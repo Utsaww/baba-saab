@@ -1,0 +1,29 @@
+.BreadCrumb{
+    width: 100%;
+    // height: 300px;
+    background: linear-gradient(144deg, #cda45e 10%, transparent 120%);
+    padding: 120px 100px 60px;
+    @media screen and (max-width:768px){
+        padding: 20px;
+    }
+    .BreadCrumbList{
+        display: flex;
+        gap: 5px;
+        .BreadCrumbListItem{
+            &:first-child{
+                a{
+                    color: rgba(#202020,0.7);
+                }
+            }
+        }
+    }
+    h1{
+        font-size: 52px;
+        line-height: 1.3;
+        color: #202020;
+        margin-top: 30px;
+        max-width: 600px;
+        width: 100%;
+        font-style: italic;
+    }
+}

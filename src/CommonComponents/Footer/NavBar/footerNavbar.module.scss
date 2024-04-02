@@ -1,0 +1,52 @@
+.navbar{
+position: relative;
+
+}
+.navList{
+display: flex;
+justify-content: center;
+}
+.navItem{
+padding: 35px 25px;
+position: relative;
+
+
+&:hover{
+    .navLink{
+        color: #cda45e;
+    }
+}
+// &.active{
+
+// }
+
+
+}
+.navLink{
+    font-size: 14px;
+    color: #fff;
+    transition: all .3s;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    position: relative;
+}
+
+/* .navLink:hover{
+    color: #cda45e;
+    letter-spacing: .8px;
+} */
+/* .cursor{
+    position: fixed;
+    height: 20px;
+    width: 20px;
+    background: #cda45e;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 99;
+    mix-blend-mode: difference;
+} */
+/* .scale{
+transform: scale(5);
+} */
+
+

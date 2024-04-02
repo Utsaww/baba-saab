@@ -1,0 +1,25 @@
+.serviceWrapper{
+    padding: 20px;
+    background: linear-gradient(144deg, #cda45e 10%, transparent 70%);
+    width: 100%;
+    overflow-x: hidden;
+}
+.serviceList{
+    display: flex;
+    gap: 50px;
+    animation: marquee 20s linear infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.listItem a{
+    color: #000;
+    font-size: 25px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'Lora', serif;
+    font-style: italic;
+    font-weight: 600;
+}

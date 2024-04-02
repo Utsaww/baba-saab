@@ -1,0 +1,118 @@
+.header {
+  background: transparent;
+  padding: 0 30px;
+  display: flex;
+  position: absolute;
+  top: 0;
+  z-index: 99;
+  width: 100%;
+  align-items: center;
+  @media screen and (max-width:991px) {
+    display: none;
+  }
+  &.sticky {
+    background-color: #000;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    animation: headerSticky 0.95s ease forwards;
+    box-shadow: 0px 3px 9px rgb(0 0 0 / 5%);
+    z-index: 99;
+  }
+  @keyframes headerSticky {
+    0% {
+      transform: translateY(-100%);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  // .navView{
+  //   position: relative;
+  //   :global .navList{
+  //     background: #cda45e;
+  //   }
+  // }
+}
+.logoContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+.logoWrapper {
+  width: 100px;
+}
+.logoWrapper img {
+  width: 100%;
+  height: auto;
+}
+.logoText {
+  color: #fff;
+}
+/* === contact btn  === */
+.contactBtn {
+  color: #fff;
+  background: #cda45e;
+  border: 1px solid #fff;
+  outline: 2px solid #cda45e;
+  text-transform: uppercase;
+  padding: 7px 30px;
+  letter-spacing: 0.5px;
+  font-size: 14px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+  font-family: 'Poppins', sans-serif;
+
+  &::before {
+    position: absolute;
+    content: "";
+    height: 120%;
+    width: 80%;
+    left: -300px;
+    background: hsla(0, 0%, 100%, 0.6);
+    top: 0;
+    -webkit-clip-path: polygon(25% 0, 100% 0, 75% 100%, 0 100%);
+    clip-path: polygon(25% 0, 100% 0, 75% 100%, 0 100%);
+    transition: all 0.5s;
+  }
+  &:hover::before {
+    left: 300px;
+  }
+}
+
+/* === nav links === */
+.navView {
+  margin: 0 auto;
+}
+.menuIcon {
+  margin-left: 30px;
+  color: #fff;
+  font-size: 30px;
+}
+.responsiveHeader{
+  padding: 10px 20px;
+  background: #000;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  display: none;
+  @media screen and (max-width:991px) {
+    display: flex;
+  }
+}
+.overlay{
+  position: fixed;
+  height: 100vh;
+  width: 100%;
+  background: rgba($color: #202020, $alpha: 0.8);
+  top: 0;
+  left: 0;
+  transform: translateX(-1000px);
+  transition: all .3s;
+  z-index: 99;
+  &.activeOverlay{
+    transform: translateX(0);
+  }
+}

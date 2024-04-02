@@ -1,0 +1,75 @@
+.instaImages {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  max-width: 400px;
+  width: 100%;
+  // padding: 20px;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+.instaHeading {
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: 0.8%;
+  color: #333;
+  font-weight: 600;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  position: relative;
+    max-width: 400px;
+  width: 100%;
+  &::before {
+    position: absolute;
+    content: "";
+    height: 4px;
+    width: 40px;
+    background: #b97b12;
+    border-radius: 10px;
+    bottom: -5px;
+  }
+  &::after {
+    position: absolute;
+    content: "";
+    height: 4px;
+    width: calc(100% - 50px);
+    background: #848892;
+    opacity: 0.4;
+    border-radius: 10px;
+    bottom: -5px;
+    right: 0;
+  }
+}
+.instaLink{
+      position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    height: 100px;
+    &:hover{
+      .instaSpan{
+    transform: translateY(-50%);
+
+      }
+    }
+    
+}
+.instaSpan{
+  position: absolute;
+    top: 50%;
+    height: 90%;
+    width: 90%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: translateY(500%);
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    background: #0000003d;
+    border-radius: 10px;
+    transition: all .3s;
+}

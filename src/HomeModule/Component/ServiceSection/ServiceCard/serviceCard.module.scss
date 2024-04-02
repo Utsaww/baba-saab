@@ -1,0 +1,90 @@
+.serviceCard{
+    padding: 25px 20px;
+    border: 1px solid #eee;
+    height: 200px;
+    overflow: hidden;
+}
+.serviceNumber{
+    position: relative;
+    &::before{
+    position: absolute;
+    content: "";
+    top: -2px;
+    left: 13px;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    background: rgba(205, 164, 94, 0.2);
+    }
+}
+.cardWrapper{
+    position: relative;
+    overflow: hidden;
+}
+.cardWrapper:hover .serviceCardhover{
+    transform: translateY(0);
+}
+.serviceHeading{
+overflow: hidden;
+   display: -webkit-box;
+   -webkit-line-clamp: 1; /* number of lines to show */
+           line-clamp: 1; 
+   -webkit-box-orient: vertical;
+}
+.serviceContent{
+    overflow: hidden;
+   display: -webkit-box;
+   -webkit-line-clamp: 3; /* number of lines to show */
+           line-clamp: 3; 
+   -webkit-box-orient: vertical;
+}
+.serviceCardhover{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    transform: translateY(300px);
+    transition: all .3s;
+    height: 100%;
+    width: 100%;
+    border: 1px solid #eee;
+    height: 200px;
+    overflow: hidden;
+}
+.imageContent{
+    position: relative;
+    height: 100%;
+}
+.imageContent img{
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+}
+.servicecardContent{
+    padding: 25px 20px;
+    position: relative;
+    z-index: 2;
+}
+.imageContent::before{
+    position: absolute;
+    content: '';
+    height: 100%;
+    width: 100%;
+    bottom: 0px;
+    left: 0;
+    background: #000;
+    opacity: .6;
+    z-index: 1;
+}
+.cardLink{
+    color: #cda45e;
+    text-decoration: underline;
+    // text-transform: uppercase;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-block;
+    margin-top: 20px;
+}
+

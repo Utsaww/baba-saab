@@ -1,0 +1,125 @@
+.gallaryWrapper{
+padding: 100px 0;
+}
+.mainDiv{
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    width: 100%;
+    // grid-template-rows: 300px 300px;
+    @media screen and (max-width:992px) {
+    grid-template-columns: repeat(3,1fr);
+    }
+    @media screen and (max-width:768px) {
+    grid-template-columns: repeat(2,1fr);
+    }
+    @media screen and (max-width:576px) {
+    grid-template-columns: repeat(1,1fr);
+    gap: 10px;
+    // grid-template-rows: auto;
+
+    }
+}
+.mainImage{
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    height: 300px;
+    img{
+        transition: all .8s;
+        height: 100%;
+        width: 100%;
+    }
+    &:hover{
+        img{
+            transform: scale(1.28);
+        }
+    }
+}
+.lightImage{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+.lightImageWrapper{
+    max-width: 800px;
+    width: 100%;
+    max-height: 700px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.lightImageWrapper img{
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+}
+.closeIcon{
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    cursor: pointer;
+
+}
+.closeIcon svg{
+    width: 30px;
+    height: 30px;
+    stroke: #fff;
+    & path{
+        stroke: #fff;
+    }
+}
+.leftArrow{
+    position: absolute;
+    top: 50%;
+    left: 0px;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+.rightArrow{
+    right: 0 !important;
+    transform: translateY(-50%);
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+}
+.rightArrow svg{
+    width: 30px;
+    height: 30px;
+    fill: #fff;
+}
+.leftArrow svg{
+    width: 30px;
+    height: 30px;
+    fill: #fff;
+}
+.categoryBtn{
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    font-size: 18px;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    @media screen and (max-width:991px) {
+        display: none;
+    }
+    // overflow: auto;
+    button{
+        font-family: "Poppins", "sans - serif";
+        // transition: all .3s;
+        padding-bottom: 2px;
+        white-space: nowrap;
+        &:hover{
+            color: #cda45e;
+        }
+        &.activeBtn{
+        font-weight: 600;
+        color: #cda45e;
+        border-bottom: 2px solid #cda45e;
+
+        }
+    }
+}

@@ -1,0 +1,12 @@
+.floatIcons{
+        position: fixed;
+    top: 200px;
+    right: 0px;
+    flex-direction: column;
+    z-index: 9;
+    gap: 0 !important;
+    :global .SocialMediaIcon_socialMediaIcon___wmbg{
+        background: #000;
+        border-radius: 0px !important;
+    }
+}

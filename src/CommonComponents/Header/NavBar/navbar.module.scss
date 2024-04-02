@@ -1,0 +1,65 @@
+.navbar{
+position: relative;
+
+}
+.navList{
+display: flex;
+justify-content: center;
+}
+.navItem{
+padding: 35px 25px;
+position: relative;
+&.activeNav{
+    &::before{
+    position: absolute;
+    top:0px;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: #cda45e;
+    content: "";
+    transition: all .3s;
+}
+    .navLink{
+        color: #cda45e;
+        font-weight: 600;
+    }
+
+}
+
+&::before{
+    position: absolute;
+    top:0px;
+    left: 0;
+    width: 0%;
+    height: 5px;
+    background: #cda45e;
+    content: "";
+    transition: all .3s;
+}
+
+&:hover::before{
+    width: 100%;
+}
+&:hover{
+    .navLink{
+        color: #cda45e;
+    }
+}
+// &.active{
+
+// }
+
+
+}
+.navLink{
+    font-size: 14px;
+    color: #fff;
+    transition: all .3s;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    position: relative;
+}
+
+
+

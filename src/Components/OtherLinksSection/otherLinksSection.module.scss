@@ -1,0 +1,40 @@
+.rightTopService {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 10px;
+  p {
+    font-size: 24px;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 0px;
+  }
+  li {
+    font-size: 14px;
+    line-height: 24px;
+    letter-spacing: 0.8%;
+    color: #848892;
+    position: relative;
+    margin-left: 30px;
+    display: inline-block;
+    transition: all 0.3s;
+    font-weight: 400;
+    &::before {
+      position: absolute;
+      content: "";
+      height: 8px;
+      width: 8px;
+      background: currentColor;
+      border-radius: 50%;
+      left: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    &:hover {
+      color: #b97b12;
+    }
+  }
+  .activeTopService {
+    color: #b97b12;
+  }
+}

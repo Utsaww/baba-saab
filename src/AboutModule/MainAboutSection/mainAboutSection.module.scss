@@ -1,0 +1,13 @@
+// .mainAboutContent{
+//     max-width: 850px;
+//     margin: 0 auto;
+
+//     width: 100%;
+// }
+.aboutSection{
+    & :global .aboutSection_aboutWrapper__bMbjH{
+        grid-template-columns: 700px 500px;
+        display: grid;
+        align-items: flex-start;
+    }
+}

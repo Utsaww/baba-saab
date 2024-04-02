@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "../WeddingPlanner/weddingPlanner.module.scss";
-import wedding from "../../../public/assets/wedding.jpg";
+import wedding from "@/assets/wedding.jpg";
 import insta from "@/assets/insta.png";
 import Image from "next/image";
 import OtherLinksSection from "@/Components/OtherLinksSection/OtherLinksSection";

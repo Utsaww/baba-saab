@@ -1,6 +1,6 @@
 'use client';
-import './globals.css';
-import "./style.css";
+import '../globals.css';
+import "../style.css";
 import MainHeader from '@/CommonComponents/Header';
 import Footer from '@/CommonComponents/Footer';
 import AOS from "aos";

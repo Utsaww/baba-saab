@@ -1,0 +1,20 @@
+.tapOpen { background: none; border: 0; color: inherit; font: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 16px; }
+.monogram {
+  width: 140px;
+  height: 140px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display), serif;
+  font-size: 40px;
+  letter-spacing: 0.04em;
+}
+.tapHint { font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); }
+.coverNames { letter-spacing: -0.01em; }
+.amp { font-style: italic; color: var(--accent); }
+.section { border-top: 1px solid color-mix(in srgb, var(--text) 12%, transparent); }
+.sectionTitle { color: var(--text); font-family: var(--font-body), sans-serif; font-size: 13px; letter-spacing: 0.3em; text-transform: uppercase; }
+.event { background: transparent; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent); border-radius: 0; padding: 16px 0; }
+.eventName { color: var(--text); }
+.countItem { background: transparent; border: 0; }

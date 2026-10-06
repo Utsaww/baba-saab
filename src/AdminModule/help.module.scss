@@ -1,0 +1,17 @@
+.guide {
+  max-width: 760px;
+  line-height: 1.65;
+  color: #292524;
+  h1 { font-size: 28px; font-weight: 600; margin-bottom: 12px; }
+  h2 { font-size: 20px; font-weight: 600; margin: 32px 0 10px; }
+  p, ul, ol, table, blockquote { margin: 10px 0; }
+  ul { list-style: disc; padding-left: 22px; }
+  ol { list-style: decimal; padding-left: 22px; }
+  li { margin: 4px 0; }
+  strong { font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid #e7e5e4; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f5f5f4; font-weight: 600; }
+  blockquote { border-left: 3px solid #d6d3d1; padding: 4px 14px; color: #57534e; background: #fafaf9; }
+  a { text-decoration: underline; }
+}

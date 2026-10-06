@@ -40,9 +40,9 @@ const ServiceCard = ({cardNumber,cardHeading,cardContent,backgroundImage,route})
               >
                 {cardContent}
               </p>
-              <Link href={route} className={styles.cardLink}>
+              <span className={styles.cardLink}>
                 Read More
-              </Link>
+              </span>
             </div>
           </div>
         </div>

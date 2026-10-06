@@ -56,7 +56,6 @@ const ResponsiveNavBar = ({ responsiveNavBar, setResponsiveNavBar }) => {
           <ul className={styles.navList}>
             {navData?.map((value) => {
               return (
-                <>
                   <li
                     className={`${styles.navItem}`}
                     key={value?.id}
@@ -70,7 +69,6 @@ const ResponsiveNavBar = ({ responsiveNavBar, setResponsiveNavBar }) => {
                       {value?.name}
                     </Link>
                   </li>
-                </>
               );
             })}
           </ul>

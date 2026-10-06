@@ -14,7 +14,6 @@ const OtherLinksSection = ({ topService }) => {
 
         {topService.map((val) => {
           return (
-            <>
               <li
                 className={`${styles?.topServiceItem} ${
                   pathname == val?.routeLink && styles?.activeTopService
@@ -23,7 +22,6 @@ const OtherLinksSection = ({ topService }) => {
               >
                 <Link href={val?.routeLink}>{val?.routeName}</Link>
               </li>
-            </>
           );
         })}
       </ul>

@@ -1,0 +1,63 @@
+import RoyalTemplate from "./royal";
+import { royalFontVars, royalPalettes } from "./royal/palettes";
+import { royalSample } from "./royal/sample";
+import FloralTemplate from "./floral";
+import { floralFontVars, floralPalettes } from "./floral/palettes";
+import { floralSample } from "./floral/sample";
+import TempleTemplate from "./temple";
+import { templeFontVars, templePalettes } from "./temple/palettes";
+import { templeSample } from "./temple/sample";
+import MinimalTemplate from "./minimal";
+import { minimalFontVars, minimalPalettes } from "./minimal/palettes";
+import { minimalSample } from "./minimal/sample";
+
+export const TEMPLATES = [
+  {
+    id: "royal",
+    name: "Royal Rajasthani",
+    description: "Maroon and gold with a palace-arch frame. Guests scratch a gold card to reveal the date.",
+    Component: RoyalTemplate,
+    palettes: royalPalettes,
+    fontVars: royalFontVars,
+    sample: royalSample,
+  },
+  {
+    id: "floral",
+    name: "Floral Pastel",
+    description: "Soft watercolour florals in pastel tones. The cover opens with a gentle scroll.",
+    Component: FloralTemplate,
+    palettes: floralPalettes,
+    fontVars: floralFontVars,
+    sample: floralSample,
+  },
+  {
+    id: "temple",
+    name: "Temple Classic",
+    description: "Temple motifs and kolam borders in rich traditional colours. Guests tap a sealed envelope to open it.",
+    Component: TempleTemplate,
+    palettes: templePalettes,
+    fontVars: templeFontVars,
+    sample: templeSample,
+  },
+  {
+    id: "minimal",
+    name: "Modern Minimal",
+    description: "A monogram cover and clean typography. Suits receptions and destination weddings. Tap to reveal.",
+    Component: MinimalTemplate,
+    palettes: minimalPalettes,
+    fontVars: minimalFontVars,
+    sample: minimalSample,
+  },
+];
+
+export function getTemplate(id) {
+  return TEMPLATES.find((t) => t.id === id) ?? null;
+}
+
+export function getPalette(template, paletteId) {
+  return template.palettes.find((p) => p.id === paletteId) ?? template.palettes[0];
+}
+
+export function themeStyle(template, paletteId) {
+  return { ...template.fontVars, ...getPalette(template, paletteId).vars };
+}

@@ -12,7 +12,6 @@ const InstaGramSection = ({instaData}) => {
       <div className={styles?.instaImages}>
         {instaData.map((val) => {
           return (
-            <>
               <Link href={"/"} target="_blank" key={val?.id} className={styles?.instaLink}>
                 <Image src={val?.name} alt={val?.alt} />
                 <span className={styles?.instaSpan}>
@@ -70,7 +69,6 @@ const InstaGramSection = ({instaData}) => {
                   </svg>
                 </span>
               </Link>
-            </>
           );
         })}
       </div>

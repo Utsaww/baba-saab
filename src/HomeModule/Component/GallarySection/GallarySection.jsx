@@ -112,15 +112,13 @@ const GallarySection = () => {
           <div className={styles?.categoryBtn}>
             {category?.map((category) => {
               return (
-                <>
                   <button
                     key={category}
-                    className={active === category && styles.activeBtn}
+                    className={active === category ? styles.activeBtn : ""}
                     onClick={() => handleCategory(category)}
                   >
                     {category}
                   </button>
-                </>
               );
             })}
           </div>
@@ -130,15 +128,13 @@ const GallarySection = () => {
         <div className={styles.mainDiv}>
           {galleryData?.map((value, index) => {
             return (
-              <>
                 <div
                   className={styles.mainImage}
                   key={value?.id}
                   onClick={() => getValue(index)}
                 >
-                  <Image src={value?.img} alt="12" fill={"fill"} />
+                  <Image src={value?.img} alt="12" fill />
                 </div>
-              </>
             );
           })}
         </div>
@@ -148,6 +144,7 @@ const GallarySection = () => {
               <div className={styles.lightImageWrapper}>
                 <Image
                   src={galleryData[currentIndex].img}
+                  alt={galleryData[currentIndex].category}
                   width={500}
                   height={500}
                 />

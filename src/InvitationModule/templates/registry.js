@@ -1,6 +1,9 @@
 import RoyalTemplate from "./royal";
 import { royalFontVars, royalPalettes } from "./royal/palettes";
 import { royalSample } from "./royal/sample";
+import FloralTemplate from "./floral";
+import { floralFontVars, floralPalettes } from "./floral/palettes";
+import { floralSample } from "./floral/sample";
 
 export const TEMPLATES = [
   {
@@ -11,6 +14,15 @@ export const TEMPLATES = [
     palettes: royalPalettes,
     fontVars: royalFontVars,
     sample: royalSample,
+  },
+  {
+    id: "floral",
+    name: "Floral Pastel",
+    description: "Soft watercolour florals in pastel tones. The cover opens with a gentle scroll.",
+    Component: FloralTemplate,
+    palettes: floralPalettes,
+    fontVars: floralFontVars,
+    sample: floralSample,
   },
 ];
 

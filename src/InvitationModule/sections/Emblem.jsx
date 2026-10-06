@@ -1,4 +1,4 @@
-const CENTRE = { ganesh: "श्री गणेशाय नमः", om: "ॐ" };
+const CENTRE = { ganesh: "श्री गणेश", om: "ॐ" };
 const PETAL_ANGLES = Array.from({ length: 16 }, (_, i) => i * 22.5);
 
 // Original typographic emblem: a petal ring around the invocation word.
@@ -23,7 +23,7 @@ export default function Emblem({ deity, className }) {
         textAnchor="middle"
         dominantBaseline="central"
         fill="currentColor"
-        fontSize={deity === "om" ? 60 : 14}
+        fontSize={deity === "om" ? 60 : 22}
         lang="hi"
         style={{ fontFamily: "var(--font-hindi), serif" }}
       >

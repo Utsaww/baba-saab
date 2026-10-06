@@ -27,6 +27,15 @@ describe("registry lookups", () => {
   });
 });
 
+describe("temple opening", () => {
+  it("shows the couple on one line inside the envelope, clear of the flap", () => {
+    const temple = getTemplate("temple");
+    render(<InvitationRenderer invitation={build(temple, { language: "both" })} />);
+    const cover = screen.getByRole("dialog", { name: "Invitation cover" });
+    expect(within(cover).getByText("Meera & Arjun")).toBeInTheDocument();
+  });
+});
+
 describe.each(TEMPLATES.map((t) => [t.id, t]))("template %s", (_id, template) => {
   it("has a valid sample whose palette exists", () => {
     const inv = build(template);

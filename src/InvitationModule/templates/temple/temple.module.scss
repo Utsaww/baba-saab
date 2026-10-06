@@ -33,11 +33,15 @@
   background: var(--surface);
   color: var(--text);
   border-radius: 6px;
+  // The flap and seal cover the top of the letter, so the names sit on its bottom edge.
   display: grid;
-  place-items: center;
-  padding: 12px;
+  place-items: end center;
+  padding: 12px 12px 14px;
   font-family: var(--font-display), serif;
-  font-size: 20px;
+  font-size: 17px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: transform 0.8s ease 0.2s;
   z-index: 1;
 }

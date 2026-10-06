@@ -8,7 +8,7 @@ import Emblem from "../../sections/Emblem";
 import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
 import { plainText } from "../../lib/i18n";
-import { monogram } from "../../lib/names";
+import { coupleTitle, monogram } from "../../lib/names";
 import { mergeStyles } from "../../lib/styles";
 
 const s = mergeStyles(base, own);
@@ -19,8 +19,8 @@ function Opening({ inv, lang, open }) {
       <Emblem deity={inv.invocation.deity} className={s.openingEmblem} />
       <EnvelopeReveal className={s.envelope} label={plainText(UI.tapToOpen, lang)} onReveal={open}>
         <span className={s.flap} />
-        <span className={s.letter}>
-          <T v={inv.couple.bride.name} lang={lang} /> &amp; <T v={inv.couple.groom.name} lang={lang} />
+        <span className={s.letter} lang={lang === "hi" ? "hi" : undefined}>
+          {coupleTitle(inv, lang === "hi" ? "hi" : "en")}
         </span>
         <span className={s.seal} aria-hidden="true">
           {monogram(inv)}

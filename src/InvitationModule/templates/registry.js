@@ -7,6 +7,9 @@ import { floralSample } from "./floral/sample";
 import TempleTemplate from "./temple";
 import { templeFontVars, templePalettes } from "./temple/palettes";
 import { templeSample } from "./temple/sample";
+import MinimalTemplate from "./minimal";
+import { minimalFontVars, minimalPalettes } from "./minimal/palettes";
+import { minimalSample } from "./minimal/sample";
 
 export const TEMPLATES = [
   {
@@ -35,6 +38,15 @@ export const TEMPLATES = [
     palettes: templePalettes,
     fontVars: templeFontVars,
     sample: templeSample,
+  },
+  {
+    id: "minimal",
+    name: "Modern Minimal",
+    description: "A monogram cover and clean typography. Suits receptions and destination weddings. Tap to reveal.",
+    Component: MinimalTemplate,
+    palettes: minimalPalettes,
+    fontVars: minimalFontVars,
+    sample: minimalSample,
   },
 ];
 

@@ -4,6 +4,9 @@ import { royalSample } from "./royal/sample";
 import FloralTemplate from "./floral";
 import { floralFontVars, floralPalettes } from "./floral/palettes";
 import { floralSample } from "./floral/sample";
+import TempleTemplate from "./temple";
+import { templeFontVars, templePalettes } from "./temple/palettes";
+import { templeSample } from "./temple/sample";
 
 export const TEMPLATES = [
   {
@@ -23,6 +26,15 @@ export const TEMPLATES = [
     palettes: floralPalettes,
     fontVars: floralFontVars,
     sample: floralSample,
+  },
+  {
+    id: "temple",
+    name: "Temple Classic",
+    description: "Temple motifs and kolam borders in rich traditional colours. Guests tap a sealed envelope to open it.",
+    Component: TempleTemplate,
+    palettes: templePalettes,
+    fontVars: templeFontVars,
+    sample: templeSample,
   },
 ];
 

@@ -21,7 +21,16 @@ export const SECTION_IDS = [
 const localised = z
   .object({ en: z.string().trim().optional(), hi: z.string().trim().optional() })
   .default({});
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
+// Rejects calendar-impossible dates such as 2026-02-31, which would otherwise roll over or show NaN.
+const isRealDate = (s) => {
+  const [y, m, d] = s.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+};
+const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
+  .refine(isRealDate, "Enter a real date");
 const time24 = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:mm (24-hour)");
 const url = z.string().url();
 

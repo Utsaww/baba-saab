@@ -59,3 +59,13 @@ describe("buildIcs", () => {
     expect(ics).toContain("DTEND;VALUE=DATE:20261204");
   });
 });
+
+describe("buildIcs UIDs", () => {
+  it("uses each entry's own uid so calendar apps keep every event", () => {
+    const now = new Date("2026-10-06T00:00:00Z");
+    const one = buildIcs([{ uid: "inv1-haldi", title: "Haldi", date: "2026-12-03" }], { now });
+    const two = buildIcs([{ uid: "inv1-mehendi", title: "Mehendi", date: "2026-12-03" }], { now });
+    expect(one).toContain("UID:inv1-haldi@babasaab");
+    expect(two).toContain("UID:inv1-mehendi@babasaab");
+  });
+});

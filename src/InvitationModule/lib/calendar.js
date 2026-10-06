@@ -41,7 +41,7 @@ export function buildIcs(entries, { uidPrefix = "invite", now = new Date() } = {
     if (!w) return;
     lines.push(
       "BEGIN:VEVENT",
-      `UID:${uidPrefix}-${i}@babasaab`,
+      `UID:${entry.uid ?? `${uidPrefix}-${i}`}@babasaab`,
       `DTSTAMP:${utcStamp(now)}`,
       w.allDay ? `DTSTART;VALUE=DATE:${w.start}` : `DTSTART:${w.start}`,
       w.allDay ? `DTEND;VALUE=DATE:${w.end}` : `DTEND:${w.end}`,

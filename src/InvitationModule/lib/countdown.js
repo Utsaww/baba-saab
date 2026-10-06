@@ -1,7 +1,7 @@
 import { istInstant } from "./datetime";
 
 export function timeLeft(targetMs, nowMs) {
-  const diff = Math.max(0, targetMs - nowMs);
+  const diff = Number.isFinite(targetMs) ? Math.max(0, targetMs - nowMs) : 0;
   const total = Math.floor(diff / 1000);
   return {
     days: Math.floor(total / 86400),

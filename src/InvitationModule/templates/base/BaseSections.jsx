@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import T from "../../sections/Text";
 import Emblem from "../../sections/Emblem";
 import Countdown from "../../sections/Countdown";
@@ -163,6 +164,7 @@ function Schedule({ inv, lang, s }) {
               )}
               <AddToCalendar
                 entry={{
+                  uid: `${inv.id ?? inv.slug ?? inv.templateId}-${ev.id}`,
                   title: `${plainText(ev.name, "en")} — ${title}`,
                   date: ev.date,
                   time: ev.time,
@@ -199,6 +201,9 @@ function FilmSection({ inv, lang, s }) {
 function Rsvp({ inv, lang, s, ctx }) {
   const deadline = inv.rsvp.deadline ? formatDate(inv.rsvp.deadline, dateLang(lang)) : null;
   const onSubmit = ctx.mode === "preview" || !ctx.onRsvpSubmit ? previewRsvp(lang) : ctx.onRsvpSubmit;
+  // Decided after mount: cached server HTML must not depend on the clock, or hydration fails after the deadline.
+  const [closed, setClosed] = useState(false);
+  useEffect(() => setClosed(isRsvpClosed(inv.rsvp)), [inv.rsvp]);
   return (
     <Section id="rsvp" s={s} title={UI.rsvp} lang={lang}>
       <RsvpForm
@@ -206,7 +211,7 @@ function Rsvp({ inv, lang, s, ctx }) {
         events={inv.events}
         askGuestCount={inv.rsvp.askGuestCount}
         askMeal={inv.rsvp.askMeal}
-        closed={isRsvpClosed(inv.rsvp)}
+        closed={closed}
         closedOnText={deadline}
         deadlineText={deadline}
         contactPhone={inv.hosts.contactPhone}

@@ -25,21 +25,37 @@ export default function useMusic(src) {
     };
   }, [src]);
 
+  const retry = useRef(null);
+  const cancelRetry = useCallback(() => {
+    if (retry.current) window.removeEventListener("pointerdown", retry.current);
+    retry.current = null;
+  }, []);
+
   // Browsers only allow audio after a tap; if this gesture didn't count (e.g. a scroll), retry on the next tap.
+  // A tap on the music button is left to toggle(), otherwise the retry would start the music and toggle would stop it.
   const play = useCallback(() => {
     const a = audio.current;
     if (!a) return;
     tryPlay(a).catch(() => {
-      window.addEventListener("pointerdown", () => tryPlay(a).catch(() => {}), { once: true });
+      cancelRetry();
+      retry.current = (e) => {
+        if (e.target?.closest?.("[data-music-toggle]")) return;
+        cancelRetry();
+        tryPlay(a).catch(() => {});
+      };
+      window.addEventListener("pointerdown", retry.current);
     });
-  }, []);
+  }, [cancelRetry]);
 
   const toggle = useCallback(() => {
     const a = audio.current;
     if (!a) return;
+    cancelRetry();
     if (a.paused) tryPlay(a).catch(() => {});
     else a.pause();
-  }, []);
+  }, [cancelRetry]);
+
+  useEffect(() => cancelRetry, [cancelRetry]);
 
   return { enabled: Boolean(src), playing, play, toggle };
 }

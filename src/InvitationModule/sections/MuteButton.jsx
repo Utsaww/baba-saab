@@ -18,6 +18,7 @@ export default function MuteButton({ playing, onToggle, className }) {
     <button
       type="button"
       className={className}
+      data-music-toggle
       onClick={onToggle}
       aria-label={playing ? "Pause music" : "Play music"}
       aria-pressed={playing}

@@ -31,3 +31,9 @@ describe("countdownTarget", () => {
     expect(new Date(countdownTarget(inv)).toISOString()).toBe("2026-12-04T10:30:00.000Z");
   });
 });
+
+describe("timeLeft with a bad target", () => {
+  it("never returns NaN", () => {
+    expect(timeLeft(NaN, Date.now())).toEqual({ days: 0, hours: 0, minutes: 0, seconds: 0, done: true });
+  });
+});

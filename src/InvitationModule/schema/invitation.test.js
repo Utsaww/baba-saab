@@ -43,3 +43,12 @@ describe("parseInvitation", () => {
     expect(() => parseInvitation(input)).toThrow();
   });
 });
+
+describe("date validation", () => {
+  it.each(["2026-02-31", "2026-13-01", "2026-00-10", "2025-02-29"])("rejects the impossible date %s", (mainDate) => {
+    expect(() => parseInvitation({ ...minimalInvitation(), mainDate })).toThrow(/real date/);
+  });
+  it("accepts a leap day", () => {
+    expect(parseInvitation({ ...minimalInvitation(), mainDate: "2028-02-29" }).mainDate).toBe("2028-02-29");
+  });
+});

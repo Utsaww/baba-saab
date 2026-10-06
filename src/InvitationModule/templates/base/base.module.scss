@@ -1,0 +1,186 @@
+// Shared layout for all templates. Colours and fonts come only from CSS variables set by the palette.
+.root {
+  position: relative;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body), Georgia, serif;
+  font-size: 17px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+.main { max-width: 640px; margin: 0 auto; padding: 0 20px 48px; }
+
+.opening {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.openingClosing { opacity: 0; transform: scale(1.04); pointer-events: none; }
+.openingInner { width: 100%; max-width: 420px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.openingEmblem { width: 96px; height: 96px; color: var(--primary); }
+.openingNames { font-family: var(--font-display), serif; font-size: clamp(28px, 8vw, 40px); line-height: 1.2; overflow-wrap: anywhere; }
+.openingHint { color: var(--muted); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; }
+.linkButton { background: none; border: 0; color: var(--primary); text-decoration: underline; font: inherit; font-size: 15px; cursor: pointer; min-height: 44px; padding: 8px 12px; }
+
+.cover { position: relative; min-height: 92vh; display: grid; place-items: center; text-align: center; padding: 48px 0; }
+.coverImage { position: absolute; inset: 0; opacity: 0.22; img { object-fit: cover; } }
+.coverContent { position: relative; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.eyebrow { color: var(--muted); font-size: 14px; letter-spacing: 0.18em; text-transform: uppercase; }
+.coverNames {
+  font-family: var(--font-display), serif;
+  font-weight: 400;
+  font-size: clamp(40px, 12vw, 72px);
+  line-height: 1.1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-wrap: anywhere;
+}
+.amp { font-size: 0.6em; color: var(--primary); margin: 4px 0; }
+.coverDate { font-size: 20px; letter-spacing: 0.3em; color: var(--primary); }
+
+.section { padding: 48px 0; text-align: center; border-top: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); }
+.sectionTitle { font-family: var(--font-display), serif; font-weight: 400; font-size: clamp(26px, 7vw, 36px); color: var(--primary); margin-bottom: 24px; }
+.emblem { width: 120px; height: 120px; margin: 0 auto 16px; color: var(--primary); }
+.invocationText { white-space: pre-line; font-size: 18px; }
+.couple { display: grid; gap: 32px; margin-top: 16px; }
+.person { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.personPhoto { position: relative; width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); img { object-fit: cover; } }
+.personName { font-family: var(--font-display), serif; font-weight: 400; font-size: 32px; overflow-wrap: anywhere; }
+.parents { color: var(--muted); font-size: 15px; }
+.bigDate { font-family: var(--font-display), serif; font-size: clamp(32px, 10vw, 52px); color: var(--primary); letter-spacing: 0.08em; }
+.longDate { color: var(--muted); }
+
+.countdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.countItem {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+  border-radius: 12px;
+  padding: 14px 4px;
+  display: flex;
+  flex-direction: column;
+}
+.countNum { font-family: var(--font-display), serif; font-size: 30px; color: var(--primary); font-variant-numeric: tabular-nums; }
+.countLabel { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.countDone { font-size: 20px; color: var(--primary); }
+
+.venueName { font-family: var(--font-display), serif; font-weight: 400; font-size: 26px; }
+.address { color: var(--muted); margin-bottom: 20px; }
+.travelNotes { white-space: pre-line; text-align: left; }
+
+.events { list-style: none; display: grid; gap: 20px; text-align: left; padding: 0; }
+.event { background: var(--surface); border-radius: 16px; padding: 20px; border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); }
+.eventName { font-family: var(--font-display), serif; font-weight: 400; font-size: 24px; color: var(--primary); }
+.eventMeta { font-weight: 600; }
+.eventVenue, .eventDesc, .eventDress { color: var(--muted); font-size: 15px; }
+.calLinks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.calLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: 8px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  font: inherit;
+  font-size: 15px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--primary);
+  color: var(--on-primary);
+  cursor: pointer;
+  text-decoration: none;
+  &:disabled { opacity: 0.6; cursor: wait; }
+}
+.shareBtn { composes: button; margin-top: 8px; }
+
+.galleryGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.galleryItem { position: relative; aspect-ratio: 1; border: 0; padding: 0; border-radius: 12px; overflow: hidden; cursor: zoom-in; background: var(--surface); img { object-fit: cover; } }
+.lightbox { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, 0.92); display: grid; place-items: center; }
+.lightboxImage { position: relative; width: 92vw; height: 80vh; img { object-fit: contain; } }
+.lbClose, .lbPrev, .lbNext {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  width: 48px;
+  height: 48px;
+  font-size: 28px;
+  cursor: pointer;
+}
+.lbClose { top: 16px; right: 16px; }
+.lbPrev { left: 12px; top: 50%; transform: translateY(-50%); }
+.lbNext { right: 12px; top: 50%; transform: translateY(-50%); }
+
+.filmFacade { position: relative; width: 100%; aspect-ratio: 16 / 9; border: 0; padding: 0; border-radius: 16px; overflow: hidden; cursor: pointer; background: #000; img { width: 100%; height: 100%; object-fit: cover; } }
+.playIcon { position: absolute; inset: 0; display: grid; place-items: center; font-size: 48px; color: #fff; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5); }
+.filmFrame { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 16px; }
+
+.rsvpForm { display: grid; gap: 16px; text-align: left; }
+.field {
+  display: grid;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+  input, select, textarea {
+    font: inherit;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--text) 25%, transparent);
+    background: var(--surface);
+    color: var(--text);
+    min-height: 44px;
+  }
+  legend { margin-bottom: 6px; }
+}
+.choice { display: flex; gap: 10px; align-items: center; min-height: 44px; input { width: 20px; height: 20px; min-height: 0; accent-color: var(--primary); } }
+.fieldError { color: var(--error, #e5484d); font-size: 14px; }
+.rsvpDeadline, .rsvpClosed { color: var(--muted); }
+.rsvpThanks { font-size: 20px; color: var(--primary); }
+
+.closingLine { font-size: 18px; margin: 8px 0 16px; }
+.families { list-style: none; padding: 0; display: grid; gap: 4px; color: var(--muted); margin-bottom: 16px; }
+.contact { display: inline-block; color: var(--primary); margin-bottom: 12px; }
+.credit { text-align: center; font-size: 12px; color: var(--muted); padding: 24px 0 32px; }
+.muteBtn {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--primary);
+  color: var(--on-primary);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opening { transition: none; }
+}

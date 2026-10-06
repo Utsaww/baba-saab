@@ -1,0 +1,7 @@
+.wrapper {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  :global(.hiLine) { display: block; margin-top: 0.2em; }
+  [lang="hi"] { font-family: var(--font-hindi), serif; }
+}

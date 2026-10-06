@@ -17,9 +17,9 @@ const MainContactSection = () => {
             className={styles?.map}
             height="400"
             style={{ border: 0 }}
-            allowfullscreen=""
+            allowFullScreen
             loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
+            referrerPolicy="no-referrer-when-downgrade"
           ></iframe>
         </div>
         {/* ==== address cards start ==== */}
@@ -89,8 +89,8 @@ const MainContactSection = () => {
                 <label>
                   Service<sup>*</sup>
                 </label>
-                <select>
-                  <option selected>Select Service</option>
+                <select defaultValue="">
+                  <option value="" disabled>Select Service</option>
                   <option>Weddings</option>
                   <option>Corporate Events </option>
                   <option>Anniversaries</option>

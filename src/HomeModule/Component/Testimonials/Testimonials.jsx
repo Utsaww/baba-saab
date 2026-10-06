@@ -103,13 +103,12 @@ const Testimonials = () => {
           >
             {ReviewData?.map((value) => {
               return (
-                <>
                   <SwiperSlide key={value?.id}>
                     <div className={styles.testContent}>
                       <p className={styles.testContentP}>{value?.content}</p>
                       <div className={styles.testName}>
                         <div className={styles.userImage}>
-                          <Image src={value?.image} height={60} width={60} />
+                          <Image src={value?.image} alt={value?.name} height={60} width={60} />
                         </div>
                         <div className={styles.testNameContent}>
                           <h5>{value?.name}</h5>
@@ -118,7 +117,6 @@ const Testimonials = () => {
                       </div>
                     </div>
                   </SwiperSlide>
-                </>
               );
             })}
           </Swiper>

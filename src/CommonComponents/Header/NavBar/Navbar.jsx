@@ -43,9 +43,8 @@ const Navbar = ({className}) => {
       <ul className={styles.navList}>
         {navData?.map((value)=>{
             return (
-              <>
                 <li
-                  className={`${styles.navItem} ${pathname === value?.route && styles.activeNav}`}
+                  className={`${styles.navItem} ${pathname === value?.route ? styles.activeNav : ""}`}
                   key={value?.id}
                   onClick={() => getId(value?.id)}
                 >
@@ -56,7 +55,6 @@ const Navbar = ({className}) => {
                     {value?.name}
                   </Link>
                 </li>
-              </>
             );
         })}
         

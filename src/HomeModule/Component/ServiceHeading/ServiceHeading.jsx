@@ -51,13 +51,11 @@ const ServiceHeading = () => {
         {
             data?.map((value)=>{
                 return(
-                    <>
                         <li className={styles.listItem} key={value?.id}>
                             <Link href={value?.route}>
                                     {value?.listName}
                             </Link>
                         </li>
-                    </>
                 )
             })
         }

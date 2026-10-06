@@ -73,9 +73,7 @@ const ServiceSection = () => {
       <div className={styles.serviceWrapper}>
         {serviceCardData?.map((value) => {
           return (
-            <>
               <ServiceCard {...value} key={value?.id} />
-            </>
           );
         })}
       </div>

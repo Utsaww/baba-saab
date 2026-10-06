@@ -17,9 +17,7 @@ const Service = ({ ServiceData, serviceName, className, widthClass,headingClass 
         <div className={`${styles.serviceWrapper} ${widthClass}`}>
           {ServiceData?.map((value) => {
             return (
-              <>
                 <ServiceCard {...value} key={value?.id} />
-              </>
             );
           })}
         </div>

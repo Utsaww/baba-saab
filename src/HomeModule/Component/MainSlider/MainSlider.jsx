@@ -44,7 +44,7 @@ const MainSlider = () => {
         >
           <SwiperSlide>
             <div className={styles.imageWrapper}></div>
-            <Image src={slide1} />
+            <Image src={slide1} alt="Wedding planner" priority />
             <div className={styles.content}>
               <h3>Wedding planner</h3>
               <p>
@@ -59,7 +59,7 @@ const MainSlider = () => {
 
           <SwiperSlide>
             <div className={styles.imageWrapper}></div>
-            <Image src={slide2} />
+            <Image src={slide2} alt="Event planner" />
             <div className={styles.content}>
               <h3>Event Planner</h3>
               <p>
@@ -74,7 +74,7 @@ const MainSlider = () => {
           </SwiperSlide>
           <SwiperSlide>
             <div className={styles.imageWrapper}></div>
-            <Image src={slide3} />
+            <Image src={slide3} alt="Birthday celebration" />
             <div className={styles.content}>
               <h3>Birthday celebration</h3>
               <p>

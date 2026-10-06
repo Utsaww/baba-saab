@@ -39,7 +39,6 @@ const FooterNavbar = ({ className }) => {
       <ul className={styles.navList}>
         {navData?.map((value) => {
           return (
-            <>
               <li
                 className={`${styles.navItem}`}
                 key={value?.id}
@@ -53,7 +52,6 @@ const FooterNavbar = ({ className }) => {
                   {value?.name}
                 </Link>
               </li>
-            </>
           );
         })}
       </ul>

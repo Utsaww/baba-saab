@@ -38,6 +38,25 @@ After signing in you land on the **Dashboard**. It links to everything you can u
 
 The yellow **New here?** banner links to this guide. Click **Dismiss** to hide it on this computer.
 
+## Managing staff (owner only)
+
+Only the owner sees **Staff** in the left menu.
+
+**Inviting someone**
+
+1. Open **Staff**.
+2. Under **Invite a staff member**, enter their name and email address, then click **Send invitation**.
+3. They receive an email with a sign-in link and a temporary password. Their row shows **Invited · hasn't signed in yet** until they sign in for the first time.
+
+**They didn't get the email, or it expired?** Ask them to check spam first. Then click **Send invite again** on their row. This sends a fresh temporary password, valid for another 7 days.
+
+**Removing someone**
+
+1. Click **Remove** on their row.
+2. Click **Yes, remove** to confirm.
+
+They can't sign in again. If they're signed in at that moment, their session ends within the hour. You can't remove yourself or the owner account.
+
 ## Browsing templates
 
 1. Open **Templates** in the left menu.

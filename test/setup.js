@@ -5,10 +5,13 @@ import { cleanup } from "@testing-library/react";
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
-  document.body.style.overflow = "";
+  if (typeof document !== "undefined") document.body.style.overflow = "";
 });
 
 // jsdom has no canvas or media playback; components must cope with that anyway.
-HTMLCanvasElement.prototype.getContext = () => null;
-window.HTMLMediaElement.prototype.play = () => Promise.resolve();
-window.HTMLMediaElement.prototype.pause = () => {};
+// Backend tests run in plain Node, where these browser globals don't exist.
+if (typeof window !== "undefined") {
+  HTMLCanvasElement.prototype.getContext = () => null;
+  window.HTMLMediaElement.prototype.play = () => Promise.resolve();
+  window.HTMLMediaElement.prototype.pause = () => {};
+}

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import PhoneFrame from "@/AdminModule/PhoneFrame";
+import { requireStaff } from "@/AdminModule/auth/server";
 import { TEMPLATES } from "@/InvitationModule/templates/registry";
 
 export const metadata = { title: "Templates · Baba Saab Admin" };
 
-export default function TemplatesPage() {
+export default async function TemplatesPage() {
+  await requireStaff();
   return (
     <div>
       <h1 className="text-2xl font-semibold">Templates</h1>

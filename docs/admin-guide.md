@@ -6,10 +6,56 @@ This guide grows as new parts of the invitation system go live. Everything descr
 
 | Area | What it's for |
 |---|---|
+| **Dashboard** | Your starting page after signing in. |
 | **Templates** | Browse the 4 invitation designs with sample details, try their colour palettes and languages, and show them to customers. |
+| **Staff** | *Owner only.* Invite people to the admin area and remove them. |
 | **Help** | This guide. |
 
 Creating, publishing and sharing real invitations arrives in the next releases. This guide will gain a section for each one.
+
+## Signing in
+
+The admin area is private. Everyone who uses it has their own account, which the owner creates.
+
+**Your first sign-in**
+
+1. Look for an email titled **Your Baba Saab Invitations staff account**. Check your spam folder if it isn't in your inbox.
+2. Open the sign-in link in the email.
+3. Enter your email address and the **temporary password** from the email, then click **Sign in**.
+4. Choose your own password and enter it twice. It needs at least 8 characters, with an uppercase letter, a lowercase letter, a number and a symbol.
+
+The temporary password works for 7 days. If it has expired, ask the owner to send your invitation again.
+
+**Forgot your password?** On the sign-in page click **Forgot your password?**, enter your email, and type in the code you're emailed along with a new password.
+
+**Signing out.** Click **Sign out** at the bottom of the left menu. Always sign out on a shared computer.
+
+**"No access" message.** Your account isn't set up as staff. Ask the owner to invite you, then sign in with the email address they used.
+
+## The dashboard
+
+After signing in you land on the **Dashboard**. It links to everything you can use. Your invitations, upcoming events and recent RSVPs will appear here as those features arrive.
+
+The yellow **New here?** banner links to this guide. Click **Dismiss** to hide it on this computer.
+
+## Managing staff (owner only)
+
+Only the owner sees **Staff** in the left menu.
+
+**Inviting someone**
+
+1. Open **Staff**.
+2. Under **Invite a staff member**, enter their name and email address, then click **Send invitation**.
+3. They receive an email with a sign-in link and a temporary password. Their row shows **Invited · hasn't signed in yet** until they sign in for the first time.
+
+**They didn't get the email, or it expired?** Ask them to check spam first. Then click **Send invite again** on their row. This sends a fresh temporary password, valid for another 7 days.
+
+**Removing someone**
+
+1. Click **Remove** on their row.
+2. Click **Yes, remove** to confirm.
+
+They can't sign in again. If they're signed in at that moment, their session ends within the hour. You can't remove yourself or the owner account.
 
 ## Browsing templates
 

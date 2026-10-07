@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./staff", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./staff")>();
@@ -14,7 +14,7 @@ import { handler } from "./handler";
 import { inviteStaff, listStaff, removeStaff, StaffError } from "./staff";
 
 function event(fieldName: string, args: Record<string, unknown> = {}, groups: string[] | null = ["admin", "owner"]) {
-  return { info: { fieldName }, arguments: args, identity: { username: "u-owner", sub: "u-owner", groups } };
+  return { typeName: "Mutation", fieldName, arguments: args, identity: { username: "u-owner", sub: "u-owner", groups } };
 }
 
 describe("staff-admin handler", () => {
@@ -23,9 +23,18 @@ describe("staff-admin handler", () => {
     vi.mocked(listStaff).mockClear();
   });
 
+  afterEach(() => vi.unstubAllEnvs());
+
   it("rejects callers outside the owner group", async () => {
     await expect(handler(event("listStaff", {}, ["admin"]))).rejects.toThrow("Only the owner can manage staff.");
     await expect(handler(event("listStaff", {}, null))).rejects.toThrow("Only the owner can manage staff.");
+    expect(listStaff).not.toHaveBeenCalled();
+  });
+
+  it("rejects a missing identity", async () => {
+    await expect(handler({ typeName: "Query", fieldName: "listStaff", arguments: {}, identity: null })).rejects.toThrow(
+      "Only the owner can manage staff.",
+    );
     expect(listStaff).not.toHaveBeenCalled();
   });
 
@@ -59,6 +68,6 @@ describe("staff-admin handler", () => {
   });
 
   it("rejects unknown operations", async () => {
-    await expect(handler(event("dropTables"))).rejects.toThrow();
+    await expect(handler(event("dropTables"))).rejects.toThrow("Unknown operation dropTables.");
   });
 });

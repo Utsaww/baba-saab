@@ -15,7 +15,9 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // Backend code runs in Lambda/Node, not a browser.
+    environmentMatchGlobs: [["amplify/**", "node"]],
     setupFiles: ["./test/setup.js"],
-    include: ["src/**/*.test.{js,jsx}"],
+    include: ["src/**/*.test.{js,jsx}", "amplify/**/*.test.ts"],
   },
 });

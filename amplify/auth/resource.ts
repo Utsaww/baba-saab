@@ -1,4 +1,5 @@
 import { defineAuth } from "@aws-amplify/backend";
+import { staffAdmin } from "../functions/staff-admin/resource";
 
 // Shown in the invitation email Cognito sends new staff. Deployed branches set ADMIN_SITE_URL
 // in the Amplify console; the sandbox falls back to the local dev server.
@@ -22,4 +23,9 @@ export const auth = defineAuth({
     },
   },
   groups: ["owner", "admin"],
+  access: (allow) => [
+    allow
+      .resource(staffAdmin)
+      .to(["createUser", "deleteUser", "getUser", "listUsersInGroup", "listGroupsForUser", "addUserToGroup"]),
+  ],
 });

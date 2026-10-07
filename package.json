@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "admin:create": "tsx amplify/scripts/admin-create.ts"
   },
   "devDependencies": {
     "@aws-amplify/backend": "^1.25.1",

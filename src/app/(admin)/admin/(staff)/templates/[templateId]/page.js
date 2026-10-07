@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import TemplatePreview from "@/AdminModule/TemplatePreview";
+import { requireStaff } from "@/AdminModule/auth/server";
 import { getTemplate } from "@/InvitationModule/templates/registry";
 
-export default function TemplateDetailPage({ params }) {
+export default async function TemplateDetailPage({ params }) {
+  await requireStaff();
   const template = getTemplate(params.templateId);
   if (!template) notFound();
   return (

@@ -47,6 +47,7 @@ Amplify Hosting builds each connected branch with `amplify.yml`: it deploys that
 
 1. **App settings → IAM roles → service role**: attach `AmplifyBackendDeployFullAccess`.
 2. **Hosting → Environment variables**: set `ADMIN_SITE_URL` to the branch's public URL (e.g. `https://www.example.com`), so the staff invitation email links to the right sign-in page.
+3. **App settings → General**: confirm the platform is **Web compute** (`WEB_COMPUTE`), which the Next.js server features and `/admin` sign-in need.
 
 After a branch's first deploy, create its owner account:
 

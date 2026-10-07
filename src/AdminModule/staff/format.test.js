@@ -30,6 +30,15 @@ describe("errorMessage", () => {
     );
   });
 
+  it("hides AppSync and runtime errors that staff can't act on", () => {
+    expect(errorMessage([{ message: "Task timed out after 15.00 seconds", errorType: "Lambda:Timeout" }])).toBe(
+      "Something went wrong. Please try again.",
+    );
+    expect(errorMessage([{ message: "Variable 'username' has coerced Null value", errorType: "BadRequestException" }])).toBe(
+      "Something went wrong. Please try again.",
+    );
+  });
+
   it("falls back to a generic message", () => {
     expect(errorMessage(undefined)).toBe("Something went wrong. Please try again.");
     expect(errorMessage([{}])).toBe("Something went wrong. Please try again.");

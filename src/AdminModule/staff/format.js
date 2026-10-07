@@ -27,5 +27,7 @@ export function errorMessage(errors) {
   const first = errors?.[0];
   if (!first) return GENERIC;
   if (first.errorType === "Unauthorized") return "Only the owner can manage staff.";
-  return first.message || GENERIC;
+  // Only messages our Lambda wrote for staff are safe to show; AppSync/runtime errors are not.
+  if (first.errorType === "Lambda:Unhandled" && first.message) return first.message;
+  return GENERIC;
 }

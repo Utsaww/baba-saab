@@ -3,7 +3,7 @@ import { staffAdmin } from "../functions/staff-admin/resource";
 
 // Shown in the invitation email Cognito sends new staff. Deployed branches set ADMIN_SITE_URL
 // in the Amplify console; the sandbox falls back to the local dev server.
-const SITE_URL = process.env.ADMIN_SITE_URL ?? "http://localhost:3000";
+const SITE_URL = (process.env.ADMIN_SITE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 
 export const auth = defineAuth({
   loginWith: {

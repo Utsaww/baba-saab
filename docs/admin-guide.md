@@ -66,6 +66,15 @@ Open **Invitations** in the left menu to see every invitation, with the most rec
 - **Status:** choose a status to see only those invitations. New invitations are **Draft** until they are published.
 - Click a row to open it in the editor.
 
+## Creating an invitation
+
+1. Open **Invitations** and click **New invitation**.
+2. Pick a **design**. The phone on the right shows it with sample details.
+3. Pick a **colour palette** and the **language**: English, हिंदी, or **Both** (each line in English with Hindi underneath).
+4. Click **Create invitation**. The editor opens on step 2, ready for the couple's details.
+
+You can change the design, colours and language later without losing anything you've typed.
+
 ## Browsing templates
 
 1. Open **Templates** in the left menu.

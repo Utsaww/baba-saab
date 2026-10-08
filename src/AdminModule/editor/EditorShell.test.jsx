@@ -21,6 +21,15 @@ describe("EditorShell", () => {
     expect(screen.getByTitle("Live preview")).toHaveAttribute("src", "/admin/preview-frame");
   });
 
+  it("toggles the preview on small screens via a controlled button", () => {
+    renderShell(vi.fn());
+    const button = screen.getByRole("button", { name: "Preview" });
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    expect(document.getElementById(button.getAttribute("aria-controls"))).toBe(screen.getByLabelText("Live preview", { selector: "aside" }));
+    fireEvent.click(button);
+    expect(screen.getByRole("button", { name: "Hide preview" })).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("opens on the requested step and moves between steps", () => {
     renderShell(vi.fn());
     expect(screen.getByRole("heading", { name: "2. Couple & families" })).toBeInTheDocument();

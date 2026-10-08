@@ -60,13 +60,12 @@ export default function PreviewPane({ content, scale = 0.62 }) {
           ))}
         </div>
       )}
-      {failed ? (
+      {failed && (
         <p role="alert" className="rounded-xl border border-stone-300 bg-white p-4 text-sm text-stone-700">
           Preview unavailable — reload the page.
         </p>
-      ) : (
-        <PhoneFrame src="/admin/preview-frame" title="Live preview" scale={scale} iframeRef={frame} lazy={false} />
       )}
+      <PhoneFrame src="/admin/preview-frame" title="Live preview" scale={scale} iframeRef={frame} lazy={false} />
     </div>
   );
 }

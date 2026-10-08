@@ -67,6 +67,7 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
         <button
           type="button"
           aria-expanded={showPreview}
+          aria-controls="live-preview"
           onClick={() => setShowPreview((v) => !v)}
           className="min-h-[44px] rounded-full border border-stone-300 px-4 text-sm lg:hidden"
         >
@@ -109,7 +110,7 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
           </div>
         </section>
 
-        <aside aria-label="Live preview" className={`${showPreview ? "block" : "hidden"} lg:block lg:w-[262px] lg:shrink-0`}>
+        <aside id="live-preview" aria-label="Live preview" className={`${showPreview ? "block" : "hidden"} order-first lg:order-none lg:block lg:w-[262px] lg:shrink-0`}>
           <div className="lg:sticky lg:top-4">
             <PreviewPane content={content} />
           </div>

@@ -5,9 +5,9 @@ import { PREVIEW_MESSAGE, READY_MESSAGE } from "./previewMessages";
 
 const BANNER = "Sample details shown where you haven't filled in yet";
 
-function send(data, origin = window.location.origin) {
+function send(data, origin = window.location.origin, source = window.parent) {
   act(() => {
-    window.dispatchEvent(new MessageEvent("message", { data, origin }));
+    window.dispatchEvent(new MessageEvent("message", { data, origin, source }));
   });
 }
 
@@ -51,5 +51,28 @@ describe("PreviewFrameClient", () => {
     render(<PreviewFrameClient />);
     send({ type: PREVIEW_MESSAGE, content: { templateId: "royal", theme: { palette: "maroon-gold" } }, lang: null }, "https://evil.example");
     expect(screen.getByText("Loading preview…")).toBeInTheDocument();
+  });
+
+  it("ignores same-origin messages that don't come from the parent window", () => {
+    render(<PreviewFrameClient />);
+    send({ type: PREVIEW_MESSAGE, content: { templateId: "royal", theme: { palette: "maroon-gold" } }, lang: null }, window.location.origin, null);
+    expect(screen.getByText("Loading preview…")).toBeInTheDocument();
+  });
+
+  it("falls back to the invitation's own language for an unknown lang", () => {
+    render(<PreviewFrameClient />);
+    send({
+      type: PREVIEW_MESSAGE,
+      content: {
+        templateId: "royal",
+        theme: { palette: "maroon-gold" },
+        language: "en",
+        couple: { bride: { name: { en: "Priya" } }, groom: { name: { en: "Rahul" } } },
+        mainDate: "2027-02-14",
+        venue: { name: { en: "Riviera" } },
+      },
+      lang: "fr",
+    });
+    expect(screen.getAllByText("Priya").length).toBeGreaterThan(0);
   });
 });

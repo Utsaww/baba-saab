@@ -14,7 +14,7 @@ export default function PreviewFrameClient() {
   useEffect(() => {
     const origin = window.location.origin;
     const onMessage = (event) => {
-      if (event.origin === origin && event.data?.type === PREVIEW_MESSAGE) setMessage(event.data);
+      if (event.source === window.parent && event.origin === origin && event.data?.type === PREVIEW_MESSAGE) setMessage(event.data);
     };
     window.addEventListener("message", onMessage);
     window.parent.postMessage({ type: READY_MESSAGE }, origin);
@@ -28,7 +28,7 @@ export default function PreviewFrameClient() {
   if (!template) return <p className="p-6 text-center text-sm text-stone-500">Choose a design to see the preview.</p>;
 
   const { invitation, usedSample } = previewInvitation(draft, template);
-  const shown = message.lang ? { ...invitation, language: message.lang } : invitation;
+  const shown = message.lang === "en" || message.lang === "hi" ? { ...invitation, language: message.lang } : invitation;
   return (
     <>
       {usedSample && (

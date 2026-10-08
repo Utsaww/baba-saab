@@ -46,5 +46,18 @@ describe("PreviewPane", () => {
     render(<PreviewPane content={content} />);
     act(() => vi.advanceTimersByTime(READY_TIMEOUT_MS));
     expect(screen.getByRole("alert")).toHaveTextContent("Preview unavailable — reload the page.");
+    expect(screen.getByTitle("Live preview")).toBeInTheDocument();
+  });
+
+  it("recovers when the frame reports ready after the timeout", () => {
+    vi.useFakeTimers();
+    render(<PreviewPane content={content} />);
+    const iframe = screen.getByTitle("Live preview");
+    const post = vi.spyOn(iframe.contentWindow, "postMessage");
+    act(() => vi.advanceTimersByTime(READY_TIMEOUT_MS));
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    frameReady(iframe);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(post).toHaveBeenLastCalledWith({ type: PREVIEW_MESSAGE, content, lang: null }, window.location.origin);
   });
 });

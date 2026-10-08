@@ -1,7 +1,22 @@
+import { z } from "zod";
 import { TEMPLATE_IDS, invitationSchema } from "./invitation";
 
+// Makes every field optional all the way down. zod's deepPartial() does not look inside
+// .default() wrappers, so list items would keep required fields. Defaults are not applied in drafts.
+function toDraft(schema) {
+  if (schema instanceof z.ZodDefault) return toDraft(schema._def.innerType);
+  if (schema instanceof z.ZodOptional || schema instanceof z.ZodNullable) return toDraft(schema.unwrap());
+  if (schema instanceof z.ZodObject) {
+    const shape = {};
+    for (const [key, field] of Object.entries(schema.shape)) shape[key] = toDraft(field);
+    return z.object(shape).optional();
+  }
+  if (schema instanceof z.ZodArray) return z.array(toDraft(schema.element)).optional();
+  return schema.optional();
+}
+
 // Every field optional, so a half-finished invitation always saves.
-export const draftSchema = invitationSchema.deepPartial();
+export const draftSchema = toDraft(invitationSchema);
 
 export const pathKey = (path) => path.join(".");
 
@@ -44,7 +59,15 @@ export function cleanDraft(input) {
     if (issue.path.length === 0) return { draft: null, errors };
     const key = pathKey(issue.path);
     if (!(key in errors)) errors[key] = issue.message;
-    value = withoutPath(value, issue.path);
+    let path = issue.path;
+    let next = withoutPath(value, path);
+    // No progress (the field was already absent): remove the parent instead.
+    while (JSON.stringify(next) === JSON.stringify(value)) {
+      path = path.slice(0, -1);
+      if (path.length === 0) return { draft: null, errors };
+      next = withoutPath(value, path);
+    }
+    value = next;
   }
   return { draft: null, errors };
 }

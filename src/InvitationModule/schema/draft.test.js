@@ -56,4 +56,31 @@ describe("cleanDraft", () => {
     expect(draft.couple.groom.name.en).toBe("Rahul");
     expect(input.couple.groom.name.en).toBe("  Rahul ");
   });
+
+  it("keeps events with no date or name yet", () => {
+    const { draft, errors } = cleanDraft({ ...base(), events: [{ id: "e1", name: { en: "Haldi" } }, { id: "e2" }] });
+    expect(draft.events).toEqual([{ id: "e1", name: { en: "Haldi" } }, { id: "e2" }]);
+    expect(errors).toEqual({});
+  });
+
+  it("does not lose the draft over a gallery item with no key", () => {
+    const { draft } = cleanDraft({
+      ...base(),
+      couple: { bride: { name: { en: "Priya" } } },
+      media: { gallery: [{ caption: { en: "Us" } }] },
+    });
+    expect(draft).not.toBeNull();
+    expect(draft.couple.bride.name).toEqual({ en: "Priya" });
+  });
+
+  it("drops a field of the wrong type but keeps the rest", () => {
+    const { draft, errors } = cleanDraft({ ...base(), couple: { bride: { name: { en: "Priya" } } }, events: "nope" });
+    expect(draft.events).toBeUndefined();
+    expect(draft.couple.bride.name).toEqual({ en: "Priya" });
+    expect(errors.events).toBeDefined();
+  });
+
+  it("does not apply defaults to drafts", () => {
+    expect(cleanDraft(base()).draft).toEqual(base());
+  });
 });

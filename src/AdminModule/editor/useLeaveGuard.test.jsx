@@ -88,15 +88,37 @@ describe("useLeaveGuard sign-out and modifier clicks", () => {
     expect(confirm).toHaveBeenCalledTimes(2);
   });
 
-  it("saves pending changes first instead of asking", () => {
+  const unload = () => {
+    const event = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  };
+
+  it("saves pending changes first instead of asking", async () => {
     const confirm = vi.spyOn(window, "confirm");
-    const saving = Promise.resolve();
-    const flushNow = vi.fn(() => saving);
+    const flushNow = vi.fn(() => Promise.resolve({ ok: true }));
     render(<Page warnOnClose flushNow={flushNow} />);
     const { proceed, waits } = signOut();
     expect(proceed).toBe(true);
-    expect(waits).toEqual([saving]);
+    expect(waits).toHaveLength(1);
+    expect(flushNow).toHaveBeenCalledTimes(1);
+    expect(unload()).toBe(true);
+    await waits[0];
     expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("does not prompt on the final navigation after a successful sign-out save", async () => {
+    render(<Page warnOnClose flushNow={() => Promise.resolve({ ok: true })} />);
+    const { waits } = signOut();
+    await waits[0];
+    expect(unload()).toBe(false);
+  });
+
+  it("keeps the browser prompt when the sign-out save fails", async () => {
+    render(<Page warnOnClose flushNow={() => Promise.resolve({ ok: false })} />);
+    const { waits } = signOut();
+    await waits[0];
+    expect(unload()).toBe(true);
   });
 
   it("does nothing on sign-out when everything is saved", () => {

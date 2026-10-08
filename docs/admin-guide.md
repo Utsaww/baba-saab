@@ -83,7 +83,7 @@ The editor has three parts: the **steps** on the left, the **form** in the middl
 - **Saving is automatic.** About 3 seconds after you stop typing, the top right says **Saving…** and then **Saved** with the time.
 - **"Couldn't save" banner:** your changes are still on the screen. Check the internet connection and click **Retry**. Don't close the page until it says **Saved**.
 - **"Updated by someone else" banner:** another staff member saved this invitation while you had it open. Click **Reload** to see their version, then make your changes again. This stops two people overwriting each other.
-- If you leave while a save is still pending, your changes are saved first. If your latest changes couldn't be saved, the page warns you before you leave.
+- If you click a link or sign out while a save is still pending, your changes are saved first. If you close or reload the tab before it says **Saved**, the browser warns you — stay on the page until it says **Saved**. If your latest changes couldn't be saved, the page warns you before you leave.
 - Click **? Help for this step** to jump to that step's section of this guide.
 
 ## Editor step 1: Template & palette

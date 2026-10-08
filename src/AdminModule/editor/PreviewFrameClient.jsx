@@ -14,6 +14,11 @@ class PreviewBoundary extends Component {
     return { failed: true };
   }
 
+  // Only a failed preview is reset by a new message; a healthy one must stay mounted so section state survives typing.
+  componentDidUpdate(prevProps) {
+    if (this.state.failed && prevProps.resetKey !== this.props.resetKey) this.setState({ failed: false });
+  }
+
   render() {
     if (this.state.failed) return <p className="p-6 text-center text-sm text-stone-500">This preview can&apos;t be shown yet — keep editing.</p>;
     return this.props.children;
@@ -53,7 +58,7 @@ export default function PreviewFrameClient() {
           Sample details shown where you haven&apos;t filled in yet
         </p>
       )}
-      <PreviewBoundary key={count}>
+      <PreviewBoundary resetKey={count}>
         <InvitationRenderer invitation={shown} ctx={{ mode: "preview", skipOpening: true }} />
       </PreviewBoundary>
     </>

@@ -110,7 +110,7 @@ describe("EditorShell", () => {
     confirm.mockRestore();
   });
 
-  it("saves pending edits before signing out, and asks first when they can't be saved", async () => {
+  it("saves pending edits before signing out", async () => {
     const saveAction = vi.fn().mockResolvedValueOnce({ ok: true, version: 6, savedAt: "x" });
     renderShell(saveAction);
     fireEvent.change(screen.getByLabelText("Bride's name"), { target: { value: "Priya" } });
@@ -124,9 +124,16 @@ describe("EditorShell", () => {
     expect(proceed).toBe(true);
     expect(waits).toHaveLength(1);
     expect(saveAction).toHaveBeenCalledTimes(1);
+    // The save went through, so the final navigation must not raise the browser's "Leave site?" prompt.
+    const unload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(false);
+  });
 
+  it("asks before signing out when the latest changes couldn't be saved", async () => {
+    const saveAction = vi.fn().mockResolvedValueOnce({ ok: false, message: "Couldn't save." });
+    renderShell(saveAction);
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
-    saveAction.mockResolvedValueOnce({ ok: false, message: "Couldn't save." });
     fireEvent.change(screen.getByLabelText("Bride's name"), { target: { value: "Priyanka" } });
     await act(async () => vi.advanceTimersByTime(3000));
     let cancelled;

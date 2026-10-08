@@ -37,7 +37,12 @@ export function useLeaveGuard({ warnOnClose, atRisk, flushNow }) {
         if (window.confirm(LEAVE_MESSAGE)) allowed.current = true;
         else event.preventDefault();
       } else if (warnOnClose) {
-        event.detail?.waitFor?.(flushNow());
+        event.detail?.waitFor?.(
+          Promise.resolve(flushNow()).then((result) => {
+            // Saved: the final navigation must not trigger the browser's own prompt.
+            if (result?.ok) allowed.current = true;
+          }),
+        );
       }
     };
 

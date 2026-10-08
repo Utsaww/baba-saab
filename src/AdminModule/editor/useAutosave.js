@@ -42,6 +42,7 @@ export function useAutosave({ content, initialVersion, save, delay = SAVE_DELAY_
       if (result?.ok) dispatch({ type: "success", version: result.version, savedAt: result.savedAt });
       else if (result?.conflict) dispatch({ type: "conflict" });
       else dispatch({ type: "failure", message: result?.message ?? FAILED });
+      return result;
     })();
     inFlight.current = run;
     return run;
@@ -74,7 +75,7 @@ export function useAutosave({ content, initialVersion, save, delay = SAVE_DELAY_
     return undefined;
   }, [state.status, runSave]);
 
-  // Saves what is pending (or waits for the save in progress); resolves when it has finished.
+  // Saves what is pending (or waits for the save in progress); resolves with the save result when it has finished.
   const flushNow = useCallback(() => runSave(), [runSave]);
 
   return { state, retry, flushNow };

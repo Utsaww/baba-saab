@@ -1,14 +1,19 @@
+import { useEffect } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import PreviewFrameClient from "./PreviewFrameClient";
 import { PREVIEW_MESSAGE, READY_MESSAGE } from "./previewMessages";
 
-const renderControl = vi.hoisted(() => ({ fail: false }));
+const renderControl = vi.hoisted(() => ({ fail: false, mounts: 0 }));
 
 vi.mock("@/InvitationModule/InvitationRenderer", async () => {
   const actual = await vi.importActual("@/InvitationModule/InvitationRenderer");
   return {
     default: (props) => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      useEffect(() => {
+        renderControl.mounts += 1;
+      }, []);
       if (renderControl.fail) throw new Error("boom");
       return actual.default(props);
     },
@@ -25,6 +30,7 @@ function send(data, origin = window.location.origin, source = window.parent) {
 
 afterEach(() => {
   renderControl.fail = false;
+  renderControl.mounts = 0;
   vi.restoreAllMocks();
 });
 
@@ -102,5 +108,13 @@ describe("PreviewFrameClient", () => {
     send(message);
     expect(screen.queryByText("This preview can't be shown yet — keep editing.")).not.toBeInTheDocument();
     expect(screen.getAllByText("Aarohi").length).toBeGreaterThan(0);
+  });
+
+  it("keeps the invitation mounted across ordinary messages so section state survives typing", () => {
+    const message = { type: PREVIEW_MESSAGE, content: { templateId: "royal", theme: { palette: "maroon-gold" }, language: "en" }, lang: null };
+    render(<PreviewFrameClient />);
+    send(message);
+    send({ ...message, content: { ...message.content, venue: { name: { en: "Riviera" } } } });
+    expect(renderControl.mounts).toBe(1);
   });
 });

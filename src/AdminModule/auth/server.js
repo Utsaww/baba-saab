@@ -1,11 +1,15 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetchAuthSession } from "aws-amplify/auth/server";
 import { runWithAmplifyServerContext } from "./amplifyServer";
 import { LOGIN_PATH, sessionFromTokens } from "./access";
 
-/** Who is signed in, read from the auth cookies on this request, or null. */
-export async function getStaffSession() {
+/**
+ * Who is signed in, read from the auth cookies on this request, or null.
+ * Cached per request, so a layout and its page share one check instead of each calling Cognito.
+ */
+export const getStaffSession = cache(async function getStaffSession() {
   const tokens = await runWithAmplifyServerContext({
     nextServerContext: { cookies },
     operation: async (contextSpec) => {
@@ -17,7 +21,7 @@ export async function getStaffSession() {
     },
   });
   return sessionFromTokens(tokens);
-}
+});
 
 /** Use in every staff layout, page and server action; the middleware alone is not enough. */
 export async function requireStaff() {

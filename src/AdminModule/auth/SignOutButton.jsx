@@ -7,11 +7,14 @@ export default function SignOutButton({ className = "" }) {
   const [busy, setBusy] = useState(false);
 
   async function handleClick() {
-    // Lets the editor ask about unsaved changes first; cancelling keeps the user signed in.
-    const proceed = window.dispatchEvent(new Event("admin:before-signout", { cancelable: true }));
+    // Lets the editor save or ask about unsaved changes first; cancelling keeps the user signed in.
+    const pending = [];
+    const detail = { waitFor: (promise) => pending.push(promise) };
+    const proceed = window.dispatchEvent(new CustomEvent("admin:before-signout", { cancelable: true, detail }));
     if (!proceed) return;
     setBusy(true);
     try {
+      await Promise.allSettled(pending);
       await signOut();
     } finally {
       // A full page load clears any cached admin pages from the router.

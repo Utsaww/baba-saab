@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 vi.mock("aws-amplify/auth", () => ({ signOut: vi.fn() }));
 
@@ -16,5 +16,21 @@ describe("SignOutButton", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
     window.removeEventListener("admin:before-signout", cancel);
     expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it("waits for pending saves before signing out", async () => {
+    let finish;
+    const pending = new Promise((resolve) => (finish = resolve));
+    const collect = (event) => event.detail.waitFor(pending);
+    window.addEventListener("admin:before-signout", collect);
+    render(<SignOutButton />);
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    await Promise.resolve();
+    expect(signOut).not.toHaveBeenCalled();
+    finish();
+    vi.stubGlobal("location", { assign: vi.fn() });
+    await waitFor(() => expect(signOut).toHaveBeenCalled());
+    window.removeEventListener("admin:before-signout", collect);
+    vi.unstubAllGlobals();
   });
 });

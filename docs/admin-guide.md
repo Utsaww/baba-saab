@@ -69,7 +69,7 @@ Open **Invitations** in the left menu to see every invitation, with the most rec
 ## Creating an invitation
 
 1. Open **Invitations** and click **New invitation**.
-2. Pick a **design**. The phone on the right shows it with sample details.
+2. Pick a **design**. The phone preview next to (or below) the options shows it with sample details.
 3. Pick a **colour palette** and the **language**: English, हिंदी, or **Both** (each line in English with Hindi underneath).
 4. Click **Create invitation**. The editor opens on step 2, ready for the couple's details.
 
@@ -83,7 +83,7 @@ The editor has three parts: the **steps** on the left, the **form** in the middl
 - **Saving is automatic.** About 3 seconds after you stop typing, the top right says **Saving…** and then **Saved** with the time.
 - **"Couldn't save" banner:** your changes are still on the screen. Check the internet connection and click **Retry**. Don't close the page until it says **Saved**.
 - **"Updated by someone else" banner:** another staff member saved this invitation while you had it open. Click **Reload** to see their version, then make your changes again. This stops two people overwriting each other.
-- If you try to leave with unsaved changes, the page asks you first.
+- If you leave while a save is still pending, your changes are saved first. If your latest changes couldn't be saved, the page warns you before you leave.
 - Click **? Help for this step** to jump to that step's section of this guide.
 
 ## Editor step 1: Template & palette

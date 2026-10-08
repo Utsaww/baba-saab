@@ -24,8 +24,10 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
     ({ content: latest, expectedVersion }) => saveAction({ id: invitation.id, expectedVersion, content: latest }),
     [saveAction, invitation.id],
   );
-  const { state, retry } = useAutosave({ content, initialVersion: invitation.version, save });
-  const allowLeave = useLeaveGuard(hasUnsavedChanges(state));
+  const { state, retry, flushNow } = useAutosave({ content, initialVersion: invitation.version, save });
+  // Edits that are dirty, or saving with nothing queued, are saved by the autosave/unmount flush; the rest are at risk.
+  const atRisk = state.status === "error" || state.status === "conflict" || (state.status === "saving" && state.queued);
+  const allowLeave = useLeaveGuard({ warnOnClose: hasUnsavedChanges(state), atRisk, flushNow });
 
   const update = useCallback((path, value) => setContent((c) => setIn(c, path, value)), []);
   const { errors } = useMemo(() => cleanDraft(content), [content]);
@@ -34,7 +36,7 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
     setStep(n);
     const url = new URL(window.location.href);
     url.searchParams.set("step", String(n));
-    window.history.replaceState(window.history.state, "", url);
+    window.history.replaceState(null, "", url);
   }, []);
 
   const firstRender = useRef(true);

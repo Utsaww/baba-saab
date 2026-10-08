@@ -68,6 +68,32 @@ describe("useAutosave", () => {
     expect(result.current.state.status).toBe("error");
   });
 
+  it("explains a missing answer as a possible sign-out", async () => {
+    const save = vi.fn().mockResolvedValueOnce(undefined);
+    const { result, rerender } = setup(save);
+    rerender({ content: { n: 1 } });
+    await act(async () => vi.advanceTimersByTime(3000));
+    expect(result.current.state).toMatchObject({ status: "error", error: "You may have been signed out. Sign in again in a new tab, then click Retry." });
+  });
+
+  it("flushNow saves immediately and resolves when done, or joins a save in progress", async () => {
+    const first = deferred();
+    const save = vi.fn().mockReturnValueOnce(first.promise);
+    const { result, rerender } = setup(save);
+    rerender({ content: { n: 1 } });
+    let a;
+    let b;
+    act(() => {
+      a = result.current.flushNow();
+      b = result.current.flushNow();
+    });
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(b).toBe(a);
+    await act(async () => first.resolve({ ok: true, version: 2, savedAt: "x" }));
+    await a;
+    expect(result.current.state.status).toBe("saved");
+  });
+
   it("stops saving after a conflict", async () => {
     const save = vi.fn().mockResolvedValueOnce({ ok: false, conflict: true });
     const { result, rerender } = setup(save);
@@ -108,14 +134,14 @@ describe("useAutosave flush on leave", () => {
     expect(save).toHaveBeenCalledTimes(1);
   });
 
-  it("saves pending edits on pagehide", async () => {
+  it("does not save on pagehide, because a reload would race the new page", async () => {
     const save = ok();
     const { rerender } = setup(save);
     rerender({ content: { n: 1 } });
     await act(async () => {
       window.dispatchEvent(new Event("pagehide"));
     });
-    expect(save).toHaveBeenCalledWith({ content: { n: 1 }, expectedVersion: 1 });
+    expect(save).not.toHaveBeenCalled();
   });
 });
 
@@ -142,17 +168,5 @@ describe("useAutosave independence from save identity", () => {
     expect(second).toHaveBeenCalledTimes(1);
     expect(second).toHaveBeenCalledWith({ content: { n: 2 }, expectedVersion: 2 });
     expect(first).toHaveBeenCalledTimes(1);
-  });
-
-  it("on pagehide saves once through the normal path and ends saved", async () => {
-    const save = vi.fn(async () => ({ ok: true, version: 2, savedAt: "2026-10-08T05:12:00.000Z" }));
-    const { result, rerender } = setup(save);
-    rerender({ content: { n: 1 } });
-    await act(async () => {
-      window.dispatchEvent(new Event("pagehide"));
-    });
-    await act(async () => vi.advanceTimersByTime(10_000));
-    expect(save).toHaveBeenCalledTimes(1);
-    expect(result.current.state).toMatchObject({ status: "saved", version: 2 });
   });
 });

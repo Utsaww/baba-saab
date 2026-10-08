@@ -2,23 +2,25 @@
 
 import { useCallback, useEffect, useRef } from "react";
 
-export const LEAVE_MESSAGE = "You have unsaved changes. Leave this page anyway?";
+export const LEAVE_MESSAGE = "Your latest changes couldn't be saved and will be lost. Leave this page anyway?";
 
-/** While `active`, asks before closing the tab or following a link to another page. */
-export function useLeaveGuard(active) {
+/**
+ * Guards the ways of leaving the editor:
+ * - `warnOnClose`: any unsaved change. Closing or reloading the tab can't wait for a save, so the browser warns.
+ * - `atRisk`: changes that won't be saved automatically (failed, conflict, or queued behind a save). Links and sign-out ask first.
+ * - `flushNow`: saves what is pending. Sign-out waits for it; link clicks don't need to because unmounting saves.
+ */
+export function useLeaveGuard({ warnOnClose, atRisk, flushNow }) {
   const allowed = useRef(false);
 
   useEffect(() => {
-    if (!active) return undefined;
-    allowed.current = false;
-
     const onBeforeUnload = (event) => {
-      if (allowed.current) return;
+      if (allowed.current || !warnOnClose) return;
       event.preventDefault();
       event.returnValue = "";
     };
     const onClick = (event) => {
-      if (allowed.current || event.defaultPrevented) return;
+      if (allowed.current || !atRisk || event.defaultPrevented) return;
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
       if (!link || link.target === "_blank") return;
@@ -29,11 +31,14 @@ export function useLeaveGuard(active) {
         event.stopPropagation();
       }
     };
-
     const onSignOut = (event) => {
       if (allowed.current) return;
-      if (window.confirm(LEAVE_MESSAGE)) allowed.current = true;
-      else event.preventDefault();
+      if (atRisk) {
+        if (window.confirm(LEAVE_MESSAGE)) allowed.current = true;
+        else event.preventDefault();
+      } else if (warnOnClose) {
+        event.detail?.waitFor?.(flushNow());
+      }
     };
 
     window.addEventListener("beforeunload", onBeforeUnload);
@@ -44,7 +49,7 @@ export function useLeaveGuard(active) {
       window.removeEventListener("admin:before-signout", onSignOut);
       document.removeEventListener("click", onClick, true);
     };
-  }, [active]);
+  }, [warnOnClose, atRisk, flushNow]);
 
   // For deliberate exits such as "Reload": stops the guard immediately, before React re-renders.
   return useCallback(() => {

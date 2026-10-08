@@ -74,6 +74,69 @@ describe("EditorShell", () => {
     expect(screen.getByRole("button", { name: "Reload" })).toBeInTheDocument();
   });
 
+  it("keeps the step in the address bar without touching the router's history state", () => {
+    const replace = vi.spyOn(window.history, "replaceState");
+    renderShell(vi.fn());
+    fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+    expect(replace).toHaveBeenLastCalledWith(null, "", expect.any(URL));
+    replace.mockRestore();
+  });
+
+  it("does not ask before a link while edits are waiting to be saved, but warns on close", () => {
+    const confirm = vi.spyOn(window, "confirm");
+    renderShell(vi.fn(async () => ({ ok: true, version: 6, savedAt: "x" })));
+    fireEvent.change(screen.getByLabelText("Bride's name"), { target: { value: "Priya" } });
+    const close = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(close);
+    expect(close.defaultPrevented).toBe(true);
+    const stop = (event) => event.preventDefault();
+    document.addEventListener("click", stop);
+    fireEvent.click(screen.getByRole("link", { name: /All invitations/ }));
+    document.removeEventListener("click", stop);
+    expect(confirm).not.toHaveBeenCalled();
+    confirm.mockRestore();
+  });
+
+  it("asks before a link when the latest changes couldn't be saved", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderShell(vi.fn(async () => ({ ok: false, message: "Couldn't save." })));
+    fireEvent.change(screen.getByLabelText("Bride's name"), { target: { value: "Priya" } });
+    await act(async () => vi.advanceTimersByTime(3000));
+    const stop = (event) => event.preventDefault();
+    document.addEventListener("click", stop);
+    fireEvent.click(screen.getByRole("link", { name: /All invitations/ }));
+    document.removeEventListener("click", stop);
+    expect(confirm).toHaveBeenCalledWith("Your latest changes couldn't be saved and will be lost. Leave this page anyway?");
+    confirm.mockRestore();
+  });
+
+  it("saves pending edits before signing out, and asks first when they can't be saved", async () => {
+    const saveAction = vi.fn().mockResolvedValueOnce({ ok: true, version: 6, savedAt: "x" });
+    renderShell(saveAction);
+    fireEvent.change(screen.getByLabelText("Bride's name"), { target: { value: "Priya" } });
+    const waits = [];
+    const event = new CustomEvent("admin:before-signout", { cancelable: true, detail: { waitFor: (p) => waits.push(p) } });
+    let proceed;
+    await act(async () => {
+      proceed = window.dispatchEvent(event);
+      await Promise.all(waits);
+    });
+    expect(proceed).toBe(true);
+    expect(waits).toHaveLength(1);
+    expect(saveAction).toHaveBeenCalledTimes(1);
+
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    saveAction.mockResolvedValueOnce({ ok: false, message: "Couldn't save." });
+    fireEvent.change(screen.getByLabelText("Bride's name"), { target: { value: "Priyanka" } });
+    await act(async () => vi.advanceTimersByTime(3000));
+    let cancelled;
+    act(() => {
+      cancelled = window.dispatchEvent(new CustomEvent("admin:before-signout", { cancelable: true, detail: { waitFor() {} } }));
+    });
+    expect(cancelled).toBe(false);
+    confirm.mockRestore();
+  });
+
   it("links each step to its help section", () => {
     renderShell(vi.fn());
     expect(screen.getByRole("link", { name: /Help for this step/ })).toHaveAttribute("href", "/admin/help#editor-step-2-couple-families");

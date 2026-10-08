@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { useLeaveGuard } from "./useLeaveGuard";
 
-function Page({ active }) {
-  useLeaveGuard(active);
+function Page({ warnOnClose = false, atRisk = false, flushNow = () => Promise.resolve() }) {
+  useLeaveGuard({ warnOnClose, atRisk, flushNow });
   return (
     <>
       <a href="/admin/invitations">All invitations</a>
@@ -31,48 +31,84 @@ function click(link) {
 afterEach(() => vi.restoreAllMocks());
 
 describe("useLeaveGuard", () => {
-  it("asks before following a link while there are unsaved changes", () => {
+  it("asks before following a link while changes are at risk", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
-    render(<Page active />);
+    render(<Page warnOnClose atRisk />);
     expect(click(screen.getByText("All invitations"))).toBe(false);
-    expect(confirm).toHaveBeenCalled();
+    expect(confirm).toHaveBeenCalledWith("Your latest changes couldn't be saved and will be lost. Leave this page anyway?");
   });
 
   it("lets the link through when confirmed", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
-    render(<Page active />);
+    render(<Page warnOnClose atRisk />);
     expect(click(screen.getByText("All invitations"))).toBe(true);
   });
 
-  it("never asks for links that open in a new tab, or when everything is saved", () => {
+  it("does not ask for a link while changes will be saved on leaving", () => {
     const confirm = vi.spyOn(window, "confirm");
-    const { rerender } = render(<Page active />);
-    click(screen.getByText("Help"));
-    rerender(<Page active={false} />);
-    click(screen.getByText("All invitations"));
+    render(<Page warnOnClose />);
+    expect(click(screen.getByText("All invitations"))).toBe(true);
     expect(confirm).not.toHaveBeenCalled();
   });
 
-  it("warns before closing the tab", () => {
-    render(<Page active />);
+  it("never asks for links that open in a new tab", () => {
+    const confirm = vi.spyOn(window, "confirm");
+    render(<Page warnOnClose atRisk />);
+    click(screen.getByText("Help"));
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("warns before closing the tab while anything is unsaved, even if it will be saved on leaving", () => {
+    render(<Page warnOnClose />);
     const event = new Event("beforeunload", { cancelable: true });
     window.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
   });
+
+  it("does not warn before closing the tab when everything is saved", () => {
+    render(<Page />);
+    const event = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+  });
 });
 
 describe("useLeaveGuard sign-out and modifier clicks", () => {
-  it("cancels sign-out when the user declines, and lets it through when they agree", () => {
+  const signOut = () => {
+    const waits = [];
+    const event = new CustomEvent("admin:before-signout", { cancelable: true, detail: { waitFor: (p) => waits.push(p) } });
+    return { proceed: window.dispatchEvent(event), waits };
+  };
+
+  it("asks when changes are at risk, and cancels sign-out if the user declines", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
-    render(<Page active />);
-    expect(window.dispatchEvent(new Event("admin:before-signout", { cancelable: true }))).toBe(false);
-    expect(window.dispatchEvent(new Event("admin:before-signout", { cancelable: true }))).toBe(true);
+    render(<Page warnOnClose atRisk />);
+    expect(signOut().proceed).toBe(false);
+    expect(signOut().proceed).toBe(true);
     expect(confirm).toHaveBeenCalledTimes(2);
+  });
+
+  it("saves pending changes first instead of asking", () => {
+    const confirm = vi.spyOn(window, "confirm");
+    const saving = Promise.resolve();
+    const flushNow = vi.fn(() => saving);
+    render(<Page warnOnClose flushNow={flushNow} />);
+    const { proceed, waits } = signOut();
+    expect(proceed).toBe(true);
+    expect(waits).toEqual([saving]);
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("does nothing on sign-out when everything is saved", () => {
+    const flushNow = vi.fn();
+    render(<Page flushNow={flushNow} />);
+    expect(signOut()).toEqual({ proceed: true, waits: [] });
+    expect(flushNow).not.toHaveBeenCalled();
   });
 
   it("does not ask for ctrl-clicks", () => {
     const confirm = vi.spyOn(window, "confirm");
-    render(<Page active />);
+    render(<Page warnOnClose atRisk />);
     // jsdom can't navigate, so cancel the click once it has passed the guard.
     const stop = (event) => event.preventDefault();
     document.addEventListener("click", stop);

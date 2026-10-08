@@ -15,9 +15,11 @@ export default function TemplateFrame({ inv, ctx = {}, s, Cover = CoverBase, Ope
 
   return (
     <div className={s.root} data-template={inv.templateId}>
-      <OpeningOverlay className={s.opening} closingClassName={s.openingClosing} onOpen={music.play}>
-        {(open) => <Opening inv={inv} lang={lang} s={s} open={open} />}
-      </OpeningOverlay>
+      {!ctx.skipOpening && (
+        <OpeningOverlay className={s.opening} closingClassName={s.openingClosing} onOpen={music.play}>
+          {(open) => <Opening inv={inv} lang={lang} s={s} open={open} />}
+        </OpeningOverlay>
+      )}
       <main className={s.main}>
         <Cover inv={inv} lang={lang} s={s} />
         {visibleSections(inv).map((id) => {

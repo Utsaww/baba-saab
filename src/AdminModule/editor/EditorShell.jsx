@@ -6,6 +6,7 @@ import { cleanDraft } from "@/InvitationModule/schema/draft";
 import { indexFields } from "@/InvitationModule/lib/indexFields";
 import { hasUnsavedChanges } from "./autosave";
 import { setIn } from "./paths";
+import PreviewPane from "./PreviewPane";
 import SaveStatus, { SaveBanners } from "./SaveStatus";
 import StepNav from "./StepNav";
 import { guideHref, STEPS } from "./steps";
@@ -17,6 +18,7 @@ const navButton = "min-h-[44px] rounded-full border border-stone-300 px-5 text-s
 export default function EditorShell({ invitation, initialStep, templates, saveAction }) {
   const [content, setContent] = useState(invitation.content);
   const [step, setStep] = useState(initialStep);
+  const [showPreview, setShowPreview] = useState(false);
 
   const save = useCallback(
     ({ content: latest, expectedVersion }) => saveAction({ id: invitation.id, expectedVersion, content: latest }),
@@ -62,6 +64,14 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
           </Link>
           <h1 className="mt-1 text-2xl font-semibold">{title}</h1>
         </div>
+        <button
+          type="button"
+          aria-expanded={showPreview}
+          onClick={() => setShowPreview((v) => !v)}
+          className="min-h-[44px] rounded-full border border-stone-300 px-4 text-sm lg:hidden"
+        >
+          {showPreview ? "Hide preview" : "Preview"}
+        </button>
         <SaveStatus state={state} />
       </div>
       <SaveBanners state={state} onRetry={retry} onReload={reload} />
@@ -98,6 +108,12 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
             )}
           </div>
         </section>
+
+        <aside aria-label="Live preview" className={`${showPreview ? "block" : "hidden"} lg:block lg:w-[262px] lg:shrink-0`}>
+          <div className="lg:sticky lg:top-4">
+            <PreviewPane content={content} />
+          </div>
+        </aside>
       </div>
     </div>
   );

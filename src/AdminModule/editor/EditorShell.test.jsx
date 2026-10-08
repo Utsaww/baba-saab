@@ -16,6 +16,11 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe("EditorShell", () => {
+  it("shows the live preview", () => {
+    renderShell(vi.fn());
+    expect(screen.getByTitle("Live preview")).toHaveAttribute("src", "/admin/preview-frame");
+  });
+
   it("opens on the requested step and moves between steps", () => {
     renderShell(vi.fn());
     expect(screen.getByRole("heading", { name: "2. Couple & families" })).toBeInTheDocument();

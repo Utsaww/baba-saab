@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireOwner } from "@/AdminModule/auth/server";
-import { cookieDataClient } from "./dataClient";
+import { cookieDataClient } from "@/AdminModule/dataClient";
 import { errorMessage } from "./format";
 
 export async function inviteStaffAction({ email, name }) {

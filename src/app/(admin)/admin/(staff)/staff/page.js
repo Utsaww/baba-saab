@@ -1,5 +1,5 @@
 import { requireOwner } from "@/AdminModule/auth/server";
-import { cookieDataClient } from "@/AdminModule/staff/dataClient";
+import { cookieDataClient } from "@/AdminModule/dataClient";
 import { inviteStaffAction, removeStaffAction } from "@/AdminModule/staff/actions";
 import { errorMessage } from "@/AdminModule/staff/format";
 import InviteStaffForm from "@/AdminModule/staff/InviteStaffForm";

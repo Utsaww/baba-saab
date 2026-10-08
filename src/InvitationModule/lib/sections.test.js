@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { visibleSections } from "./sections";
+import { orderedSectionIds, visibleSections } from "./sections";
+import { SECTION_IDS } from "../schema/invitation";
 import { parseInvitation } from "../schema/invitation";
 import { minimalInvitation } from "../testing/fixtures";
 
@@ -30,5 +31,18 @@ describe("visibleSections", () => {
   it("follows the custom order, removes hidden and duplicate ids, and appends missing ids", () => {
     const inv = build({ theme: { palette: "p", sectionOrder: ["venue", "couple", "venue"], hidden: ["countdown"] } });
     expect(visibleSections(inv)).toEqual(["venue", "couple", "invocation", "saveTheDate"]);
+  });
+});
+
+describe("orderedSectionIds", () => {
+  it("keeps the staff order, drops unknown ids and appends missing ones", () => {
+    const order = orderedSectionIds({ sectionOrder: ["venue", "bogus", "couple", "venue"] });
+    expect(order.slice(0, 2)).toEqual(["venue", "couple"]);
+    expect(order).toHaveLength(SECTION_IDS.length);
+    expect(new Set(order)).toEqual(new Set(SECTION_IDS));
+  });
+
+  it("uses the default order when none is stored", () => {
+    expect(orderedSectionIds(undefined)).toEqual(SECTION_IDS);
   });
 });

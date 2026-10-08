@@ -75,6 +75,59 @@ Open **Invitations** in the left menu to see every invitation, with the most rec
 
 You can change the design, colours and language later without losing anything you've typed.
 
+## Editing an invitation
+
+The editor has three parts: the **steps** on the left, the **form** in the middle and a **live phone preview** on the right (on a phone, tap **Preview**).
+
+- Do the steps in any order. A **✓** appears next to each step that has details filled in.
+- **Saving is automatic.** About 3 seconds after you stop typing, the top right says **Saving…** and then **Saved** with the time.
+- **"Couldn't save" banner:** your changes are still on the screen. Check the internet connection and click **Retry**. Don't close the page until it says **Saved**.
+- **"Updated by someone else" banner:** another staff member saved this invitation while you had it open. Click **Reload** to see their version, then make your changes again. This stops two people overwriting each other.
+- If you try to leave with unsaved changes, the page asks you first.
+- Click **? Help for this step** to jump to that step's section of this guide.
+
+## Editor step 1: Template & palette
+
+Change the design, colour palette or language at any time. Nothing you've typed is lost. If you switch from **Both** to English, the Hindi text is kept, and it comes back if you switch to **Both** again.
+
+## Editor step 2: Couple & families
+
+- **Bride and groom:** names, and the parents line, for example "D/o Smt. Sunita & Shri Rajesh Sharma".
+- **Blessing at the top:** the symbol (Shri Ganesh, Om or none) and a shloka. Pick one of the ready-made shlokas, or choose **Our own text** and type the family's own.
+- **Families:** add each family's name for the closing message. **Closing line** is the sign-off, for example "With love and blessings from the Sharma and Mehra families".
+- **Family contact phone:** shown to guests once RSVPs close. Search on the Invitations page also finds invitations by this number.
+
+For a **Both** invitation, each field has an English box and a Hindi box.
+
+## Editor step 3: Date, venue & travel
+
+- **Main wedding date:** drives the countdown and the save-the-date.
+- **Venue name and address.**
+- **Google Maps link:** open the venue in Google Maps, tap **Share**, copy the link and paste it. It must start with `https://`.
+- **Travel notes:** nearest airport and railway station, weather tips. Put one point per line.
+
+## Editor step 4: Events
+
+Add each function guests are invited to. The quick buttons (**+ Haldi**, **+ Mehendi**, **+ Sangeet**, **+ Vivah**, **+ Reception**) fill in the name in English and Hindi. Use **+ Other event** for anything else. Give every event a date and time. Add a different venue, dress code or description only where it applies. Use **Move up** and **Move down** to change the order.
+
+## Editor step 5: Photos, film & music
+
+Paste the invitation film's **YouTube link**. The film can be "unlisted" on YouTube. Uploading photos and music is coming in the next release.
+
+## Editor step 6: Sections
+
+Choose which parts of the invitation guests see, and in what order. Untick **Show** to hide a section, and use the arrows to move it. The cover always comes first. A section with nothing filled in is hidden automatically, so you only need to hide sections you've filled in but don't want shown.
+
+## Editor step 7: RSVP & settings
+
+- Tick **Ask guests to RSVP** to add the RSVP form, then set the **Last day to RSVP**. After that day the form closes and shows the family's phone number.
+- Choose whether to ask **how many people are coming** and about **meal preference**.
+- **Show "Created by Baba Saab Events"** adds a small credit at the bottom. Untick it if the customer prefers.
+
+## Editor step 8: Review
+
+This step lists everything still needed before the invitation can be published, such as a missing date or an event without a time. Click **Go to step N** to fix each one. Publishing arrives in the next release. Until then, everything is saved as a draft.
+
 ## Browsing templates
 
 1. Open **Templates** in the left menu.

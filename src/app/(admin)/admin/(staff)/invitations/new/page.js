@@ -12,7 +12,7 @@ export default async function NewInvitationPage() {
 
   return (
     <div className="max-w-5xl">
-      <Link href="/admin/invitations" className="text-sm text-stone-600 hover:underline">
+      <Link href="/admin/invitations" className="inline-flex min-h-[44px] items-center text-sm text-stone-600 hover:underline">
         ← All invitations
       </Link>
       <h1 className="mt-2 text-2xl font-semibold">New invitation</h1>

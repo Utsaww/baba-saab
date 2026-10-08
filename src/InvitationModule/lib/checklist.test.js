@@ -64,6 +64,12 @@ describe("publishChecklist", () => {
     ]);
   });
 
+  it("asks for an RSVP deadline when RSVP is on", () => {
+    const draft = { ...complete(), rsvp: { enabled: true } };
+    expect(publishChecklist(draft)).toEqual([{ id: "rsvpDeadline", message: "Add the last day to RSVP", step: 7 }]);
+    expect(publishChecklist({ ...draft, rsvp: { enabled: true, deadline: "2027-02-01" } })).toEqual([]);
+  });
+
   it("calls an unnamed event by its number", () => {
     const draft = complete();
     draft.events = [{ id: "e1", date: "2027-02-13", time: "10:00" }];

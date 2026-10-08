@@ -32,7 +32,7 @@ const isoDate = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
   .refine(isRealDate, "Enter a real date");
 const time24 = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:mm (24-hour)");
-const url = z.string().url();
+const url = z.string().url().refine((s) => s.startsWith("https://"), "Use a link starting with https://");
 
 const person = z.object({
   name: localised,

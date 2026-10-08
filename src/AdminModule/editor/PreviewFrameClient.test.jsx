@@ -3,6 +3,18 @@ import { act, render, screen } from "@testing-library/react";
 import PreviewFrameClient from "./PreviewFrameClient";
 import { PREVIEW_MESSAGE, READY_MESSAGE } from "./previewMessages";
 
+const renderControl = vi.hoisted(() => ({ fail: false }));
+
+vi.mock("@/InvitationModule/InvitationRenderer", async () => {
+  const actual = await vi.importActual("@/InvitationModule/InvitationRenderer");
+  return {
+    default: (props) => {
+      if (renderControl.fail) throw new Error("boom");
+      return actual.default(props);
+    },
+  };
+});
+
 const BANNER = "Sample details shown where you haven't filled in yet";
 
 function send(data, origin = window.location.origin, source = window.parent) {
@@ -11,7 +23,10 @@ function send(data, origin = window.location.origin, source = window.parent) {
   });
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  renderControl.fail = false;
+  vi.restoreAllMocks();
+});
 
 describe("PreviewFrameClient", () => {
   it("tells the editor it is ready", () => {
@@ -74,5 +89,18 @@ describe("PreviewFrameClient", () => {
       lang: "fr",
     });
     expect(screen.getAllByText("Priya").length).toBeGreaterThan(0);
+  });
+
+  it("shows a gentle message when the draft can't be drawn, then recovers on the next message", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const message = { type: PREVIEW_MESSAGE, content: { templateId: "royal", theme: { palette: "maroon-gold" }, language: "en" }, lang: null };
+    render(<PreviewFrameClient />);
+    renderControl.fail = true;
+    send(message);
+    expect(screen.getByText("This preview can't be shown yet — keep editing.")).toBeInTheDocument();
+    renderControl.fail = false;
+    send(message);
+    expect(screen.queryByText("This preview can't be shown yet — keep editing.")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Aarohi").length).toBeGreaterThan(0);
   });
 });

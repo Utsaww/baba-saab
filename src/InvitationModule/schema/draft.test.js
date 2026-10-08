@@ -39,6 +39,14 @@ describe("cleanDraft", () => {
     expect(Object.keys(errors)).toEqual(["venue.mapsUrl"]);
   });
 
+  it("drops links that are not https", () => {
+    for (const mapsUrl of ["javascript:alert(1)", "http://x.com"]) {
+      const { draft, errors } = cleanDraft({ ...base(), venue: { name: { en: "Riviera" }, mapsUrl } });
+      expect(draft.venue).toEqual({ name: { en: "Riviera" } });
+      expect(Object.keys(errors)).toEqual(["venue.mapsUrl"]);
+    }
+  });
+
   it("drops an impossible date", () => {
     const { draft, errors } = cleanDraft({ ...base(), mainDate: "2026-02-31" });
     expect(draft.mainDate).toBeUndefined();

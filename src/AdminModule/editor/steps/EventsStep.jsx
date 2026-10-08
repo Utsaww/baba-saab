@@ -13,7 +13,8 @@ export const EVENT_PRESETS = [
 ];
 
 const smallButton = "min-h-[44px] rounded-full border border-stone-300 px-4 text-sm hover:bg-stone-100 disabled:opacity-40";
-const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 10);
+// randomUUID needs a secure page (https); fall back when staff open the admin over plain http on a LAN.
+const newId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`).replace(/-/g, "").slice(0, 10);
 
 export default function EventsStep({ content, update, errors, language }) {
   const events = content.events ?? [];
@@ -58,7 +59,9 @@ export default function EventsStep({ content, update, errors, language }) {
               <button type="button" disabled={i === events.length - 1} onClick={() => move(i, i + 1)} aria-label={`Move ${title} down`} className={smallButton}>
                 Move down
               </button>
-              <button type="button" onClick={() => setEvents(events.filter((_, j) => j !== i))} aria-label={`Remove ${title}`} className={smallButton}>
+              <button type="button" onClick={() => {
+                  if (window.confirm(`Remove ${title}? This can't be undone.`)) setEvents(events.filter((_, j) => j !== i));
+                }} aria-label={`Remove ${title}`} className={smallButton}>
                 Remove
               </button>
             </div>

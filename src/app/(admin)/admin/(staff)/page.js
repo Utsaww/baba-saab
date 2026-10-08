@@ -7,6 +7,7 @@ export const metadata = { title: "Dashboard · Baba Saab Admin" };
 export default async function Dashboard() {
   const session = await requireStaff();
   const cards = [
+    { href: "/admin/invitations", title: "Invitations", text: "Create invitations and continue drafts." },
     { href: "/admin/templates", title: "Templates", text: "Browse the 4 designs and show them to customers." },
     ...(session.isOwner ? [{ href: "/admin/staff", title: "Staff", text: "Invite or remove people who can sign in here." }] : []),
     { href: "/admin/help", title: "Help", text: "The staff guide: how everything here works." },
@@ -26,7 +27,7 @@ export default async function Dashboard() {
         ))}
       </div>
       <p className="mt-8 rounded-xl border border-dashed border-stone-300 p-5 text-sm text-stone-500">
-        Coming soon: your invitations, upcoming events, recent RSVPs and invitations due for deletion will appear here.
+        Coming soon: upcoming events, recent RSVPs and invitations due for deletion will appear here.
       </p>
     </div>
   );

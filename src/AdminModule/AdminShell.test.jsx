@@ -7,8 +7,8 @@ import AdminShell, { navFor } from "./AdminShell";
 
 describe("navFor", () => {
   it("shows Staff to the owner only", () => {
-    expect(navFor({ isOwner: true }).map((i) => i.label)).toEqual(["Dashboard", "Templates", "Staff", "Help"]);
-    expect(navFor({ isOwner: false }).map((i) => i.label)).toEqual(["Dashboard", "Templates", "Help"]);
+    expect(navFor({ isOwner: true }).map((i) => i.label)).toEqual(["Dashboard", "Invitations", "Templates", "Staff", "Help"]);
+    expect(navFor({ isOwner: false }).map((i) => i.label)).toEqual(["Dashboard", "Invitations", "Templates", "Help"]);
   });
 });
 

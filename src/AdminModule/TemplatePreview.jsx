@@ -2,17 +2,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import PhoneFrame from "./PhoneFrame";
+import { chipClass } from "./ui";
 
 const LANGUAGE_OPTIONS = [
   { id: "en", label: "English" },
   { id: "hi", label: "हिंदी" },
   { id: "both", label: "Both" },
 ];
-
-const chip = (active) =>
-  `flex min-h-[44px] items-center gap-2 rounded-full border px-4 text-sm ${
-    active ? "border-stone-900 bg-stone-900 text-white" : "border-stone-300 bg-white hover:border-stone-500"
-  }`;
 
 export default function TemplatePreview({ templateId, name, description, palettes, defaultLanguage }) {
   const [palette, setPalette] = useState(palettes[0].id);
@@ -32,7 +28,7 @@ export default function TemplatePreview({ templateId, name, description, palette
             <legend className="mb-2 text-sm font-medium">Palette</legend>
             <div className="flex flex-wrap gap-2">
               {palettes.map((p) => (
-                <button key={p.id} type="button" onClick={() => setPalette(p.id)} aria-pressed={palette === p.id} className={chip(palette === p.id)}>
+                <button key={p.id} type="button" onClick={() => setPalette(p.id)} aria-pressed={palette === p.id} className={chipClass(palette === p.id)}>
                   <span className="h-4 w-4 rounded-full border border-stone-300" style={{ background: `linear-gradient(135deg, ${p.bg} 50%, ${p.primary} 50%)` }} />
                   {p.name}
                 </button>
@@ -43,7 +39,7 @@ export default function TemplatePreview({ templateId, name, description, palette
             <legend className="mb-2 text-sm font-medium">Language</legend>
             <div className="flex flex-wrap gap-2">
               {LANGUAGE_OPTIONS.map((l) => (
-                <button key={l.id} type="button" onClick={() => setLanguage(l.id)} aria-pressed={language === l.id} className={chip(language === l.id)}>
+                <button key={l.id} type="button" onClick={() => setLanguage(l.id)} aria-pressed={language === l.id} className={chipClass(language === l.id)}>
                   {l.label}
                 </button>
               ))}

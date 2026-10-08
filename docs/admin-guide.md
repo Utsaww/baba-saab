@@ -7,6 +7,7 @@ This guide grows as new parts of the invitation system go live. Everything descr
 | Area | What it's for |
 |---|---|
 | **Dashboard** | Your starting page after signing in. |
+| **Invitations** | Create invitations for customers, fill in their details and continue saved drafts. |
 | **Templates** | Browse the 4 invitation designs with sample details, try their colour palettes and languages, and show them to customers. |
 | **Staff** | *Owner only.* Invite people to the admin area and remove them. |
 | **Help** | This guide. |
@@ -56,6 +57,14 @@ Only the owner sees **Staff** in the left menu.
 2. Click **Yes, remove** to confirm.
 
 They can't sign in again. If they're signed in at that moment, their session ends within the hour. You can't remove yourself or the owner account.
+
+## Invitations
+
+Open **Invitations** in the left menu to see every invitation, with the most recently edited at the top. Each row shows the couple's names, the design, the wedding date, its status and who edited it last.
+
+- **Search:** type part of a name (English or Hindi) or a phone number.
+- **Status:** choose a status to see only those invitations. New invitations are **Draft** until they are published.
+- Click a row to open it in the editor.
 
 ## Browsing templates
 

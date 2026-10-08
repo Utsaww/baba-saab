@@ -19,6 +19,7 @@ export function useLeaveGuard(active) {
     };
     const onClick = (event) => {
       if (allowed.current || event.defaultPrevented) return;
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
       if (!link || link.target === "_blank") return;
       const url = new URL(link.href, window.location.href);
@@ -29,10 +30,18 @@ export function useLeaveGuard(active) {
       }
     };
 
+    const onSignOut = (event) => {
+      if (allowed.current) return;
+      if (window.confirm(LEAVE_MESSAGE)) allowed.current = true;
+      else event.preventDefault();
+    };
+
     window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("admin:before-signout", onSignOut);
     document.addEventListener("click", onClick, true);
     return () => {
       window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("admin:before-signout", onSignOut);
       document.removeEventListener("click", onClick, true);
     };
   }, [active]);

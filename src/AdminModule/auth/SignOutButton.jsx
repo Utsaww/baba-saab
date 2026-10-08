@@ -7,6 +7,9 @@ export default function SignOutButton({ className = "" }) {
   const [busy, setBusy] = useState(false);
 
   async function handleClick() {
+    // Lets the editor ask about unsaved changes first; cancelling keeps the user signed in.
+    const proceed = window.dispatchEvent(new Event("admin:before-signout", { cancelable: true }));
+    if (!proceed) return;
     setBusy(true);
     try {
       await signOut();

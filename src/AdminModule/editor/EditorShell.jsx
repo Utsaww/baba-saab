@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cleanDraft } from "@/InvitationModule/schema/draft";
 import { indexFields } from "@/InvitationModule/lib/indexFields";
 import { hasUnsavedChanges } from "./autosave";
@@ -35,6 +35,15 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
     window.history.replaceState(window.history.state, "", url);
   }, []);
 
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    document.getElementById("step-title")?.focus();
+  }, [step]);
+
   const reload = () => {
     allowLeave();
     window.location.reload();
@@ -48,7 +57,7 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <Link href="/admin/invitations" className="text-sm text-stone-600 hover:underline">
+          <Link href="/admin/invitations" className="inline-flex min-h-[44px] items-center text-sm text-stone-600 hover:underline">
             ← All invitations
           </Link>
           <h1 className="mt-1 text-2xl font-semibold">{title}</h1>
@@ -64,10 +73,10 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
 
         <section className="min-w-0 flex-1" aria-labelledby="step-title">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="step-title" className="text-xl font-semibold">
+            <h2 id="step-title" tabIndex={-1} className="text-xl font-semibold outline-none">
               {current.number}. {current.title}
             </h2>
-            <a href={guideHref(current)} target="_blank" rel="noopener noreferrer" className="text-sm underline">
+            <a href={guideHref(current)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center text-sm underline">
               ? Help for this step
             </a>
           </div>

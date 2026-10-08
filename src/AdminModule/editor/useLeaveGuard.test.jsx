@@ -60,3 +60,24 @@ describe("useLeaveGuard", () => {
     expect(event.defaultPrevented).toBe(true);
   });
 });
+
+describe("useLeaveGuard sign-out and modifier clicks", () => {
+  it("cancels sign-out when the user declines, and lets it through when they agree", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
+    render(<Page active />);
+    expect(window.dispatchEvent(new Event("admin:before-signout", { cancelable: true }))).toBe(false);
+    expect(window.dispatchEvent(new Event("admin:before-signout", { cancelable: true }))).toBe(true);
+    expect(confirm).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not ask for ctrl-clicks", () => {
+    const confirm = vi.spyOn(window, "confirm");
+    render(<Page active />);
+    // jsdom can't navigate, so cancel the click once it has passed the guard.
+    const stop = (event) => event.preventDefault();
+    document.addEventListener("click", stop);
+    screen.getByText("All invitations").dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ctrlKey: true }));
+    document.removeEventListener("click", stop);
+    expect(confirm).not.toHaveBeenCalled();
+  });
+});

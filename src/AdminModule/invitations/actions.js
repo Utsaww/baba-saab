@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/AdminModule/auth/server";
 import { cleanDraft } from "@/InvitationModule/schema/draft";
@@ -23,6 +24,7 @@ export async function createInvitationAction({ templateId, palette, language }) 
     console.error("createInvitation failed", err);
     return { ok: false, message: "Couldn't create the invitation. Please try again." };
   }
+  revalidatePath("/admin/invitations");
   // redirect() throws, so it stays outside the try.
   redirect(`/admin/invitations/${id}/edit?step=2`);
 }
@@ -42,6 +44,11 @@ export async function saveInvitationAction({ id, expectedVersion, content }) {
     });
     const result = saveResult({ data, errors });
     if (!result.ok && !result.conflict) console.error("saveInvitation failed", errors);
+    if (result.ok) {
+      // Next caches dynamic pages client-side; without this, reopening shows the old content and version.
+      revalidatePath(`/admin/invitations/${id}/edit`);
+      revalidatePath("/admin/invitations");
+    }
     return result;
   } catch (err) {
     console.error("saveInvitation failed", err);

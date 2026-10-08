@@ -79,3 +79,42 @@ describe("useAutosave", () => {
     expect(result.current.state.status).toBe("conflict");
   });
 });
+
+describe("useAutosave flush on leave", () => {
+  const ok = () => vi.fn(async () => ({ ok: true, version: 2, savedAt: "2026-10-08T05:12:00.000Z" }));
+
+  it("saves pending edits once when unmounted while dirty", async () => {
+    const save = ok();
+    const { rerender, unmount } = setup(save);
+    rerender({ content: { n: 1 } });
+    unmount();
+    await act(async () => {});
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledWith({ content: { n: 1 }, expectedVersion: 1 });
+  });
+
+  it("does not save on unmount when everything is saved or after a conflict", async () => {
+    const saved = ok();
+    setup(saved).unmount();
+    expect(saved).not.toHaveBeenCalled();
+
+    const save = vi.fn().mockResolvedValueOnce({ ok: false, conflict: true });
+    const { rerender, unmount } = setup(save);
+    rerender({ content: { n: 1 } });
+    await act(async () => vi.advanceTimersByTime(3000));
+    rerender({ content: { n: 2 } });
+    unmount();
+    await act(async () => {});
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  it("saves pending edits on pagehide", async () => {
+    const save = ok();
+    const { rerender } = setup(save);
+    rerender({ content: { n: 1 } });
+    await act(async () => {
+      window.dispatchEvent(new Event("pagehide"));
+    });
+    expect(save).toHaveBeenCalledWith({ content: { n: 1 }, expectedVersion: 1 });
+  });
+});

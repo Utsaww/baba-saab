@@ -118,3 +118,41 @@ describe("useAutosave flush on leave", () => {
     expect(save).toHaveBeenCalledWith({ content: { n: 1 }, expectedVersion: 1 });
   });
 });
+
+describe("useAutosave independence from save identity", () => {
+  it("does not save again when the save function is replaced mid-session", async () => {
+    const calls = [];
+    const make = () => vi.fn(async (args) => {
+      calls.push(args);
+      return { ok: true, version: calls.length + 1, savedAt: "2026-10-08T05:12:00.000Z" };
+    });
+    const first = make();
+    const { rerender } = renderHook(({ content, save }) => useAutosave({ content, initialVersion: 1, save }), {
+      initialProps: { content: { n: 0 }, save: first },
+    });
+    rerender({ content: { n: 1 }, save: first });
+    await act(async () => vi.advanceTimersByTime(3000));
+    expect(first).toHaveBeenCalledTimes(1);
+    rerender({ content: { n: 2 }, save: first });
+    const second = make();
+    rerender({ content: { n: 2 }, save: second });
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).not.toHaveBeenCalled();
+    await act(async () => vi.advanceTimersByTime(3000));
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledWith({ content: { n: 2 }, expectedVersion: 2 });
+    expect(first).toHaveBeenCalledTimes(1);
+  });
+
+  it("on pagehide saves once through the normal path and ends saved", async () => {
+    const save = vi.fn(async () => ({ ok: true, version: 2, savedAt: "2026-10-08T05:12:00.000Z" }));
+    const { result, rerender } = setup(save);
+    rerender({ content: { n: 1 } });
+    await act(async () => {
+      window.dispatchEvent(new Event("pagehide"));
+    });
+    await act(async () => vi.advanceTimersByTime(10_000));
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(result.current.state).toMatchObject({ status: "saved", version: 2 });
+  });
+});

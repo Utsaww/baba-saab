@@ -14,6 +14,9 @@ export function useAutosave({ content, initialVersion, save, delay = SAVE_DELAY_
   const initialContent = useRef(content);
   const inFlight = useRef(false);
   const statusRef = useRef(state.status);
+  // The server action gets a new identity after every revalidation, so only ever call the latest one.
+  const saveRef = useRef(save);
+  saveRef.current = save;
   statusRef.current = state.status;
 
   useEffect(() => {
@@ -27,7 +30,7 @@ export function useAutosave({ content, initialVersion, save, delay = SAVE_DELAY_
     dispatch({ type: "start" });
     let result;
     try {
-      result = await save({ content: latest.current.content, expectedVersion: latest.current.version });
+      result = await saveRef.current({ content: latest.current.content, expectedVersion: latest.current.version });
     } catch {
       result = { ok: false, message: FAILED };
     }
@@ -35,7 +38,7 @@ export function useAutosave({ content, initialVersion, save, delay = SAVE_DELAY_
     if (result?.ok) dispatch({ type: "success", version: result.version, savedAt: result.savedAt });
     else if (result?.conflict) dispatch({ type: "conflict" });
     else dispatch({ type: "failure", message: result?.message ?? FAILED });
-  }, [save]);
+  }, []);
 
   useEffect(() => {
     if (state.status !== "dirty") return undefined;
@@ -45,22 +48,25 @@ export function useAutosave({ content, initialVersion, save, delay = SAVE_DELAY_
 
   // Back/Forward and tab closes unmount or hide the page without any save, so send what is pending.
   useEffect(() => {
-    const flush = () => {
-      if (!["dirty", "error"].includes(statusRef.current) || inFlight.current) return;
+    const pending = () => ["dirty", "error"].includes(statusRef.current) && !inFlight.current;
+    // The page may be restored from the back/forward cache, so keep local state in step with the save.
+    const onPageHide = () => {
+      if (pending()) runSave();
+    };
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      // True unmount: nothing left to update, so fire and forget.
+      if (!pending()) return;
       inFlight.current = true;
       Promise.resolve()
-        .then(() => save({ content: latest.current.content, expectedVersion: latest.current.version }))
+        .then(() => saveRef.current({ content: latest.current.content, expectedVersion: latest.current.version }))
         .catch(() => {})
         .finally(() => {
           inFlight.current = false;
         });
     };
-    window.addEventListener("pagehide", flush);
-    return () => {
-      window.removeEventListener("pagehide", flush);
-      flush();
-    };
-  }, [save]);
+  }, [runSave]);
 
   const retry = useCallback(() => {
     if (state.status === "error" || state.status === "dirty") return runSave();

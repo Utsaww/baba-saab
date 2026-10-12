@@ -9,6 +9,7 @@ export const UPLOAD_FAILED = "Couldn't upload — check the connection and retry
 export function useUploads() {
   const [items, setItems] = useState([]);
   const jobs = useRef(new Map());
+  const running = useRef(new Set());
 
   const patch = useCallback((id, change) => {
     setItems((list) => list.map((item) => (item.id === id ? { ...item, ...change } : item)));
@@ -17,15 +18,19 @@ export function useUploads() {
   const execute = useCallback(
     async (id) => {
       const job = jobs.current.get(id);
-      if (!job) return;
+      if (!job || running.current.has(id)) return;
+      running.current.add(id);
       patch(id, { status: "uploading", progress: 0, error: null });
       try {
         const result = await job.run((progress) => patch(id, { progress }));
+        if (!jobs.current.has(id)) return; // dismissed while uploading
         jobs.current.delete(id);
         setItems((list) => list.filter((item) => item.id !== id));
         job.onDone(result);
       } catch (err) {
         patch(id, { status: "failed", error: err?.friendly ? err.message : UPLOAD_FAILED });
+      } finally {
+        running.current.delete(id);
       }
     },
     [patch],

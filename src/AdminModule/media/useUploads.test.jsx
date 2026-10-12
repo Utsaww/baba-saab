@@ -61,4 +61,31 @@ describe("useUploads", () => {
     act(() => result.current.dismiss(result.current.items[0].id));
     expect(result.current.items).toEqual([]);
   });
+
+  it("ignores a result that arrives after the item was dismissed", async () => {
+    const d = deferred();
+    const onDone = vi.fn();
+    const { result } = renderHook(() => useUploads());
+    act(() => {
+      result.current.start({ label: "a.jpg", run: () => d.promise, onDone });
+    });
+    act(() => result.current.dismiss(result.current.items[0].id));
+    await act(async () => d.resolve("k"));
+    expect(onDone).not.toHaveBeenCalled();
+    expect(result.current.items).toEqual([]);
+  });
+
+  it("does not re-run an upload that is still uploading", async () => {
+    const d = deferred();
+    const run = vi.fn(() => d.promise);
+    const { result } = renderHook(() => useUploads());
+    act(() => {
+      result.current.start({ label: "a.jpg", run, onDone: vi.fn() });
+    });
+    act(() => {
+      result.current.retry(result.current.items[0].id);
+    });
+    expect(run).toHaveBeenCalledTimes(1);
+    await act(async () => d.resolve("k"));
+  });
 });

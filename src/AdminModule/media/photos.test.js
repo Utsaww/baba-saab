@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { HEIC_FAILED, PHOTO_FAILED, PhotoError, preparePhoto } from "./photos";
+import { encodeInBrowser, HEIC_FAILED, PHOTO_FAILED, PhotoError, preparePhoto } from "./photos";
 
 const bitmap = (width, height) => ({ width, height, close: vi.fn() });
 
@@ -40,5 +40,28 @@ describe("preparePhoto", () => {
     const error = await preparePhoto({ name: "x.png", type: "image/png", size: 5 }, { decode }).catch((e) => e);
     expect(error).toBeInstanceOf(PhotoError);
     expect(error.message).toBe(PHOTO_FAILED);
+  });
+});
+
+describe("encodeInBrowser", () => {
+  it("paints a white background before the photo, then encodes JPEG at 0.82", async () => {
+    const calls = [];
+    const ctx = {
+      set fillStyle(v) {
+        calls.push(["fillStyle", v]);
+      },
+      fillRect: vi.fn((...a) => calls.push(["fillRect", ...a])),
+      drawImage: vi.fn((...a) => calls.push(["drawImage", ...a])),
+    };
+    const blob = new Blob(["x"], { type: "image/jpeg" });
+    const canvas = { getContext: () => ctx, toBlob: vi.fn((cb) => cb(blob)) };
+    const image = bitmap(10, 5);
+    await expect(encodeInBrowser(image, { width: 8, height: 4 }, 0.82, () => canvas)).resolves.toBe(blob);
+    expect(calls).toEqual([
+      ["fillStyle", "#ffffff"],
+      ["fillRect", 0, 0, 8, 4],
+      ["drawImage", image, 0, 0, 8, 4],
+    ]);
+    expect(canvas.toBlob).toHaveBeenCalledWith(expect.any(Function), "image/jpeg", 0.82);
   });
 });

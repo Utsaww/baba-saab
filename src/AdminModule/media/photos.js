@@ -17,11 +17,15 @@ async function convertHeicInBrowser(file) {
 // "from-image" applies the photo's EXIF rotation, so portrait phone photos stay upright.
 const decodeInBrowser = (blob) => createImageBitmap(blob, { imageOrientation: "from-image" });
 
-function encodeInBrowser(bitmap, { width, height }, quality) {
-  const canvas = document.createElement("canvas");
+export function encodeInBrowser(bitmap, { width, height }, quality, createCanvas = () => document.createElement("canvas")) {
+  const canvas = createCanvas();
   canvas.width = width;
   canvas.height = height;
-  canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
+  const ctx = canvas.getContext("2d");
+  // JPEG has no transparency, so transparent PNG/WebP areas would turn black without a white backdrop.
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(bitmap, 0, 0, width, height);
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Encoding failed"))), "image/jpeg", quality);
   });

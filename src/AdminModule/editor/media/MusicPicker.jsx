@@ -9,10 +9,22 @@ import UploadStatus from "./UploadStatus";
 
 const selectClass = "mt-1 block min-h-[44px] w-full rounded-md border border-stone-300 bg-white px-3 text-sm";
 
+export const PLAY_EVENT = "media:play";
+
 export function PlayButton({ src, label }) {
   const audio = useRef(null);
   const [playing, setPlaying] = useState(false);
   useEffect(() => () => audio.current?.pause(), []);
+  // Another PlayButton started: only one song plays at a time.
+  useEffect(() => {
+    const onOtherPlay = (event) => {
+      if (event.detail === audio.current) return;
+      audio.current?.pause();
+      setPlaying(false);
+    };
+    window.addEventListener(PLAY_EVENT, onOtherPlay);
+    return () => window.removeEventListener(PLAY_EVENT, onOtherPlay);
+  }, []);
   useEffect(() => {
     audio.current?.pause();
     setPlaying(false);
@@ -29,8 +41,12 @@ export function PlayButton({ src, label }) {
             audio.current.pause();
             setPlaying(false);
           } else {
-            audio.current.play().catch(() => {});
-            setPlaying(true);
+            const element = audio.current;
+            window.dispatchEvent(new CustomEvent(PLAY_EVENT, { detail: element }));
+            Promise.resolve(element.play()).then(
+              () => setPlaying(true),
+              () => {},
+            );
           }
         }}
         className={pickerButton}
@@ -41,17 +57,27 @@ export function PlayButton({ src, label }) {
   );
 }
 
-export default function MusicPicker({ music, onChange, tracks, folder, uploads }) {
+export default function MusicPicker({ music, onChange, tracks, tracksError = false, folder, uploads }) {
   const [mode, setMode] = useState(music?.type ?? "none");
   const [error, setError] = useState(null);
   const songId = useId();
   const items = uploads.items.filter((item) => item.group === "music");
+  // A newer choice (or "No music" / a library song) makes any song still uploading obsolete.
+  const latest = useRef(0);
   const libraryTrack = music?.type === "library" ? tracks.find((t) => t.id === music.trackId) : null;
 
   function choose(next) {
     setMode(next);
     setError(null);
-    if (next === "none") onChange(undefined);
+    if (next === "none") {
+      supersede();
+      onChange(undefined);
+    }
+  }
+
+  function supersede() {
+    latest.current += 1;
+    items.forEach((item) => uploads.dismiss(item.id));
   }
 
   function pickSong(event) {
@@ -61,11 +87,12 @@ export default function MusicPicker({ music, onChange, tracks, folder, uploads }
     const problem = validateMusic(file);
     setError(problem);
     if (problem) return;
+    const token = ++latest.current;
     uploads.start({
       label: file.name,
       group: "music",
       run: (onProgress) => uploadMedia({ key: newKey(folder, "mp3"), blob: file, contentType: "audio/mpeg", onProgress }),
-      onDone: (key) => onChange({ type: "upload", key }),
+      onDone: (key) => latest.current === token && onChange({ type: "upload", key }),
     });
   }
 
@@ -85,7 +112,11 @@ export default function MusicPicker({ music, onChange, tracks, folder, uploads }
       </div>
 
       {mode === "library" &&
-        (tracks.length === 0 ? (
+        (tracksError ? (
+          <p role="alert" className="text-sm text-red-700">
+            Couldn't load the Music Library — refresh the page to try again.
+          </p>
+        ) : tracks.length === 0 ? (
           <p className="text-sm text-stone-600">No songs in the Music Library yet — add some under Music in the menu.</p>
         ) : (
           <div className="flex flex-wrap items-end gap-3">
@@ -98,6 +129,7 @@ export default function MusicPicker({ music, onChange, tracks, folder, uploads }
                 value={music?.type === "library" ? music.trackId : ""}
                 onChange={(e) => {
                   const track = tracks.find((t) => t.id === e.target.value);
+                  supersede();
                   onChange(track ? { type: "library", trackId: track.id, key: track.key } : undefined);
                 }}
                 className={selectClass}

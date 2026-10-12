@@ -15,9 +15,11 @@ export default async function EditInvitationPage({ params, searchParams }) {
   if (!invitation) notFound();
 
   let musicTracks = [];
+  let musicTracksError = false;
   try {
     musicTracks = (await listMusicTracks()).map(({ id, name, key, durationSec }) => ({ id, name, key, durationSec }));
   } catch (err) {
+    musicTracksError = true;
     console.error("listMusicTracks failed", err);
   }
   return (
@@ -27,6 +29,7 @@ export default async function EditInvitationPage({ params, searchParams }) {
       templates={templateChoices()}
       saveAction={saveInvitationAction}
       musicTracks={musicTracks}
+      musicTracksError={musicTracksError}
     />
   );
 }

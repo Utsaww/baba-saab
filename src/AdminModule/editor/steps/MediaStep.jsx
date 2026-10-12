@@ -7,7 +7,7 @@ import GalleryEditor from "../media/GalleryEditor";
 import MusicPicker from "../media/MusicPicker";
 import PhotoSlot from "../media/PhotoSlot";
 
-export default function MediaStep({ content, update, errors, language, invitationId, musicTracks = [], uploads }) {
+export default function MediaStep({ content, update, errors, language, invitationId, musicTracks = [], musicTracksError = false, uploads }) {
   const folder = invitationFolder(invitationId);
   const url = content.media?.film?.url ?? "";
   const invalid = Boolean(url) && (!youtubeId(url) || Boolean(errors["media.film.url"]));
@@ -41,7 +41,7 @@ export default function MediaStep({ content, update, errors, language, invitatio
       </Group>
 
       <Group title="Background music">
-        <MusicPicker music={content.media?.music} onChange={(music) => update(["media", "music"], music)} tracks={musicTracks} folder={folder} uploads={uploads} />
+        <MusicPicker music={content.media?.music} onChange={(music) => update(["media", "music"], music)} tracks={musicTracks} tracksError={musicTracksError} folder={folder} uploads={uploads} />
       </Group>
     </div>
   );

@@ -18,7 +18,7 @@ import { LEAVE_MESSAGE, UPLOADING_MESSAGE, useLeaveGuard } from "./useLeaveGuard
 
 const navButton = "min-h-[44px] rounded-full border border-stone-300 px-5 text-sm hover:bg-stone-100";
 
-export default function EditorShell({ invitation, initialStep, templates, saveAction, musicTracks = [] }) {
+export default function EditorShell({ invitation, initialStep, templates, saveAction, musicTracks = [], musicTracksError = false }) {
   const [content, setContent] = useState(invitation.content);
   const [step, setStep] = useState(initialStep);
   const [showPreview, setShowPreview] = useState(false);
@@ -127,6 +127,7 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
               onGoToStep={goTo}
               invitationId={invitation.id}
               musicTracks={musicTracks}
+              musicTracksError={musicTracksError}
               uploads={uploads}
             />
           </div>

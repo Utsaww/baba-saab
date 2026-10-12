@@ -121,7 +121,9 @@ Add each function guests are invited to. The quick buttons (**+ Haldi**, **+ Meh
 - **Invitation film:** paste the film's **YouTube link**. The film can be "unlisted" on YouTube.
 - **Background music:** choose **No music**, a song **From the Music Library**, or **Upload a song for this invitation** (MP3 up to 10 MB). Press **▶ Play** to listen first. Only upload music you have the rights to use.
 
-If an upload fails, click **Retry** next to it. Your other changes are already saved. Don't close the page while a photo is still uploading.
+If an upload fails, click **Retry** next to it, or **Dismiss** to drop it. The rest of the invitation isn't affected. Don't close the page while a photo is still uploading.
+
+Removing a cover or couple photo asks you to confirm first, because it can't be undone.
 
 ## Editor step 6: Sections
 

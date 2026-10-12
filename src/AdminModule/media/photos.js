@@ -15,7 +15,15 @@ async function convertHeicInBrowser(file) {
 }
 
 // "from-image" applies the photo's EXIF rotation, so portrait phone photos stay upright.
-const decodeInBrowser = (blob) => createImageBitmap(blob, { imageOrientation: "from-image" });
+// Older browsers throw a TypeError for the options, so they get a plain decode instead.
+export async function decodeInBrowser(blob) {
+  try {
+    return await createImageBitmap(blob, { imageOrientation: "from-image" });
+  } catch (err) {
+    if (err instanceof TypeError) return createImageBitmap(blob);
+    throw err;
+  }
+}
 
 export function encodeInBrowser(bitmap, { width, height }, quality, createCanvas = () => document.createElement("canvas")) {
   const canvas = createCanvas();
@@ -33,19 +41,26 @@ export function encodeInBrowser(bitmap, { width, height }, quality, createCanvas
 
 /** A JPEG no larger than 2000 px on its longest side, ready to upload. */
 export async function preparePhoto(file, { convertHeic = convertHeicInBrowser, decode = decodeInBrowser, encode = encodeInBrowser } = {}) {
-  let source = file;
-  if (isHeic(file)) {
-    try {
-      source = await convertHeic(file);
-    } catch {
-      throw new PhotoError(HEIC_FAILED);
-    }
-  }
   let bitmap;
-  try {
-    bitmap = await decode(source);
-  } catch {
-    throw new PhotoError(PHOTO_FAILED);
+  if (isHeic(file)) {
+    // Safari and iOS 17+ read iPhone photos natively; only convert when the browser can't.
+    try {
+      bitmap = await decode(file);
+    } catch {
+      let converted;
+      try {
+        converted = await convertHeic(file);
+        bitmap = await decode(converted);
+      } catch {
+        throw new PhotoError(HEIC_FAILED);
+      }
+    }
+  } else {
+    try {
+      bitmap = await decode(file);
+    } catch {
+      throw new PhotoError(PHOTO_FAILED);
+    }
   }
   try {
     return await encode(bitmap, fitWithin(bitmap.width, bitmap.height), PHOTO_QUALITY);

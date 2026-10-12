@@ -82,6 +82,14 @@ describe("MusicLibrary", () => {
     expect(renameAction).toHaveBeenCalledWith({ id: "t2", name: "Dhol Entry" });
   });
 
+  it("shows an error and re-enables Save when renaming throws", async () => {
+    setup({ renameAction: vi.fn(async () => { throw new Error("boom"); }) });
+    await userEvent.click(within(row("Dhol Beat")).getByRole("button", { name: "Rename Dhol Beat" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save name" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't save the name.");
+    expect(screen.getByRole("button", { name: "Save name" })).toBeEnabled();
+  });
+
   it("deletes an unused song and then its file", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     const { deleteAction } = setup();

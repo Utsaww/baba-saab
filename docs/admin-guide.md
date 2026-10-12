@@ -148,7 +148,6 @@ Open **Music** in the left menu to see the songs every invitation can use.
 **Renaming:** click **Rename**, type the new name and click **Save name**.
 
 **Deleting:** click **Delete**. A song that any invitation uses can't be deleted. The page shows which invitations use it, so you can change their music first.
-```
 
 ## Browsing templates
 

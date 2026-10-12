@@ -47,7 +47,7 @@ function AddTrack({ createAction, onResult }) {
       const [, durationSec] = await Promise.all([uploadMedia({ key, blob: file, contentType: "audio/mpeg" }), readDuration(file)]);
       const result = await createAction({ name: name.trim(), key, durationSec });
       if (!result?.ok) {
-        await deleteMedia([key]);
+        await deleteMedia([key]).catch(() => {});
         setError(result?.message ?? UPLOAD_FAILED);
         return;
       }
@@ -55,7 +55,7 @@ function AddTrack({ createAction, onResult }) {
       setName("");
       onResult({ ok: true, message: `Added "${result.track.name}".` });
     } catch {
-      await deleteMedia([key]);
+      await deleteMedia([key]).catch(() => {});
       setError(UPLOAD_FAILED);
     } finally {
       setBusy(false);
@@ -96,22 +96,32 @@ function TrackRow({ track, usedBy, renameAction, deleteAction, onResult }) {
 
   async function rename() {
     setBusy(true);
-    const result = await renameAction({ id: track.id, name });
-    setBusy(false);
-    if (result?.ok) setEditing(false);
-    onResult(result?.ok ? { ok: true, message: "Name saved." } : { ok: false, message: result?.message ?? "Couldn't save the name." });
+    try {
+      const result = await renameAction({ id: track.id, name });
+      if (result?.ok) setEditing(false);
+      onResult(result?.ok ? { ok: true, message: "Name saved." } : { ok: false, message: result?.message ?? "Couldn't save the name." });
+    } catch {
+      onResult({ ok: false, message: "Couldn't save the name." });
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function remove() {
     if (!window.confirm(`Delete "${track.name}" from the Music Library? This can't be undone.`)) return;
     setBusy(true);
-    const result = await deleteAction({ id: track.id });
-    setBusy(false);
-    if (result?.ok) {
-      if (result.key) await deleteMedia([result.key]);
-      onResult({ ok: true, message: `Deleted "${track.name}".` });
-    } else {
-      onResult({ ok: false, message: result?.message ?? "Couldn't delete the song." });
+    try {
+      const result = await deleteAction({ id: track.id });
+      if (result?.ok) {
+        if (result.key) await deleteMedia([result.key]).catch(() => {});
+        onResult({ ok: true, message: `Deleted "${track.name}".` });
+      } else {
+        onResult({ ok: false, message: result?.message ?? "Couldn't delete the song." });
+      }
+    } catch {
+      onResult({ ok: false, message: "Couldn't delete the song." });
+    } finally {
+      setBusy(false);
     }
   }
 

@@ -30,6 +30,37 @@ const schema = a.schema({
     .returns(a.boolean())
     .authorization((allow) => [allow.group("owner")])
     .handler(a.handler.function(staffAdmin)),
+
+  Invitation: a
+    .model({
+      status: a.string().required(),
+      templateId: a.string().required(),
+      mainDate: a.string(),
+      coupleNames: a.string().required(),
+      searchText: a.string().required(),
+      content: a.json().required(),
+      version: a.integer().required(),
+      createdBy: a.string().required(),
+      updatedBy: a.string().required(),
+    })
+    // Staff can create and read; every change goes through saveInvitation's version check.
+    .authorization((allow) => [allow.group("admin").to(["create", "read"])]),
+
+  saveInvitation: a
+    .mutation()
+    .arguments({
+      id: a.id().required(),
+      expectedVersion: a.integer().required(),
+      content: a.json().required(),
+      templateId: a.string().required(),
+      mainDate: a.string(),
+      coupleNames: a.string().required(),
+      searchText: a.string().required(),
+      updatedBy: a.string().required(),
+    })
+    .returns(a.ref("Invitation"))
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.custom({ dataSource: a.ref("Invitation"), entry: "./saveInvitation.js" })),
 });
 
 export type Schema = ClientSchema<typeof schema>;

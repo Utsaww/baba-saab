@@ -4,6 +4,7 @@ import SignOutButton from "./auth/SignOutButton";
 export function navFor({ isOwner }) {
   return [
     { href: "/admin", label: "Dashboard" },
+    { href: "/admin/invitations", label: "Invitations" },
     { href: "/admin/templates", label: "Templates" },
     ...(isOwner ? [{ href: "/admin/staff", label: "Staff" }] : []),
     { href: "/admin/help", label: "Help" },
@@ -21,7 +22,6 @@ export default function AdminShell({ email, isOwner, children }) {
               {item.label}
             </Link>
           ))}
-          <span className="flex min-h-[44px] items-center rounded-md px-3 text-sm text-stone-400">Invitations · coming soon</span>
         </nav>
         <div className="flex flex-wrap items-center gap-2 border-t border-stone-200 px-3 py-3 md:mt-auto md:flex-col md:items-stretch">
           <p className="truncate px-3 text-xs text-stone-500" title={email}>{email}</p>

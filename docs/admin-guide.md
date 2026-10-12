@@ -9,6 +9,7 @@ This guide grows as new parts of the invitation system go live. Everything descr
 | **Dashboard** | Your starting page after signing in. |
 | **Invitations** | Create invitations for customers, fill in their details and continue saved drafts. |
 | **Templates** | Browse the 4 invitation designs with sample details, try their colour palettes and languages, and show them to customers. |
+| **Music** | The shared Music Library: songs any invitation can use as background music. |
 | **Staff** | *Owner only.* Invite people to the admin area and remove them. |
 | **Help** | This guide. |
 
@@ -135,6 +136,19 @@ Choose which parts of the invitation guests see, and in what order. Untick **Sho
 ## Editor step 8: Review
 
 This step lists everything still needed before the invitation can be published, such as a missing date or an event without a time. Click **Go to step N** to fix each one. Publishing arrives in the next release. Until then, everything is saved as a draft.
+
+## Music Library
+
+Open **Music** in the left menu to see the songs every invitation can use.
+
+**Adding a song:** click **Choose MP3** and pick an MP3 file (up to 10 MB). The name fills in from the file name; change it if you like. Then click **Upload song**. Only upload music you have the rights to use.
+
+**Listening:** press **▶ Play** next to a song.
+
+**Renaming:** click **Rename**, type the new name and click **Save name**.
+
+**Deleting:** click **Delete**. A song that any invitation uses can't be deleted. The page shows which invitations use it, so you can change their music first.
+```
 
 ## Browsing templates
 

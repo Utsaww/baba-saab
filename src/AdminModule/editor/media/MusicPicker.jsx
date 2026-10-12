@@ -9,7 +9,7 @@ import UploadStatus from "./UploadStatus";
 
 const selectClass = "mt-1 block min-h-[44px] w-full rounded-md border border-stone-300 bg-white px-3 text-sm";
 
-function PlayButton({ src, label }) {
+export function PlayButton({ src, label }) {
   const audio = useRef(null);
   const [playing, setPlaying] = useState(false);
   useEffect(() => () => audio.current?.pause(), []);

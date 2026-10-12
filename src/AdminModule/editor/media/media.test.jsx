@@ -49,10 +49,45 @@ describe("cover photo", () => {
     expect(latest().media?.coverKey).toBeUndefined();
   });
 
-  it("removes the cover", async () => {
+  it("removes the cover after confirming", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const { latest } = renderStep(MediaStep, { ...base(), media: { coverKey: "invitations/inv-test/c.jpg" } });
     await userEvent.click(screen.getByRole("button", { name: "Remove cover photo" }));
+    expect(confirm).toHaveBeenCalledWith("Remove this photo? This can't be undone.");
     expect(latest().media.coverKey).toBeUndefined();
+    confirm.mockRestore();
+  });
+
+  it("keeps the cover when the removal isn't confirmed", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const { latest } = renderStep(MediaStep, { ...base(), media: { coverKey: "invitations/inv-test/c.jpg" } });
+    await userEvent.click(screen.getByRole("button", { name: "Remove cover photo" }));
+    expect(latest().media.coverKey).toBe("invitations/inv-test/c.jpg");
+    confirm.mockRestore();
+  });
+
+  it("keeps the newest upload when an older one finishes last", async () => {
+    uploadMedia.mockClear();
+    const { latest } = renderStep(MediaStep, base());
+    await userEvent.upload(screen.getByLabelText("Choose cover photo"), jpg("a.jpg"));
+    await userEvent.upload(screen.getByLabelText("Choose cover photo"), jpg("b.jpg"));
+    await act(async () => {});
+    const [keyA, keyB] = uploadMedia.mock.calls.map(([args]) => args.key);
+    await finishInReverse(); // B finishes first, A last
+    expect(latest().media.coverKey).toBe(keyB);
+    expect(latest().media.coverKey).not.toBe(keyA);
+  });
+
+  it("ignores an upload that finishes after Remove was pressed", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { latest } = renderStep(MediaStep, { ...base(), media: { coverKey: "invitations/inv-test/old.jpg" } });
+    await userEvent.upload(screen.getByLabelText("Choose cover photo"), jpg("new.jpg"));
+    await act(async () => {});
+    await userEvent.click(screen.getByRole("button", { name: "Remove cover photo" }));
+    await finishAll();
+    expect(latest().media.coverKey).toBeUndefined();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    confirm.mockRestore();
   });
 });
 
@@ -153,6 +188,34 @@ describe("music", () => {
     expect(screen.queryByText(/keeps playing/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("radio", { name: "From the Music Library" }));
     expect(screen.getByText("Your current song keeps playing until you choose a new one.")).toBeInTheDocument();
+  });
+
+  it("ignores a song upload that finishes after No music was chosen", async () => {
+    const { latest } = renderStep(MediaStep, base());
+    await userEvent.click(screen.getByRole("radio", { name: "Upload a song for this invitation" }));
+    await userEvent.upload(screen.getByLabelText("Choose a song"), new File(["x"], "song.mp3", { type: "audio/mpeg" }));
+    await act(async () => {});
+    await userEvent.click(screen.getByRole("radio", { name: "No music" }));
+    await finishAll();
+    expect(latest().media?.music).toBeUndefined();
+  });
+
+  it("ignores a song upload that finishes after a library song was picked", async () => {
+    const { latest } = renderStep(MediaStep, base(), { musicTracks: tracks });
+    await userEvent.click(screen.getByRole("radio", { name: "Upload a song for this invitation" }));
+    await userEvent.upload(screen.getByLabelText("Choose a song"), new File(["x"], "song.mp3", { type: "audio/mpeg" }));
+    await act(async () => {});
+    await userEvent.click(screen.getByRole("radio", { name: "From the Music Library" }));
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Song" }), "t1");
+    await finishAll();
+    expect(latest().media.music).toEqual({ type: "library", trackId: "t1", key: "music-library/t1.mp3" });
+  });
+
+  it("says so when the Music Library couldn't be loaded", async () => {
+    renderStep(MediaStep, base(), { musicTracks: [], musicTracksError: true });
+    await userEvent.click(screen.getByRole("radio", { name: "From the Music Library" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't load the Music Library — refresh the page to try again.");
+    expect(screen.queryByText(/No songs in the Music Library yet/)).not.toBeInTheDocument();
   });
 
   it("explains when the library is empty", async () => {

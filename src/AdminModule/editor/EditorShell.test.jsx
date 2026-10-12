@@ -164,7 +164,9 @@ describe("EditorShell media", () => {
     const withCover = { ...invitation, content: { ...invitation.content, media: { coverKey: "invitations/inv-1/old.jpg" } } };
     const saveAction = vi.fn().mockResolvedValueOnce({ ok: false, message: "Couldn't save." }).mockResolvedValueOnce({ ok: true, version: 6, savedAt: "x" });
     render(<EditorShell invitation={withCover} initialStep={5} templates={TEMPLATE_CHOICES} saveAction={saveAction} />);
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getByRole("button", { name: "Remove cover photo" }));
+    confirm.mockRestore();
     await act(async () => vi.advanceTimersByTime(3000));
     expect(deleteMedia).not.toHaveBeenCalled();
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Retry" })));

@@ -22,7 +22,7 @@ describe("prepareSave", () => {
     const result = prepareSave({ id: "inv-1", expectedVersion: 2, content });
     expect(result.ok).toBe(true);
     expect(JSON.parse(result.content).couple.bride.name.en).toBe("Priya");
-    expect(result.fields).toEqual({ templateId: "royal", mainDate: null, coupleNames: "Priya", searchText: "priya" });
+    expect(result.fields).toEqual({ templateId: "royal", mainDate: null, coupleNames: "Priya", searchText: "priya", musicTrackId: null });
   });
 
   it("rejects a malformed request", () => {

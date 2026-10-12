@@ -15,5 +15,6 @@ export function indexFields(draft) {
     mainDate: draft.mainDate ?? null,
     coupleNames: names.length ? names.join(" & ") : "Untitled invitation",
     searchText: searchParts.join(" ").toLowerCase(),
+    musicTrackId: draft.media?.music?.type === "library" ? draft.media.music.trackId ?? null : null,
   };
 }

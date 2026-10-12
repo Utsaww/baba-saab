@@ -14,6 +14,7 @@ describe("indexFields", () => {
       mainDate: "2027-02-14",
       coupleNames: "Priya & Rahul",
       searchText: "priya प्रिया rahul राहुल 919876543210",
+      musicTrackId: null,
     });
   });
 
@@ -28,6 +29,18 @@ describe("indexFields", () => {
       mainDate: null,
       coupleNames: "Untitled invitation",
       searchText: "",
+      musicTrackId: null,
     });
+  });
+});
+
+describe("indexFields musicTrackId", () => {
+  it("records the library track an invitation uses", () => {
+    expect(indexFields({ templateId: "royal", media: { music: { type: "library", trackId: "t1", key: "music-library/t.mp3" } } }).musicTrackId).toBe("t1");
+  });
+
+  it("is null for one-off uploads or no music", () => {
+    expect(indexFields({ templateId: "royal", media: { music: { type: "upload", key: "invitations/i/m.mp3" } } }).musicTrackId).toBeNull();
+    expect(indexFields({ templateId: "royal" }).musicTrackId).toBeNull();
   });
 });

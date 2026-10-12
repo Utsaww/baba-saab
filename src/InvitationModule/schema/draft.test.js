@@ -92,3 +92,13 @@ describe("cleanDraft", () => {
     expect(cleanDraft(base()).draft).toEqual(base());
   });
 });
+
+describe("cleanDraft gallery limit", () => {
+  it("keeps the first 12 gallery photos and explains why the rest were dropped", () => {
+    const gallery = Array.from({ length: 14 }, (_, i) => ({ key: `invitations/i/${i}.jpg` }));
+    const { draft, errors } = cleanDraft({ templateId: "royal", theme: { palette: "maroon-gold" }, media: { gallery } });
+    expect(draft.media.gallery).toHaveLength(12);
+    expect(draft.media.gallery[11].key).toBe("invitations/i/11.jpg");
+    expect(errors["media.gallery"]).toBe("The gallery holds up to 12 photos");
+  });
+});

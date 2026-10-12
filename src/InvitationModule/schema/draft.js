@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TEMPLATE_IDS, invitationSchema } from "./invitation";
+import { GALLERY_MAX, TEMPLATE_IDS, invitationSchema } from "./invitation";
 
 // Makes every field optional all the way down. zod's deepPartial() does not look inside
 // .default() wrappers, so list items would keep required fields. Defaults are not applied in drafts.
@@ -52,6 +52,10 @@ export function cleanDraft(input) {
     const result = draftSchema.safeParse(value);
     if (result.success) {
       const draft = result.data;
+      if ((draft.media?.gallery?.length ?? 0) > GALLERY_MAX) {
+        errors["media.gallery"] = `The gallery holds up to ${GALLERY_MAX} photos`;
+        draft.media.gallery = draft.media.gallery.slice(0, GALLERY_MAX);
+      }
       const valid = TEMPLATE_IDS.includes(draft.templateId) && Boolean(draft.theme?.palette);
       return { draft: valid ? draft : null, errors };
     }

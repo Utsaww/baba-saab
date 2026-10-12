@@ -7,7 +7,7 @@ export const invitationFolder = (id) => `${INVITATION_PREFIX}${id}/`;
 const SAFE_KEY = /^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/;
 
 export function isSafeKey(key) {
-  return typeof key === "string" && SAFE_KEY.test(key) && !key.split("/").includes("..");
+  return typeof key === "string" && SAFE_KEY.test(key) && !key.split("/").some((part) => part === "." || part === "..");
 }
 
 /** Every file an invitation draft points at, with where it is used. */
@@ -21,6 +21,7 @@ export function mediaKeys(draft) {
   add("couple.groom.photoKey", draft?.couple?.groom?.photoKey);
   (draft?.media?.gallery ?? []).forEach((item, i) => add(`media.gallery.${i}.key`, item?.key));
   add("media.music.key", draft?.media?.music?.key);
+  add("media.film.key", draft?.media?.film?.key);
   return found;
 }
 

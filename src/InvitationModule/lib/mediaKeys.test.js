@@ -11,7 +11,7 @@ describe("isSafeKey", () => {
   });
 
   it("rejects keys a browser could resolve to a different file", () => {
-    for (const bad of ["invitations/inv-1/../inv-2/a.jpg", "invitations//a.jpg", "/invitations/inv-1/a.jpg", "invitations/inv-1/a b.jpg", "https://x.com/a.jpg", "", null]) {
+    for (const bad of ["invitations/inv-1/../inv-2/a.jpg", "invitations//a.jpg", "invitations/inv-1/./a.jpg", "invitations/inv-1/%2e%2e/a.jpg", "invitations\\inv-1\\a.jpg", "/invitations/inv-1/a.jpg", "invitations/inv-1/a b.jpg", "https://x.com/a.jpg", "", null]) {
       expect(isSafeKey(bad)).toBe(false);
     }
   });
@@ -21,13 +21,14 @@ describe("mediaKeys", () => {
   it("lists every file the invitation uses", () => {
     const draft = {
       couple: { bride: { photoKey: own("b.jpg") }, groom: {} },
-      media: { coverKey: own("c.jpg"), gallery: [{ key: own("g1.jpg") }, { caption: { en: "x" } }], music: { type: "upload", key: own("m.mp3") } },
+      media: { coverKey: own("c.jpg"), gallery: [{ key: own("g1.jpg") }, { caption: { en: "x" } }], music: { type: "upload", key: own("m.mp3") }, film: { type: "upload", key: own("f.mp4") } },
     };
     expect(mediaKeys(draft)).toEqual([
       { field: "media.coverKey", key: own("c.jpg") },
       { field: "couple.bride.photoKey", key: own("b.jpg") },
       { field: "media.gallery.0.key", key: own("g1.jpg") },
       { field: "media.music.key", key: own("m.mp3") },
+      { field: "media.film.key", key: own("f.mp4") },
     ]);
     expect(mediaKeys({})).toEqual([]);
   });
@@ -55,6 +56,10 @@ describe("foreignMediaKeys", () => {
     ]);
   });
 
+  it("flags a film upload from another invitation", () => {
+    expect(foreignMediaKeys({ media: { film: { type: "upload", key: "invitations/inv-2/f.mp4" } } }, ID)).toEqual(["invitations/inv-2/f.mp4"]);
+  });
+
   it("flags library music that isn't in the library folder", () => {
     expect(foreignMediaKeys({ media: { music: { type: "library", trackId: "t1", key: own("m.mp3") } } }, ID)).toEqual([own("m.mp3")]);
   });
@@ -65,6 +70,11 @@ describe("removedMediaKeys", () => {
     const before = { media: { coverKey: own("old.jpg"), gallery: [{ key: own("g1.jpg") }, { key: own("g2.jpg") }] } };
     const after = { media: { coverKey: own("new.jpg"), gallery: [{ key: own("g2.jpg") }] } };
     expect(removedMediaKeys(before, after, ID).sort()).toEqual([own("g1.jpg"), own("old.jpg")]);
+  });
+
+  it("returns a removed own film file", () => {
+    const before = { media: { film: { type: "upload", key: own("f.mp4") } } };
+    expect(removedMediaKeys(before, { media: {} }, ID)).toEqual([own("f.mp4")]);
   });
 
   it("never returns library files or files that moved within the invitation", () => {

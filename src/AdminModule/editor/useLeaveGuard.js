@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 
+export const UPLOADING_MESSAGE = "A photo or song is still uploading. Leave this page anyway?";
 export const LEAVE_MESSAGE = "Your latest changes couldn't be saved and will be lost. Leave this page anyway?";
 
 /**
@@ -10,7 +11,7 @@ export const LEAVE_MESSAGE = "Your latest changes couldn't be saved and will be 
  * - `atRisk`: changes that won't be saved automatically (failed, conflict, or queued behind a save). Links and sign-out ask first.
  * - `flushNow`: saves what is pending. Sign-out waits for it; link clicks don't need to because unmounting saves.
  */
-export function useLeaveGuard({ warnOnClose, atRisk, flushNow }) {
+export function useLeaveGuard({ warnOnClose, atRisk, flushNow, message = LEAVE_MESSAGE }) {
   const allowed = useRef(false);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export function useLeaveGuard({ warnOnClose, atRisk, flushNow }) {
       if (!link || link.target === "_blank") return;
       const url = new URL(link.href, window.location.href);
       if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return;
-      if (!window.confirm(LEAVE_MESSAGE)) {
+      if (!window.confirm(message)) {
         event.preventDefault();
         event.stopPropagation();
       }
@@ -34,7 +35,7 @@ export function useLeaveGuard({ warnOnClose, atRisk, flushNow }) {
     const onSignOut = (event) => {
       if (allowed.current) return;
       if (atRisk) {
-        if (window.confirm(LEAVE_MESSAGE)) allowed.current = true;
+        if (window.confirm(message)) allowed.current = true;
         else event.preventDefault();
       } else if (warnOnClose) {
         event.detail?.waitFor?.(
@@ -54,7 +55,7 @@ export function useLeaveGuard({ warnOnClose, atRisk, flushNow }) {
       window.removeEventListener("admin:before-signout", onSignOut);
       document.removeEventListener("click", onClick, true);
     };
-  }, [warnOnClose, atRisk, flushNow]);
+  }, [warnOnClose, atRisk, flushNow, message]);
 
   // For deliberate exits such as "Reload": stops the guard immediately, before React re-renders.
   return useCallback(() => {

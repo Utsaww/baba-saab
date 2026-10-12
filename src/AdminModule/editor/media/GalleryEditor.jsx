@@ -18,11 +18,11 @@ function moved(list, from, to) {
   return next;
 }
 
-export default function GalleryEditor({ gallery = [], update, folder, uploads, language }) {
+export default function GalleryEditor({ gallery = [], update, folder, uploads, language, error }) {
   const [problems, setProblems] = useState([]);
   const items = uploads.items.filter((item) => item.group === "gallery");
-  const uploading = items.filter((item) => item.status === "uploading").length;
-  const room = Math.max(0, GALLERY_MAX - gallery.length - uploading);
+  // Failed uploads keep their place, because Retry can still add them.
+  const room = Math.max(0, GALLERY_MAX - gallery.length - items.length);
   const full = gallery.length >= GALLERY_MAX;
 
   function pick(event) {
@@ -41,7 +41,7 @@ export default function GalleryEditor({ gallery = [], update, folder, uploads, l
     }
     setProblems(found);
     for (const file of allowed) {
-      uploads.start(photoJob({ file, folder, group: "gallery", onDone: (key) => update(GALLERY, (current = []) => [...current, { key }]) }));
+      uploads.start(photoJob({ file, folder, group: "gallery", onDone: (key) => update(GALLERY, (current = []) => (current.length >= GALLERY_MAX ? current : [...current, { key }])) }));
     }
   }
 
@@ -61,7 +61,12 @@ export default function GalleryEditor({ gallery = [], update, folder, uploads, l
           ))}
         </div>
       )}
-      <UploadStatus items={items} uploads={uploads} />
+      {error && (
+        <p role="alert" className="text-xs text-red-700">
+          {error}
+        </p>
+      )}
+      <UploadStatus items={items} uploads={uploads} canRetry={!full} />
       <ol className="grid gap-4 sm:grid-cols-2">
         {gallery.map((photo, i) => (
           <li key={photo.key} className="space-y-2 rounded-xl border border-stone-200 p-3">

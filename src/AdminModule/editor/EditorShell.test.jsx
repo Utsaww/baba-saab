@@ -183,3 +183,21 @@ describe("EditorShell media", () => {
     expect(event.defaultPrevented).toBe(true);
   });
 });
+
+describe("EditorShell upload leave message", () => {
+  it("says a photo is still uploading when that is the only risk", async () => {
+    const { preparePhoto } = await import("@/AdminModule/media/photos");
+    preparePhoto.mockImplementationOnce(() => new Promise(() => {}));
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<EditorShell invitation={invitation} initialStep={5} templates={TEMPLATE_CHOICES} saveAction={vi.fn()} />);
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Choose cover photo"), { target: { files: [new File(["x"], "c.jpg", { type: "image/jpeg" })] } });
+    });
+    const stop = (event) => event.preventDefault();
+    document.addEventListener("click", stop);
+    fireEvent.click(screen.getByRole("link", { name: /All invitations/ }));
+    document.removeEventListener("click", stop);
+    expect(confirm).toHaveBeenCalledWith("A photo or song is still uploading. Leave this page anyway?");
+    confirm.mockRestore();
+  });
+});

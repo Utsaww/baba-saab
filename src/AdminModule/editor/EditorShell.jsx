@@ -14,7 +14,7 @@ import SaveStatus, { SaveBanners } from "./SaveStatus";
 import StepNav from "./StepNav";
 import { guideHref, STEPS } from "./steps";
 import { useAutosave } from "./useAutosave";
-import { useLeaveGuard } from "./useLeaveGuard";
+import { LEAVE_MESSAGE, UPLOADING_MESSAGE, useLeaveGuard } from "./useLeaveGuard";
 
 const navButton = "min-h-[44px] rounded-full border border-stone-300 px-5 text-sm hover:bg-stone-100";
 
@@ -40,8 +40,14 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
   );
   const { state, retry, flushNow } = useAutosave({ content, initialVersion: invitation.version, save, onSaved });
   // Edits that are dirty, or saving with nothing queued, are saved by the autosave/unmount flush; the rest are at risk.
-  const atRisk = uploads.busy || state.status === "error" || state.status === "conflict" || (state.status === "saving" && state.queued);
-  const allowLeave = useLeaveGuard({ warnOnClose: uploads.busy || hasUnsavedChanges(state), atRisk, flushNow });
+  const saveAtRisk = state.status === "error" || state.status === "conflict" || (state.status === "saving" && state.queued);
+  const atRisk = uploads.busy || saveAtRisk;
+  const allowLeave = useLeaveGuard({
+    warnOnClose: uploads.busy || hasUnsavedChanges(state),
+    atRisk,
+    flushNow,
+    message: uploads.busy && !saveAtRisk ? UPLOADING_MESSAGE : LEAVE_MESSAGE,
+  });
 
   const update = useCallback(
     (path, value) => setContent((c) => setIn(c, path, typeof value === "function" ? value(getIn(c, path)) : value)),

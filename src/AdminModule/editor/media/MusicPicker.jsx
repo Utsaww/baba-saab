@@ -128,6 +128,10 @@ export default function MusicPicker({ music, onChange, tracks, folder, uploads }
         </div>
       )}
 
+      {music && music.type !== mode && mode !== "none" && (
+        <p className="text-xs text-stone-600">Your current song keeps playing until you choose a new one.</p>
+      )}
+
       {error && (
         <p role="alert" className="text-xs text-red-700">
           {error}

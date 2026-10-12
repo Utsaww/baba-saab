@@ -26,7 +26,7 @@ export default function MediaStep({ content, update, errors, language, invitatio
       </Group>
 
       <Group title="Photo gallery">
-        <GalleryEditor gallery={content.media?.gallery} update={update} folder={folder} uploads={uploads} language={language} />
+        <GalleryEditor gallery={content.media?.gallery} update={update} folder={folder} uploads={uploads} language={language} error={errors["media.gallery"]} />
       </Group>
 
       <Group title="Invitation film">

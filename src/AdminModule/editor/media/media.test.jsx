@@ -15,6 +15,7 @@ vi.mock("@/AdminModule/media/storage", () => ({
   deleteMedia: vi.fn(async () => {}),
 }));
 
+import { uploadMedia } from "@/AdminModule/media/storage";
 import MediaStep from "../steps/MediaStep";
 import { renderStep } from "../test-utils";
 
@@ -75,6 +76,37 @@ describe("gallery", () => {
     expect(screen.getByLabelText("Add gallery photos")).toBeDisabled();
   });
 
+  it("reserves room for failed uploads so a retry can never push past 12", async () => {
+    const gallery = Array.from({ length: 10 }, (_, i) => ({ key: `invitations/inv-test/${i}.jpg` }));
+    const { latest } = renderStep(MediaStep, { ...base(), media: { gallery } });
+    uploadMedia.mockImplementationOnce(() => Promise.reject(new Error("net"))).mockImplementationOnce(() => Promise.reject(new Error("net")));
+    await userEvent.upload(screen.getByLabelText("Add gallery photos"), [jpg("f1.jpg"), jpg("f2.jpg")]);
+    await act(async () => {});
+    expect(screen.getAllByRole("button", { name: "Retry" })).toHaveLength(2);
+    await userEvent.upload(screen.getByLabelText("Add gallery photos"), [jpg("g1.jpg"), jpg("g2.jpg")]);
+    expect(screen.getByText("The gallery holds up to 12 photos — 2 not added.")).toBeInTheDocument();
+    await finishAll();
+    expect(latest().media.gallery).toHaveLength(10);
+  });
+
+  it("keeps Retry for a failed photo while there is room, and the gallery stays within 12", async () => {
+    const gallery = Array.from({ length: 10 }, (_, i) => ({ key: `invitations/inv-test/${i}.jpg` }));
+    const { latest } = renderStep(MediaStep, { ...base(), media: { gallery } });
+    uploadMedia.mockImplementationOnce(() => Promise.reject(new Error("net")));
+    await userEvent.upload(screen.getByLabelText("Add gallery photos"), [jpg("f1.jpg")]);
+    await act(async () => {});
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    await userEvent.upload(screen.getByLabelText("Add gallery photos"), [jpg("g1.jpg")]);
+    await finishAll();
+    expect(latest().media.gallery).toHaveLength(11);
+  });
+
+  it("shows the over-12 draft error", () => {
+    const gallery = Array.from({ length: 13 }, (_, i) => ({ key: `invitations/inv-test/${i}.jpg` }));
+    renderStep(MediaStep, { ...base(), media: { gallery } });
+    expect(screen.getByText("The gallery holds up to 12 photos")).toBeInTheDocument();
+  });
+
   it("captions, reorders and removes photos", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     const gallery = [{ key: "invitations/inv-test/a.jpg" }, { key: "invitations/inv-test/b.jpg" }];
@@ -114,6 +146,13 @@ describe("music", () => {
     await userEvent.click(screen.getByRole("radio", { name: "Upload a song for this invitation" }));
     await userEvent.upload(screen.getByLabelText("Choose a song"), new File(["x"], "song.wav", { type: "audio/wav" }), { applyAccept: false });
     expect(screen.getByRole("alert")).toHaveTextContent("Choose an MP3 under 10 MB.");
+  });
+
+  it("notes that the saved song keeps playing when another source is selected", async () => {
+    renderStep(MediaStep, { ...base(), media: { music: { type: "upload", key: "invitations/inv-test/s.mp3" } } }, { musicTracks: tracks });
+    expect(screen.queryByText(/keeps playing/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("radio", { name: "From the Music Library" }));
+    expect(screen.getByText("Your current song keeps playing until you choose a new one.")).toBeInTheDocument();
   });
 
   it("explains when the library is empty", async () => {

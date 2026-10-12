@@ -7,6 +7,16 @@ import { chipClass } from "../ui";
 export const FULL_LINK_HINT = "Use the full link, starting with https://";
 
 const inputClass = "mt-1 block min-h-[44px] w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm aria-[invalid=true]:border-red-600";
+const PICKER_TYPES = new Set(["date", "time"]);
+
+// Desktop browsers only open the calendar/clock from the small icon; open it from anywhere in the box.
+function openPicker(event) {
+  try {
+    event.currentTarget.showPicker?.();
+  } catch {
+    // Some browsers refuse (e.g. no user gesture); the field still works by typing.
+  }
+}
 const LANGUAGE_LABELS = { en: "English", hi: "हिंदी" };
 
 export function Group({ title, children }) {
@@ -38,6 +48,7 @@ export function TextInput({ label, value, onChange, error, hint, type = "text", 
         aria-invalid={error ? "true" : undefined}
         aria-describedby={note ? `${id}-note` : undefined}
         onChange={(e) => onChange(e.target.value)}
+        onClick={!multiline && PICKER_TYPES.has(type) ? openPicker : undefined}
         className={inputClass}
       />
       {note && (

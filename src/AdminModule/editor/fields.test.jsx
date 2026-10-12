@@ -20,6 +20,41 @@ describe("LocalisedInput", () => {
 });
 
 describe("TextInput", () => {
+  it("opens the calendar or clock when a date or time field is clicked anywhere", () => {
+    const showPicker = vi.fn();
+    const original = HTMLInputElement.prototype.showPicker;
+    HTMLInputElement.prototype.showPicker = showPicker;
+    try {
+      render(
+        <>
+          <TextInput label="Main wedding date" type="date" value="" onChange={() => {}} />
+          <TextInput label="Time" type="time" value="" onChange={() => {}} />
+          <TextInput label="Venue" value="" onChange={() => {}} />
+        </>,
+      );
+      fireEvent.click(screen.getByLabelText("Main wedding date"));
+      fireEvent.click(screen.getByLabelText("Time"));
+      expect(showPicker).toHaveBeenCalledTimes(2);
+      fireEvent.click(screen.getByLabelText("Venue"));
+      expect(showPicker).toHaveBeenCalledTimes(2);
+    } finally {
+      HTMLInputElement.prototype.showPicker = original;
+    }
+  });
+
+  it("still works in browsers that can't open the picker", () => {
+    const original = HTMLInputElement.prototype.showPicker;
+    HTMLInputElement.prototype.showPicker = () => {
+      throw new DOMException("not allowed", "NotAllowedError");
+    };
+    try {
+      render(<TextInput label="Main wedding date" type="date" value="" onChange={() => {}} />);
+      expect(() => fireEvent.click(screen.getByLabelText("Main wedding date"))).not.toThrow();
+    } finally {
+      HTMLInputElement.prototype.showPicker = original;
+    }
+  });
+
   it("marks an invalid value and explains it", () => {
     render(<TextInput label="Google Maps link" value="maps.google.com" error="Use the full link" onChange={() => {}} />);
     const input = screen.getByLabelText("Google Maps link");

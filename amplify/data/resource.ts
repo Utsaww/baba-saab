@@ -38,6 +38,7 @@ const schema = a.schema({
       mainDate: a.string(),
       coupleNames: a.string().required(),
       searchText: a.string().required(),
+      musicTrackId: a.string(),
       content: a.json().required(),
       version: a.integer().required(),
       createdBy: a.string().required(),
@@ -56,11 +57,21 @@ const schema = a.schema({
       mainDate: a.string(),
       coupleNames: a.string().required(),
       searchText: a.string().required(),
+      musicTrackId: a.string(),
       updatedBy: a.string().required(),
     })
     .returns(a.ref("Invitation"))
     .authorization((allow) => [allow.group("admin")])
     .handler(a.handler.custom({ dataSource: a.ref("Invitation"), entry: "./saveInvitation.js" })),
+
+  MusicTrack: a
+    .model({
+      name: a.string().required(),
+      key: a.string().required(),
+      durationSec: a.integer(),
+      createdBy: a.string().required(),
+    })
+    .authorization((allow) => [allow.group("admin")]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

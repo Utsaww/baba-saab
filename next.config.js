@@ -14,16 +14,28 @@ function mediaHost() {
 }
 
 const MEDIA_HOST = mediaHost();
+const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_BASE_URL || (MEDIA_HOST ? `https://${MEDIA_HOST}` : "");
+
+// The image host is derived from the effective base URL so next/image always allows what mediaUrl produces.
+function imageHost(base) {
+  try {
+    return base ? new URL(base).hostname : null;
+  } catch {
+    return null;
+  }
+}
+
+const IMAGE_HOST = imageHost(MEDIA_BASE_URL);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
-    NEXT_PUBLIC_MEDIA_BASE_URL: process.env.NEXT_PUBLIC_MEDIA_BASE_URL || (MEDIA_HOST ? `https://${MEDIA_HOST}` : ""),
+    NEXT_PUBLIC_MEDIA_BASE_URL: MEDIA_BASE_URL,
   },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
-      ...(MEDIA_HOST ? [{ protocol: "https", hostname: MEDIA_HOST }] : []),
+      ...(IMAGE_HOST ? [{ protocol: "https", hostname: IMAGE_HOST }] : []),
     ],
   },
   webpack(config) {

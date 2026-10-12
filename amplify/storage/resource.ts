@@ -4,7 +4,7 @@ import { defineStorage } from "@aws-amplify/backend";
 export const storage = defineStorage({
   name: "invitationMedia",
   access: (allow) => ({
-    "invitations/*": [allow.groups(["admin"]).to(["read", "write", "delete"])],
-    "music-library/*": [allow.groups(["admin"]).to(["read", "write", "delete"])],
+    "invitations/*": [allow.groups(["admin", "owner"]).to(["read", "write", "delete"])],
+    "music-library/*": [allow.groups(["admin", "owner"]).to(["read", "write", "delete"])],
   }),
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { mediaUrl } from "@/InvitationModule/lib/media";
 import { newKey, PHOTO_ACCEPT, validatePhoto } from "@/AdminModule/media/files";
 import { createLimiter } from "@/AdminModule/media/limit";
@@ -15,13 +15,15 @@ export const pickerButton =
 const prepareLimited = createLimiter(2);
 
 /** One upload job: compress (and convert iPhone photos), then upload into the invitation's folder. */
-export function photoJob({ file, folder, group, onDone }) {
+export function photoJob({ file, folder, group, onDone, replaceGroup = false }) {
   return {
     label: file.name,
     group,
+    replaceGroup,
     onDone,
-    run: async (onProgress) => {
+    run: async (onProgress, isCancelled) => {
       const blob = await prepareLimited(() => preparePhoto(file));
+      if (isCancelled?.()) throw new Error("Upload cancelled"); // dismissed while preparing: don't upload
       return uploadMedia({ key: newKey(folder, "jpg"), blob, contentType: "image/jpeg", onProgress });
     },
   };
@@ -30,8 +32,6 @@ export function photoJob({ file, folder, group, onDone }) {
 export default function PhotoSlot({ label, group, value, onChange, folder, uploads }) {
   const [error, setError] = useState(null);
   const items = uploads.items.filter((item) => item.group === group);
-  // Only the newest pick may fill the slot; Remove invalidates anything still uploading.
-  const latest = useRef(0);
 
   function pick(event) {
     const file = event.target.files?.[0];
@@ -40,13 +40,12 @@ export default function PhotoSlot({ label, group, value, onChange, folder, uploa
     const problem = validatePhoto(file);
     setError(problem);
     if (problem) return;
-    const token = ++latest.current;
-    uploads.start(photoJob({ file, folder, group, onDone: (key) => latest.current === token && onChange(key) }));
+    // replaceGroup dismisses earlier picks in this slot, so only the newest can fill it (even across step changes).
+    uploads.start(photoJob({ file, folder, group, replaceGroup: true, onDone: onChange }));
   }
 
   function remove() {
     if (!window.confirm("Remove this photo? This can't be undone.")) return;
-    latest.current += 1;
     items.forEach((item) => uploads.dismiss(item.id));
     onChange(undefined);
   }

@@ -17,6 +17,7 @@ vi.mock("@/AdminModule/media/storage", () => ({
 
 import { uploadMedia } from "@/AdminModule/media/storage";
 import MediaStep from "../steps/MediaStep";
+import { photoJob } from "./PhotoSlot";
 import { renderStep } from "../test-utils";
 
 const base = () => ({ templateId: "royal", theme: { palette: "maroon-gold" }, language: "en" });
@@ -88,6 +89,20 @@ describe("cover photo", () => {
     expect(latest().media.coverKey).toBeUndefined();
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     confirm.mockRestore();
+  });
+});
+
+describe("photoJob", () => {
+  it("does not upload a photo that was dismissed while it was being prepared", async () => {
+    uploadMedia.mockClear();
+    const job = photoJob({ file: jpg("a.jpg"), folder: "invitations/x", group: "cover", onDone: vi.fn() });
+    await expect(job.run(vi.fn(), () => true)).rejects.toThrow();
+    expect(uploadMedia).not.toHaveBeenCalled();
+    pending.clear();
+    job.run(vi.fn(), () => false);
+    await act(async () => {});
+    expect(uploadMedia).toHaveBeenCalledTimes(1);
+    pending.clear();
   });
 });
 
@@ -209,6 +224,19 @@ describe("music", () => {
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Song" }), "t1");
     await finishAll();
     expect(latest().media.music).toEqual({ type: "library", trackId: "t1", key: "music-library/t1.mp3" });
+  });
+
+  it("keeps the newest song when an older upload finishes last", async () => {
+    uploadMedia.mockClear();
+    const { latest } = renderStep(MediaStep, base());
+    await userEvent.click(screen.getByRole("radio", { name: "Upload a song for this invitation" }));
+    await userEvent.upload(screen.getByLabelText("Choose a song"), new File(["x"], "a.mp3", { type: "audio/mpeg" }));
+    await userEvent.upload(screen.getByLabelText("Choose a song"), new File(["x"], "b.mp3", { type: "audio/mpeg" }));
+    await act(async () => {});
+    const [keyA, keyB] = uploadMedia.mock.calls.map(([args]) => args.key);
+    await finishInReverse();
+    expect(latest().media.music).toEqual({ type: "upload", key: keyB });
+    expect(keyA).not.toBe(keyB);
   });
 
   it("says so when the Music Library couldn't be loaded", async () => {

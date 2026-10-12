@@ -62,8 +62,6 @@ export default function MusicPicker({ music, onChange, tracks, tracksError = fal
   const [error, setError] = useState(null);
   const songId = useId();
   const items = uploads.items.filter((item) => item.group === "music");
-  // A newer choice (or "No music" / a library song) makes any song still uploading obsolete.
-  const latest = useRef(0);
   const libraryTrack = music?.type === "library" ? tracks.find((t) => t.id === music.trackId) : null;
 
   function choose(next) {
@@ -76,7 +74,6 @@ export default function MusicPicker({ music, onChange, tracks, tracksError = fal
   }
 
   function supersede() {
-    latest.current += 1;
     items.forEach((item) => uploads.dismiss(item.id));
   }
 
@@ -87,12 +84,12 @@ export default function MusicPicker({ music, onChange, tracks, tracksError = fal
     const problem = validateMusic(file);
     setError(problem);
     if (problem) return;
-    const token = ++latest.current;
     uploads.start({
       label: file.name,
       group: "music",
+      replaceGroup: true,
       run: (onProgress) => uploadMedia({ key: newKey(folder, "mp3"), blob: file, contentType: "audio/mpeg", onProgress }),
-      onDone: (key) => latest.current === token && onChange({ type: "upload", key }),
+      onDone: (key) => onChange({ type: "upload", key }),
     });
   }
 

@@ -186,6 +186,33 @@ describe("EditorShell media", () => {
   });
 });
 
+describe("EditorShell upload ordering across steps", () => {
+  it("keeps the newest cover even when the step was left and re-entered in between", async () => {
+    const storage = await import("@/AdminModule/media/storage");
+    const resolvers = [];
+    storage.uploadMedia.mockImplementation(({ key }) => new Promise((resolve) => resolvers.push(() => resolve(key))));
+    const saveAction = vi.fn(async () => ({ ok: true, version: 6, savedAt: "x" }));
+    render(<EditorShell invitation={invitation} initialStep={5} templates={TEMPLATE_CHOICES} saveAction={saveAction} />);
+    const pickCover = async (name) => {
+      await act(async () => {
+        fireEvent.change(screen.getByLabelText("Choose cover photo"), { target: { files: [new File(["x"], name, { type: "image/jpeg" })] } });
+      });
+    };
+    await pickCover("a.jpg");
+    fireEvent.click(screen.getByRole("button", { name: /6\./ }));
+    fireEvent.click(screen.getByRole("button", { name: /5\./ }));
+    await pickCover("b.jpg");
+    const keys = storage.uploadMedia.mock.calls.map(([args]) => args.key);
+    const [keyA, keyB] = keys.slice(-2);
+    await act(async () => resolvers[resolvers.length - 1]()); // B first
+    await act(async () => resolvers[resolvers.length - 2]()); // A last
+    await act(async () => vi.advanceTimersByTime(3000));
+    expect(saveAction).toHaveBeenLastCalledWith(expect.objectContaining({ content: expect.objectContaining({ media: expect.objectContaining({ coverKey: keyB }) }) }));
+    expect(keyA).not.toBe(keyB);
+    storage.uploadMedia.mockImplementation(async ({ key }) => key);
+  });
+});
+
 describe("EditorShell upload leave message", () => {
   it("says a photo is still uploading when that is the only risk", async () => {
     const { preparePhoto } = await import("@/AdminModule/media/photos");

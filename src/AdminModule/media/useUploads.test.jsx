@@ -88,4 +88,51 @@ describe("useUploads", () => {
     expect(run).toHaveBeenCalledTimes(1);
     await act(async () => d.resolve("k"));
   });
+
+  it("replaceGroup dismisses earlier items of the same group (uploading and failed) but not other groups", async () => {
+    const d = deferred();
+    const staleDone = vi.fn();
+    const { result } = renderHook(() => useUploads());
+    await act(async () => {
+      result.current.start({ label: "failed", group: "cover", run: () => Promise.reject(new Error("x")), onDone: staleDone });
+      result.current.start({ label: "gallery", group: "gallery", run: () => new Promise(() => {}), onDone: vi.fn() });
+    });
+    act(() => {
+      result.current.start({ label: "slow", group: "cover", run: () => d.promise, onDone: staleDone });
+    });
+    expect(result.current.items.map((i) => i.label)).toEqual(["failed", "gallery", "slow"]);
+    const onDone = vi.fn();
+    act(() => {
+      result.current.start({ label: "new", group: "cover", replaceGroup: true, run: () => Promise.resolve("k"), onDone });
+    });
+    expect(result.current.items.map((i) => i.label)).toEqual(["gallery", "new"]);
+    await act(async () => d.resolve("old"));
+    expect(staleDone).not.toHaveBeenCalled();
+    expect(onDone).toHaveBeenCalledWith("k");
+  });
+
+  it("never runs a job that was dismissed before it ran", async () => {
+    const run = vi.fn().mockRejectedValueOnce(new Error("x"));
+    const { result } = renderHook(() => useUploads());
+    await act(async () => {
+      result.current.start({ label: "a", run, onDone: vi.fn() });
+    });
+    const id = result.current.items[0].id;
+    act(() => result.current.dismiss(id));
+    await act(async () => result.current.retry(id));
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it("tells a running job when it was dismissed", async () => {
+    const d = deferred();
+    let isCancelled;
+    const { result } = renderHook(() => useUploads());
+    act(() => {
+      result.current.start({ label: "a", run: (_p, cancelled) => ((isCancelled = cancelled), d.promise), onDone: vi.fn() });
+    });
+    expect(isCancelled()).toBe(false);
+    act(() => result.current.dismiss(result.current.items[0].id));
+    expect(isCancelled()).toBe(true);
+    await act(async () => d.resolve("k"));
+  });
 });

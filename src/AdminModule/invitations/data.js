@@ -2,7 +2,7 @@ import { cookieDataClient } from "@/AdminModule/dataClient";
 import { indexFields } from "@/InvitationModule/lib/indexFields";
 import { parseContent } from "./content";
 
-const LIST_FIELDS = ["id", "status", "templateId", "mainDate", "coupleNames", "searchText", "updatedAt", "updatedBy"];
+const LIST_FIELDS = ["id", "status", "templateId", "mainDate", "coupleNames", "searchText", "updatedAt", "updatedBy", "musicTrackId"];
 
 function failIfErrors(errors) {
   if (errors?.length) throw new Error(errors.map((e) => e.message).join("; "));

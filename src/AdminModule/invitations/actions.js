@@ -6,6 +6,7 @@ import { requireStaff } from "@/AdminModule/auth/server";
 import { cleanDraft } from "@/InvitationModule/schema/draft";
 import { LANGUAGES } from "@/InvitationModule/schema/invitation";
 import { getTemplate } from "@/InvitationModule/templates/registry";
+import { getMusicTrack } from "@/AdminModule/music/data";
 import { createInvitationRecord, saveInvitationRecord } from "./data";
 import { prepareSave, SAVE_FAILED, saveResult } from "./content";
 
@@ -31,7 +32,17 @@ export async function createInvitationAction({ templateId, palette, language }) 
 
 export async function saveInvitationAction({ id, expectedVersion, content }) {
   const session = await requireStaff();
-  const prepared = prepareSave({ id, expectedVersion, content });
+  const trackId = content?.media?.music?.type === "library" ? content.media.music.trackId : null;
+  let libraryTrack = null;
+  if (typeof trackId === "string" && trackId) {
+    try {
+      libraryTrack = await getMusicTrack(trackId);
+    } catch (err) {
+      console.error("getMusicTrack failed", err);
+      return { ok: false, message: SAVE_FAILED };
+    }
+  }
+  const prepared = prepareSave({ id, expectedVersion, content, libraryTrack });
   if (!prepared.ok) return prepared;
 
   try {

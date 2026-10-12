@@ -112,7 +112,15 @@ Add each function guests are invited to. The quick buttons (**+ Haldi**, **+ Meh
 
 ## Editor step 5: Photos, film & music
 
-Paste the invitation film's **YouTube link**. The film can be "unlisted" on YouTube. Uploading photos and music is coming in the next release.
+**Photos you can use:** JPG/JPEG, PNG, WebP and iPhone photos (HEIC). Pixel phone photos ("PXL_…") are ordinary JPGs. iPhone photos are converted automatically. Every photo is resized and compressed so the invitation loads quickly on phones. Photos sent to you on WhatsApp work too.
+
+- **Cover photo:** the big photo at the top of the invitation. Click **Upload**, pick a photo, and wait for the bar to finish. Use **Replace** or **Remove** to change it.
+- **Couple photos (optional):** one for the bride and one for the groom, shown in "The couple" section.
+- **Photo gallery:** click **Add photos** and pick up to 12 at once. Each photo can have a caption. Use the arrows to change the order and **Remove** to take one out. When the gallery holds 12 photos it's full.
+- **Invitation film:** paste the film's **YouTube link**. The film can be "unlisted" on YouTube.
+- **Background music:** choose **No music**, a song **From the Music Library**, or **Upload a song for this invitation** (MP3 up to 10 MB). Press **▶ Play** to listen first. Only upload music you have the rights to use.
+
+If an upload fails, click **Retry** next to it. Your other changes are already saved. Don't close the page while a photo is still uploading.
 
 ## Editor step 6: Sections
 

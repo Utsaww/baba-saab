@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cleanDraft } from "@/InvitationModule/schema/draft";
+import { removedMediaKeys } from "@/InvitationModule/lib/mediaKeys";
+import { deleteMedia } from "@/AdminModule/media/storage";
+import { useUploads } from "@/AdminModule/media/useUploads";
 import { indexFields } from "@/InvitationModule/lib/indexFields";
 import { hasUnsavedChanges } from "./autosave";
-import { setIn } from "./paths";
+import { getIn, setIn } from "./paths";
 import PreviewPane from "./PreviewPane";
 import SaveStatus, { SaveBanners } from "./SaveStatus";
 import StepNav from "./StepNav";
@@ -15,7 +18,7 @@ import { useLeaveGuard } from "./useLeaveGuard";
 
 const navButton = "min-h-[44px] rounded-full border border-stone-300 px-5 text-sm hover:bg-stone-100";
 
-export default function EditorShell({ invitation, initialStep, templates, saveAction }) {
+export default function EditorShell({ invitation, initialStep, templates, saveAction, musicTracks = [] }) {
   const [content, setContent] = useState(invitation.content);
   const [step, setStep] = useState(initialStep);
   const [showPreview, setShowPreview] = useState(false);
@@ -24,12 +27,27 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
     ({ content: latest, expectedVersion }) => saveAction({ id: invitation.id, expectedVersion, content: latest }),
     [saveAction, invitation.id],
   );
-  const { state, retry, flushNow } = useAutosave({ content, initialVersion: invitation.version, save });
+  const uploads = useUploads();
+  // Files are deleted only after a save that no longer references them has succeeded.
+  const lastSaved = useRef(invitation.content);
+  const onSaved = useCallback(
+    (saved) => {
+      const removed = removedMediaKeys(lastSaved.current, saved, invitation.id);
+      lastSaved.current = saved;
+      if (removed.length > 0) deleteMedia(removed);
+    },
+    [invitation.id],
+  );
+  const { state, retry, flushNow } = useAutosave({ content, initialVersion: invitation.version, save, onSaved });
   // Edits that are dirty, or saving with nothing queued, are saved by the autosave/unmount flush; the rest are at risk.
-  const atRisk = state.status === "error" || state.status === "conflict" || (state.status === "saving" && state.queued);
-  const allowLeave = useLeaveGuard({ warnOnClose: hasUnsavedChanges(state), atRisk, flushNow });
+  const atRisk = uploads.busy || state.status === "error" || state.status === "conflict" || (state.status === "saving" && state.queued);
+  const allowLeave = useLeaveGuard({ warnOnClose: uploads.busy || hasUnsavedChanges(state), atRisk, flushNow });
 
-  const update = useCallback((path, value) => setContent((c) => setIn(c, path, value)), []);
+  const update = useCallback(
+    (path, value) => setContent((c) => setIn(c, path, typeof value === "function" ? value(getIn(c, path)) : value)),
+    [],
+  );
+
   const { errors } = useMemo(() => cleanDraft(content), [content]);
 
   const goTo = useCallback((n) => {
@@ -94,7 +112,17 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
             </a>
           </div>
           <div className="mt-4">
-            <Step content={content} update={update} errors={errors} language={content.language ?? "en"} templates={templates} onGoToStep={goTo} />
+            <Step
+              content={content}
+              update={update}
+              errors={errors}
+              language={content.language ?? "en"}
+              templates={templates}
+              onGoToStep={goTo}
+              invitationId={invitation.id}
+              musicTracks={musicTracks}
+              uploads={uploads}
+            />
           </div>
           <div className="mt-8 flex justify-between gap-3">
             {step > 1 ? (

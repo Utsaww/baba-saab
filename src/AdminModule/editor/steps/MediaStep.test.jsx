@@ -1,7 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
 import MediaStep from "./MediaStep";
 import { renderStep } from "../test-utils";
+
+vi.mock("@/AdminModule/media/storage", () => ({ uploadMedia: vi.fn(async ({ key }) => key), deleteMedia: vi.fn(async () => {}) }));
+vi.mock("@/AdminModule/media/photos", () => ({ preparePhoto: vi.fn(async () => new Blob(["x"], { type: "image/jpeg" })) }));
 
 const base = () => ({ templateId: "royal", theme: { palette: "maroon-gold" }, language: "en" });
 
@@ -21,10 +24,5 @@ describe("MediaStep", () => {
     const { latest } = renderStep(MediaStep, { ...base(), media: { film: { type: "youtube", url: "https://youtu.be/x" } } });
     fireEvent.change(screen.getByLabelText("YouTube link"), { target: { value: "" } });
     expect(latest().media).toEqual({});
-  });
-
-  it("says photos and music are coming", () => {
-    renderStep(MediaStep, base());
-    expect(screen.getByText(/coming in the next release/)).toBeInTheDocument();
   });
 });

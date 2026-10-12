@@ -7,7 +7,7 @@ const FAILED = "Couldn't save. Check your connection and try again.";
 const SIGNED_OUT = "You may have been signed out. Sign in again in a new tab, then click Retry.";
 
 /** Saves `content` SAVE_DELAY_MS after the last change, one save at a time, always with the latest version. */
-export function useAutosave({ content, initialVersion, save, delay = SAVE_DELAY_MS }) {
+export function useAutosave({ content, initialVersion, save, onSaved, delay = SAVE_DELAY_MS }) {
   const [state, dispatch] = useReducer(saveReducer, initialVersion, initialSaveState);
   const latest = useRef({ content, version: initialVersion });
   latest.current.content = content;
@@ -19,6 +19,8 @@ export function useAutosave({ content, initialVersion, save, delay = SAVE_DELAY_
   // The server action gets a new identity after every revalidation, so only ever call the latest one.
   const saveRef = useRef(save);
   saveRef.current = save;
+  const onSavedRef = useRef(onSaved);
+  onSavedRef.current = onSaved;
   statusRef.current = state.status;
 
   useEffect(() => {
@@ -30,17 +32,20 @@ export function useAutosave({ content, initialVersion, save, delay = SAVE_DELAY_
     if (inFlight.current) return inFlight.current;
     dispatch({ type: "start" });
     const run = (async () => {
+      const sent = latest.current.content;
       let result;
       try {
-        result = await saveRef.current({ content: latest.current.content, expectedVersion: latest.current.version });
+        result = await saveRef.current({ content: sent, expectedVersion: latest.current.version });
         // No answer at all usually means the session ended and the request was redirected to sign-in.
         if (result === undefined) result = { ok: false, message: SIGNED_OUT };
       } catch {
         result = { ok: false, message: FAILED };
       }
       inFlight.current = null;
-      if (result?.ok) dispatch({ type: "success", version: result.version, savedAt: result.savedAt });
-      else if (result?.conflict) dispatch({ type: "conflict" });
+      if (result?.ok) {
+        dispatch({ type: "success", version: result.version, savedAt: result.savedAt });
+        onSavedRef.current?.(sent);
+      } else if (result?.conflict) dispatch({ type: "conflict" });
       else dispatch({ type: "failure", message: result?.message ?? FAILED });
       return result;
     })();

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { render } from "@testing-library/react";
 import { cleanDraft } from "@/InvitationModule/schema/draft";
-import { setIn } from "./paths";
+import { useUploads } from "@/AdminModule/media/useUploads";
+import { getIn, setIn } from "./paths";
 
 export const TEMPLATE_CHOICES = [
   {
@@ -27,9 +28,23 @@ export function renderStep(Step, initial, extraProps = {}) {
   function Harness() {
     const [content, setContent] = useState(initial);
     current = content;
-    const update = (path, value) => setContent((c) => setIn(c, path, value));
+    const uploads = useUploads();
+    const update = (path, value) => setContent((c) => setIn(c, path, typeof value === "function" ? value(getIn(c, path)) : value));
     const { errors } = cleanDraft(content);
-    return <Step content={content} update={update} errors={errors} language={content.language ?? "en"} templates={TEMPLATE_CHOICES} onGoToStep={() => {}} {...extraProps} />;
+    return (
+      <Step
+        content={content}
+        update={update}
+        errors={errors}
+        language={content.language ?? "en"}
+        templates={TEMPLATE_CHOICES}
+        onGoToStep={() => {}}
+        invitationId="inv-test"
+        musicTracks={[]}
+        uploads={uploads}
+        {...extraProps}
+      />
+    );
   }
   const utils = render(<Harness />);
   return { ...utils, latest: () => current };

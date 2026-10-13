@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
+vi.mock("@/AdminModule/media/storage", () => ({
+  uploadMedia: vi.fn(async ({ key }) => key),
+  deleteMedia: vi.fn(async () => {}),
+}));
+vi.mock("@/AdminModule/media/photos", () => ({
+  preparePhoto: vi.fn(async () => new Blob(["x"], { type: "image/jpeg" })),
+}));
+
 import EditorShell from "./EditorShell";
 import { TEMPLATE_CHOICES } from "./test-utils";
 
@@ -147,5 +155,78 @@ describe("EditorShell", () => {
   it("links each step to its help section", () => {
     renderShell(vi.fn());
     expect(screen.getByRole("link", { name: /Help for this step/ })).toHaveAttribute("href", "/admin/help#editor-step-2-couple-families");
+  });
+});
+
+describe("EditorShell media", () => {
+  it("deletes a removed photo only after the save that drops it succeeds", async () => {
+    const { deleteMedia } = await import("@/AdminModule/media/storage");
+    const withCover = { ...invitation, content: { ...invitation.content, media: { coverKey: "invitations/inv-1/old.jpg" } } };
+    const saveAction = vi.fn().mockResolvedValueOnce({ ok: false, message: "Couldn't save." }).mockResolvedValueOnce({ ok: true, version: 6, savedAt: "x" });
+    render(<EditorShell invitation={withCover} initialStep={5} templates={TEMPLATE_CHOICES} saveAction={saveAction} />);
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: "Remove cover photo" }));
+    confirm.mockRestore();
+    await act(async () => vi.advanceTimersByTime(3000));
+    expect(deleteMedia).not.toHaveBeenCalled();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Retry" })));
+    expect(deleteMedia).toHaveBeenCalledWith(["invitations/inv-1/old.jpg"]);
+  });
+
+  it("warns before closing the tab while a photo is uploading", async () => {
+    const { preparePhoto } = await import("@/AdminModule/media/photos");
+    preparePhoto.mockImplementationOnce(() => new Promise(() => {}));
+    render(<EditorShell invitation={invitation} initialStep={5} templates={TEMPLATE_CHOICES} saveAction={vi.fn()} />);
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Choose cover photo"), { target: { files: [new File(["x"], "c.jpg", { type: "image/jpeg" })] } });
+    });
+    const event = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+});
+
+describe("EditorShell upload ordering across steps", () => {
+  it("keeps the newest cover even when the step was left and re-entered in between", async () => {
+    const storage = await import("@/AdminModule/media/storage");
+    const resolvers = [];
+    storage.uploadMedia.mockImplementation(({ key }) => new Promise((resolve) => resolvers.push(() => resolve(key))));
+    const saveAction = vi.fn(async () => ({ ok: true, version: 6, savedAt: "x" }));
+    render(<EditorShell invitation={invitation} initialStep={5} templates={TEMPLATE_CHOICES} saveAction={saveAction} />);
+    const pickCover = async (name) => {
+      await act(async () => {
+        fireEvent.change(screen.getByLabelText("Choose cover photo"), { target: { files: [new File(["x"], name, { type: "image/jpeg" })] } });
+      });
+    };
+    await pickCover("a.jpg");
+    fireEvent.click(screen.getByRole("button", { name: /6\./ }));
+    fireEvent.click(screen.getByRole("button", { name: /5\./ }));
+    await pickCover("b.jpg");
+    const keys = storage.uploadMedia.mock.calls.map(([args]) => args.key);
+    const [keyA, keyB] = keys.slice(-2);
+    await act(async () => resolvers[resolvers.length - 1]()); // B first
+    await act(async () => resolvers[resolvers.length - 2]()); // A last
+    await act(async () => vi.advanceTimersByTime(3000));
+    expect(saveAction).toHaveBeenLastCalledWith(expect.objectContaining({ content: expect.objectContaining({ media: expect.objectContaining({ coverKey: keyB }) }) }));
+    expect(keyA).not.toBe(keyB);
+    storage.uploadMedia.mockImplementation(async ({ key }) => key);
+  });
+});
+
+describe("EditorShell upload leave message", () => {
+  it("says a photo is still uploading when that is the only risk", async () => {
+    const { preparePhoto } = await import("@/AdminModule/media/photos");
+    preparePhoto.mockImplementationOnce(() => new Promise(() => {}));
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<EditorShell invitation={invitation} initialStep={5} templates={TEMPLATE_CHOICES} saveAction={vi.fn()} />);
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Choose cover photo"), { target: { files: [new File(["x"], "c.jpg", { type: "image/jpeg" })] } });
+    });
+    const stop = (event) => event.preventDefault();
+    document.addEventListener("click", stop);
+    fireEvent.click(screen.getByRole("link", { name: /All invitations/ }));
+    document.removeEventListener("click", stop);
+    expect(confirm).toHaveBeenCalledWith("A photo or song is still uploading. Leave this page anyway?");
+    confirm.mockRestore();
   });
 });

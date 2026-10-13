@@ -9,6 +9,7 @@ This guide grows as new parts of the invitation system go live. Everything descr
 | **Dashboard** | Your starting page after signing in. |
 | **Invitations** | Create invitations for customers, fill in their details and continue saved drafts. |
 | **Templates** | Browse the 4 invitation designs with sample details, try their colour palettes and languages, and show them to customers. |
+| **Music** | The shared Music Library: songs any invitation can use as background music. |
 | **Staff** | *Owner only.* Invite people to the admin area and remove them. |
 | **Help** | This guide. |
 
@@ -112,7 +113,17 @@ Add each function guests are invited to. The quick buttons (**+ Haldi**, **+ Meh
 
 ## Editor step 5: Photos, film & music
 
-Paste the invitation film's **YouTube link**. The film can be "unlisted" on YouTube. Uploading photos and music is coming in the next release.
+**Photos you can use:** JPG/JPEG, PNG, WebP and iPhone photos (HEIC). Pixel phone photos ("PXL_…") are ordinary JPGs. iPhone photos are converted automatically. Every photo is resized and compressed so the invitation loads quickly on phones. Photos sent to you on WhatsApp work too.
+
+- **Cover photo:** the big photo at the top of the invitation. Click **Upload**, pick a photo, and wait for the bar to finish. Use **Replace** or **Remove** to change it.
+- **Couple photos (optional):** one for the bride and one for the groom, shown in "The couple" section.
+- **Photo gallery:** click **Add photos** and pick up to 12 at once. Each photo can have a caption. Use the arrows to change the order and **Remove** to take one out. When the gallery holds 12 photos it's full.
+- **Invitation film:** paste the film's **YouTube link**. The film can be "unlisted" on YouTube.
+- **Background music:** choose **No music**, a song **From the Music Library**, or **Upload a song for this invitation** (MP3 up to 10 MB). Press **▶ Play** to listen first. Only upload music you have the rights to use.
+
+If an upload fails, click **Retry** next to it, or **Dismiss** to drop it. The rest of the invitation isn't affected. Don't close the page while a photo is still uploading.
+
+Removing a cover or couple photo asks you to confirm first, because it can't be undone.
 
 ## Editor step 6: Sections
 
@@ -127,6 +138,18 @@ Choose which parts of the invitation guests see, and in what order. Untick **Sho
 ## Editor step 8: Review
 
 This step lists everything still needed before the invitation can be published, such as a missing date or an event without a time. Click **Go to step N** to fix each one. Publishing arrives in the next release. Until then, everything is saved as a draft.
+
+## Music Library
+
+Open **Music** in the left menu to see the songs every invitation can use.
+
+**Adding a song:** click **Choose MP3** and pick an MP3 file (up to 10 MB). The name fills in from the file name; change it if you like. Then click **Upload song**. Only upload music you have the rights to use.
+
+**Listening:** press **▶ Play** next to a song.
+
+**Renaming:** click **Rename**, type the new name and click **Save name**.
+
+**Deleting:** click **Delete**. A song that any invitation uses can't be deleted. The page shows which invitations use it, so you can change their music first.
 
 ## Browsing templates
 

@@ -6,6 +6,7 @@ export function navFor({ isOwner }) {
     { href: "/admin", label: "Dashboard" },
     { href: "/admin/invitations", label: "Invitations" },
     { href: "/admin/templates", label: "Templates" },
+    { href: "/admin/music", label: "Music" },
     ...(isOwner ? [{ href: "/admin/staff", label: "Staff" }] : []),
     { href: "/admin/help", label: "Help" },
   ];

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+export const GALLERY_MAX = 12;
 export const TEMPLATE_IDS = ["royal", "floral", "temple", "minimal"];
 export const LANGUAGES = ["en", "hi", "both"];
 export const STATUSES = ["draft", "published", "archived", "deleted"];
@@ -89,7 +90,10 @@ export const invitationSchema = z.object({
   media: z
     .object({
       coverKey: z.string().optional(),
-      gallery: z.array(z.object({ key: z.string().min(1), caption: localised.optional() })).default([]),
+      gallery: z
+        .array(z.object({ key: z.string().min(1), caption: localised.optional() }))
+        .max(GALLERY_MAX, `The gallery holds up to ${GALLERY_MAX} photos`)
+        .default([]),
       music: z
         .object({ type: z.enum(["library", "upload"]), trackId: z.string().optional(), key: z.string().min(1) })
         .optional(),

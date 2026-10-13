@@ -1,14 +1,34 @@
 "use client";
 
+import { invitationFolder } from "@/InvitationModule/lib/mediaKeys";
 import { youtubeId } from "@/InvitationModule/lib/media";
 import { Group, TextInput } from "../fields";
+import GalleryEditor from "../media/GalleryEditor";
+import MusicPicker from "../media/MusicPicker";
+import PhotoSlot from "../media/PhotoSlot";
 
-export default function MediaStep({ content, update, errors }) {
+export default function MediaStep({ content, update, errors, language, invitationId, musicTracks = [], musicTracksError = false, uploads }) {
+  const folder = invitationFolder(invitationId);
   const url = content.media?.film?.url ?? "";
   const invalid = Boolean(url) && (!youtubeId(url) || Boolean(errors["media.film.url"]));
 
   return (
     <div className="space-y-6">
+      <Group title="Cover photo">
+        <PhotoSlot label="Cover photo" group="cover" value={content.media?.coverKey} onChange={(key) => update(["media", "coverKey"], key)} folder={folder} uploads={uploads} />
+      </Group>
+
+      <Group title="Couple photos (optional)">
+        <div className="grid gap-6 sm:grid-cols-2">
+          <PhotoSlot label="Bride's photo" group="bride" value={content.couple?.bride?.photoKey} onChange={(key) => update(["couple", "bride", "photoKey"], key)} folder={folder} uploads={uploads} />
+          <PhotoSlot label="Groom's photo" group="groom" value={content.couple?.groom?.photoKey} onChange={(key) => update(["couple", "groom", "photoKey"], key)} folder={folder} uploads={uploads} />
+        </div>
+      </Group>
+
+      <Group title="Photo gallery">
+        <GalleryEditor gallery={content.media?.gallery} update={update} folder={folder} uploads={uploads} language={language} error={errors["media.gallery"]} />
+      </Group>
+
       <Group title="Invitation film">
         <TextInput
           label="YouTube link"
@@ -19,8 +39,9 @@ export default function MediaStep({ content, update, errors }) {
           onChange={(v) => update(["media", "film"], v.trim() ? { type: "youtube", url: v.trim() } : undefined)}
         />
       </Group>
-      <Group title="Photos and music">
-        <p className="text-sm text-stone-600">Cover photo, photo gallery and background music are coming in the next release.</p>
+
+      <Group title="Background music">
+        <MusicPicker music={content.media?.music} onChange={(music) => update(["media", "music"], music)} tracks={musicTracks} tracksError={musicTracksError} folder={folder} uploads={uploads} />
       </Group>
     </div>
   );

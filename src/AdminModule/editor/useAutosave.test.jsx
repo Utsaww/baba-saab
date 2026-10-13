@@ -170,3 +170,18 @@ describe("useAutosave independence from save identity", () => {
     expect(first).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("useAutosave onSaved", () => {
+  it("reports the content each successful save sent, and nothing for failures", async () => {
+    const onSaved = vi.fn();
+    const save = vi.fn().mockResolvedValueOnce({ ok: false, message: "x" }).mockResolvedValueOnce({ ok: true, version: 2, savedAt: "x" });
+    const { result, rerender } = renderHook(({ content }) => useAutosave({ content, initialVersion: 1, save, onSaved }), {
+      initialProps: { content: { n: 0 } },
+    });
+    rerender({ content: { n: 1 } });
+    await act(async () => vi.advanceTimersByTime(3000));
+    expect(onSaved).not.toHaveBeenCalled();
+    await act(async () => result.current.retry());
+    expect(onSaved).toHaveBeenCalledWith({ n: 1 });
+  });
+});

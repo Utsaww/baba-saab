@@ -37,6 +37,7 @@ describe("saveInvitation request", () => {
       mainDate: null,
       coupleNames: "Priya & Rahul",
       searchText: "priya rahul",
+      musicTrackId: null,
       updatedBy: "staff@example.com",
       updatedAt: "2026-10-08T10:00:00.000Z",
       version: { increment: 1 },
@@ -46,6 +47,11 @@ describe("saveInvitation request", () => {
   it("stores the wedding date when given", () => {
     const req = request({ args: { ...args, mainDate: "2027-02-14" } } as any) as any;
     expect(req.input.update.mainDate).toBe("2027-02-14");
+  });
+
+  it("stores the library track id when given", () => {
+    const req = request({ args: { ...args, musicTrackId: "t1" } } as any) as any;
+    expect(req.input.update.musicTrackId).toBe("t1");
   });
 });
 

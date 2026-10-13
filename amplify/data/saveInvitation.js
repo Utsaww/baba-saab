@@ -4,7 +4,7 @@ import * as ddb from "@aws-appsync/utils/dynamodb";
 // Version-checked save: writes only if nobody else has saved since this editor loaded the invitation.
 // An unknown id has no stored version, so it is reported as a conflict too.
 export function request(ctx) {
-  const { id, expectedVersion, content, templateId, mainDate, coupleNames, searchText, updatedBy } = ctx.args;
+  const { id, expectedVersion, content, templateId, mainDate, coupleNames, searchText, musicTrackId, updatedBy } = ctx.args;
   return ddb.update({
     key: { id },
     update: {
@@ -13,6 +13,7 @@ export function request(ctx) {
       mainDate: mainDate ?? null,
       coupleNames,
       searchText,
+      musicTrackId: musicTrackId ?? null,
       updatedBy,
       updatedAt: util.time.nowISO8601(),
       version: ddb.operations.increment(1),

@@ -181,7 +181,7 @@ When the live link is pasted into WhatsApp, it shows a card with the cover photo
 
 ### QR codes
 
-After publishing, click **Download QR code**. It saves a file named like `riya-and-arjun-qr.png` that points to the live link. It prints sharply at any size. Always scan it with a phone before sending it to print.
+After publishing, click **Download QR code**. It saves a file named like `riya-and-arjun-qr.png` that points to the live link. It prints sharply at normal invitation and standee sizes. Always scan it with a phone before sending it to print.
 
 ### RSVP forms
 

@@ -13,5 +13,9 @@ export function ogFonts() {
     { name: "Display", data: latin, weight: 600, style: "normal" },
     { name: "Devanagari", data: deva, weight: 600, style: "normal" },
   ]);
+  // A failed read is not kept: the next card request tries again.
+  loaded.catch(() => {
+    loaded = undefined;
+  });
   return loaded;
 }

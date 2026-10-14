@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FOREIGN_FILE, MISSING_TRACK, parseContent, prepareSave, SAVE_FAILED, saveResult } from "./content";
+import { FOREIGN_FILE, MISSING_TRACK, parseAwsJson, parseContent, prepareSave, SAVE_FAILED, saveResult } from "./content";
 
 const content = {
   templateId: "royal",
@@ -95,5 +95,19 @@ describe("prepareSave media checks", () => {
   it("refuses a library song that no longer exists", () => {
     const content = { ...base, media: { music: { type: "library", trackId: "gone", key: "music-library/x.mp3" } } };
     expect(prepareSave({ id: "inv-1", expectedVersion: 1, content, libraryTrack: null })).toEqual({ ok: false, message: MISSING_TRACK });
+  });
+});
+
+describe("parseAwsJson", () => {
+  it("accepts an object, a JSON string or a double-encoded JSON string", () => {
+    expect(parseAwsJson({ a: 1 })).toEqual({ a: 1 });
+    expect(parseAwsJson('{"a":1}')).toEqual({ a: 1 });
+    expect(parseAwsJson(JSON.stringify(JSON.stringify({ a: 1 })))).toEqual({ a: 1 });
+  });
+  it("throws on anything that is not an object after two passes", () => {
+    expect(() => parseAwsJson("not json")).toThrow();
+    expect(() => parseAwsJson(null)).toThrow();
+    expect(() => parseAwsJson("[1]")).toThrow();
+    expect(() => parseAwsJson(JSON.stringify(JSON.stringify(JSON.stringify({ a: 1 }))))).toThrow();
   });
 });

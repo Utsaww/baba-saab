@@ -45,3 +45,9 @@ export function removedMediaKeys(before, after, invitationId) {
   const previous = new Set(mediaKeys(before).map(({ key }) => key));
   return [...previous].filter((key) => key.startsWith(folder) && isSafeKey(key) && !kept.has(key));
 }
+
+/** Files to delete after a change: dropped by `after`, and not used by any content in `keep` (e.g. the live copy). */
+export function mediaKeysToDelete({ before, after, keep = [], invitationId }) {
+  const kept = new Set(keep.filter(Boolean).flatMap((c) => mediaKeys(c).map(({ key }) => key)));
+  return removedMediaKeys(before, after, invitationId).filter((key) => !kept.has(key));
+}

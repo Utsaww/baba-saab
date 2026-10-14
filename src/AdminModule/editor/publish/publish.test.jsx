@@ -101,6 +101,11 @@ describe("PublishPanel — published", () => {
     await userEvent.click(screen.getByRole("button", { name: "Update live invitation" }));
     await waitFor(() => expect(p.onUpdateLive).toHaveBeenCalled());
   });
+  it("disables its buttons while the editor is running a request", () => {
+    render(<PublishPanel publishing={base({ live, state: "changes", pending: true })} ready content={{}} />);
+    expect(screen.getByRole("button", { name: "Update live invitation" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "New preview link" })).toBeDisabled();
+  });
   it("shows a server refusal", () => {
     render(<PublishPanel publishing={base({ live, state: "changes", error: "Some details are still missing." })} ready content={{}} />);
     expect(screen.getByRole("alert")).toHaveTextContent("Some details are still missing.");

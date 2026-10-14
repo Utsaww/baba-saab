@@ -311,6 +311,70 @@ describe("EditorShell publishing", () => {
     expect(screen.getByLabelText("Link name").value).toMatch(/^priya-weds-rahul-[a-z2-9]{4}$/);
   });
 
+  it("never deletes a file the copy being sent live uses, even when a save finishes during the request", async () => {
+    let finish;
+    const updateLiveAction = vi.fn(() => new Promise((resolve) => (finish = resolve)));
+    const { saveAction } = renderEditor({ invitation: { ...published, version: 6 }, publishActions: { updateLiveAction } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Update live invitation" })));
+    await settle();
+    expect(updateLiveAction).toHaveBeenCalledWith({ id: "inv-test", expectedVersion: 6 });
+    // While the request runs, staff remove the cover and the autosave stores that.
+    fireEvent.click(screen.getByRole("button", { name: /5\./ }));
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: "Remove cover photo" }));
+    confirm.mockRestore();
+    await act(async () => vi.advanceTimersByTime(3000));
+    expect(saveAction).toHaveBeenCalledTimes(1);
+    expect(storage.deleteMedia).not.toHaveBeenCalled();
+    await act(async () => finish({ ok: true, liveVersion: 6 }));
+    await settle();
+    // Guests now see version 6, which still shows the cover.
+    expect(storage.deleteMedia).not.toHaveBeenCalled();
+    expect(screen.getByText("You have changes guests can't see yet")).toBeInTheDocument();
+  });
+
+  it("does not delete a file the copy being published uses when a save finishes during the request", async () => {
+    let finish;
+    const publishAction = vi.fn(() => new Promise((resolve) => (finish = resolve)));
+    renderEditor({ invitation: { content: withCover }, initialStep: 8, publishActions: { publishAction } });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: /5\./ }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove cover photo" }));
+    confirm.mockRestore();
+    await act(async () => vi.advanceTimersByTime(3000));
+    await act(async () => finish({ ok: true, status: "published", slug: "priya-weds-rahul-k3f9", liveVersion: 5 }));
+    await settle();
+    expect(storage.deleteMedia).not.toHaveBeenCalled();
+  });
+
+  it("shows header Update live errors on any step, and sends one request for a double click", async () => {
+    let finish;
+    const updateLiveAction = vi.fn(() => new Promise((resolve) => (finish = resolve)));
+    renderEditor({ invitation: { ...published, version: 6 }, publishActions: { updateLiveAction } });
+    const button = screen.getByRole("button", { name: "Update live invitation" });
+    await act(async () => fireEvent.click(button));
+    await act(async () => fireEvent.click(button));
+    await settle();
+    expect(button).toBeDisabled();
+    expect(updateLiveAction).toHaveBeenCalledTimes(1);
+    await act(async () => finish({ ok: false, message: "Some details are still missing.", missing: ["Add the venue"] }));
+    await settle();
+    expect(screen.getByRole("alert")).toHaveTextContent("Some details are still missing. Add the venue");
+    expect(button).toBeEnabled();
+  });
+
+  it("says the server couldn't be reached when an action call fails", async () => {
+    renderEditor({ initialStep: 8, publishActions: { publishAction: vi.fn(async () => Promise.reject(new TypeError("Failed to fetch"))) } });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
+    await settle();
+    confirm.mockRestore();
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't reach the server. Check your connection and try again.");
+    expect(screen.getByRole("button", { name: "Publish" })).toBeEnabled();
+  });
+
   it("tries a second generated name when the first was just taken", async () => {
     const setSlugAction = vi
       .fn()

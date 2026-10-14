@@ -1,5 +1,5 @@
 const GENERIC = "Something went wrong. Please try again.";
-export const OFFLINE_MESSAGE = "Couldn't reach the server. Check your connection and try again.";
+export { OFFLINE_MESSAGE } from "../messages";
 
 const STATUS_LABELS = {
   invited: "Invited · hasn't signed in yet",

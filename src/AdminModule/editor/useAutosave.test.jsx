@@ -195,7 +195,7 @@ describe("useAutosave settle", () => {
       settled = await result.current.settle();
     });
     expect(save).not.toHaveBeenCalled();
-    expect(settled).toEqual({ ok: true, version: 1 });
+    expect(settled).toEqual({ ok: true, version: 1, content: { n: 0 } });
   });
 
   it("waits for the save in progress, then saves edits queued behind it, and resolves with the final version", async () => {
@@ -213,7 +213,7 @@ describe("useAutosave settle", () => {
     });
     expect(save).toHaveBeenCalledTimes(2);
     expect(save).toHaveBeenLastCalledWith({ content: { n: 2 }, expectedVersion: 2 });
-    expect(settled).toEqual({ ok: true, version: 3 });
+    expect(settled).toEqual({ ok: true, version: 3, content: { n: 2 } });
   });
 
   it("resolves with the failure when a save fails, and does not save after a conflict", async () => {

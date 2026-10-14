@@ -11,18 +11,20 @@ const button = "min-h-[44px] rounded-full px-5 text-sm";
 export default function PublishPanel({ publishing, ready }) {
   const { live, state, busy, error, origin } = publishing;
   const [slug, setSlug] = useState(live.slug ?? "");
-  const [pending, setPending] = useState(false);
+  const [running, setRunning] = useState(false);
+  // A request started here, or one the editor is already running (e.g. from the header).
+  const pending = running || Boolean(publishing.pending);
   const published = live.status === "published";
 
   // A link name saved elsewhere (claimed automatically, or saved from this field) becomes the field's value.
   useEffect(() => setSlug(live.slug ?? ""), [live.slug]);
 
   const run = async (fn) => {
-    setPending(true);
+    setRunning(true);
     try {
       await fn();
     } finally {
-      setPending(false);
+      setRunning(false);
     }
   };
 

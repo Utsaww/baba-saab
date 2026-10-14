@@ -93,7 +93,7 @@ export function useAutosave({ content, initialVersion, save, onSaved, delay = SA
   const flushNow = useCallback(() => runSave(), [runSave]);
 
   // Saves until nothing is pending — the save in progress, then any edits queued behind it — and resolves with
-  // { ok: true, version } of the stored copy, or the first failed save's result. Saves nothing when all is saved.
+  // { ok: true, version, content } of the stored copy, or the first failed save's result. Saves nothing when all is saved.
   const settle = useCallback(async () => {
     if (inFlight.current) {
       const result = await inFlight.current;
@@ -104,7 +104,7 @@ export function useAutosave({ content, initialVersion, save, onSaved, delay = SA
       const result = await runSave();
       if (!result?.ok) return result;
     }
-    return { ok: true, version: lastGood.current.version };
+    return { ok: true, version: lastGood.current.version, content: lastGood.current.content };
   }, [runSave]);
 
   return { state, retry, flushNow, settle };

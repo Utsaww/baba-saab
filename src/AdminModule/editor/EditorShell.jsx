@@ -9,6 +9,7 @@ import { generateSlug } from "@/InvitationModule/lib/slug";
 import { deleteMedia } from "@/AdminModule/media/storage";
 import { useUploads } from "@/AdminModule/media/useUploads";
 import { SLUG_TAKEN } from "@/AdminModule/invitations/publishing";
+import { OFFLINE_MESSAGE } from "@/AdminModule/messages";
 import { indexFields } from "@/InvitationModule/lib/indexFields";
 import { hasUnsavedChanges } from "./autosave";
 import { getIn, setIn } from "./paths";
@@ -57,9 +58,12 @@ export default function EditorShell({
   // Files are deleted only after a save that no longer references them has succeeded,
   // and never while the live copy guests see still uses them (Update live deletes those).
   const lastSaved = useRef(invitation.content);
+  // The copy a publish or Update live request is sending; it may become what guests see, so its files are kept.
+  const sending = useRef(null);
   const onSaved = useCallback(
     (saved) => {
-      const removed = mediaKeysToDelete({ before: lastSaved.current, after: saved, keep: [liveRef.current.publishedContent], invitationId: invitation.id });
+      const keep = [liveRef.current.publishedContent, sending.current];
+      const removed = mediaKeysToDelete({ before: lastSaved.current, after: saved, keep, invitationId: invitation.id });
       lastSaved.current = saved;
       if (removed.length > 0) deleteMedia(removed);
     },
@@ -68,58 +72,98 @@ export default function EditorShell({
   const { state, retry, flushNow, settle } = useAutosave({ content, initialVersion: invitation.version, save, onSaved });
   const liveStatus = liveState({ status: live.status, version: state.version, liveVersion: live.liveVersion });
 
-  // Publishing works on the stored copy, so pending edits are saved first and the version that save produced is sent.
-  // Returns the version, or null after showing why it couldn't be saved.
-  const savedVersion = useCallback(async () => {
+  // Server actions can get a new identity after a revalidation; always call the latest ones.
+  const actionsRef = useRef(publishActions);
+  actionsRef.current = publishActions;
+  // A server action that never answers (dropped connection) rejects on the client; staff get a sentence instead.
+  const call = async (name, args) => {
+    try {
+      return await actionsRef.current[name](args);
+    } catch {
+      return { ok: false, message: OFFLINE_MESSAGE };
+    }
+  };
+
+  // One publish, Update live or new preview link at a time, shared by the header and the Review panel buttons.
+  const [publishPending, setPublishPending] = useState(false);
+  const pendingRef = useRef(false);
+  const exclusive = async (fn) => {
+    if (pendingRef.current) return;
+    pendingRef.current = true;
+    setPublishPending(true);
+    try {
+      await fn();
+    } finally {
+      pendingRef.current = false;
+      setPublishPending(false);
+    }
+  };
+
+  // Publishing works on the stored copy, so pending edits are saved first; the version and content that
+  // save stored are what is sent and what guests will see. Returns them, or null after showing why not.
+  const savedCopy = async () => {
     const result = await settle();
-    if (result?.ok) return result.version;
+    if (result?.ok) return result;
     setPublishError(result?.conflict ? "Updated by someone else — reload the page." : "Couldn't save your latest changes. Try again.");
     return null;
-  }, [settle]);
+  };
 
   const showFailure = (r) => {
     if (r?.conflict) setPublishError("Updated by someone else — reload the page.");
     else setPublishError([r?.message ?? "Couldn't publish. Check your connection and try again.", ...(r?.missing ?? [])].join(" "));
   };
 
-  const onPublish = async (slug) => {
+  // Runs a publish-type request for the stored copy. While it runs, saves keep that copy's files. After a
+  // failure they are left alone: an unanswered request may still have made that copy live.
+  const sendLive = async (name, args, onOk) => {
     setPublishError(null);
-    const expectedVersion = await savedVersion();
-    if (expectedVersion === null) return;
-    const r = await publishActions.publishAction({ id: invitation.id, expectedVersion, slug });
-    if (r?.ok) setLive((l) => ({ ...l, status: "published", slug: r.slug, liveVersion: r.liveVersion, publishedContent: lastSaved.current }));
-    else showFailure(r);
+    const copy = await savedCopy();
+    if (!copy) return;
+    sending.current = copy.content;
+    try {
+      const r = await call(name, { id: invitation.id, expectedVersion: copy.version, ...args });
+      if (r?.ok) onOk(r, copy.content);
+      else showFailure(r);
+    } finally {
+      sending.current = null;
+    }
   };
 
-  const onUpdateLive = async () => {
-    setPublishError(null);
-    const expectedVersion = await savedVersion();
-    if (expectedVersion === null) return;
-    const r = await publishActions.updateLiveAction({ id: invitation.id, expectedVersion });
-    if (!r?.ok) {
-      showFailure(r);
-      return;
-    }
-    const old = liveRef.current.publishedContent;
-    const now = lastSaved.current;
-    // Files only the old live copy still used can go now that guests see the new one.
-    const removed = mediaKeysToDelete({ before: old, after: now, keep: [now], invitationId: invitation.id });
-    if (removed.length > 0) deleteMedia(removed);
-    setLive((l) => ({ ...l, liveVersion: r.liveVersion, publishedContent: now }));
-  };
+  const onPublish = (slug) =>
+    exclusive(() =>
+      sendLive("publishAction", { slug }, (r, sent) => {
+        liveRef.current = { ...liveRef.current, publishedContent: sent };
+        setLive((l) => ({ ...l, status: "published", slug: r.slug, liveVersion: r.liveVersion, publishedContent: sent }));
+      }),
+    );
+
+  const onUpdateLive = () =>
+    exclusive(() =>
+      sendLive("updateLiveAction", {}, (r, sent) => {
+        // Files only the old live copy used can go now that guests see the new one — unless the current draft uses them.
+        const removed = mediaKeysToDelete({ before: liveRef.current.publishedContent, after: sent, keep: [sent, lastSaved.current], invitationId: invitation.id });
+        if (removed.length > 0) deleteMedia(removed);
+        liveRef.current = { ...liveRef.current, publishedContent: sent };
+        setLive((l) => ({ ...l, liveVersion: r.liveVersion, publishedContent: sent }));
+      }),
+    );
 
   const onSetSlug = async (slug) => {
     setPublishError(null);
-    const r = await publishActions.setSlugAction({ id: invitation.id, slug });
+    const r = await call("setSlugAction", { id: invitation.id, slug });
     if (r?.ok) setLive((l) => ({ ...l, slug: r.slug }));
     else setPublishError(r?.message ?? "Couldn't save the link name. Try again.");
     return r;
   };
 
-  // Server actions can get a new identity after a revalidation; the slug check must not restart because of it.
-  const actionsRef = useRef(publishActions);
-  actionsRef.current = publishActions;
-  const onCheckSlug = useCallback((slug) => actionsRef.current.checkSlugAction({ id: invitation.id, slug }), [invitation.id]);
+  // Stable identity, so a revalidation doesn't restart the debounced check.
+  const onCheckSlug = useCallback(async (slug) => {
+    try {
+      return await actionsRef.current.checkSlugAction({ id: invitation.id, slug });
+    } catch {
+      return { status: "error", message: OFFLINE_MESSAGE };
+    }
+  }, [invitation.id]);
 
   // A draft without a link name gets one from the couple's names the first time Review opens.
   const claimed = useRef(false);
@@ -127,20 +171,21 @@ export default function EditorShell({
     if (step !== 8 || live.status !== "draft" || live.slug || claimed.current || !actionsRef.current.setSlugAction) return;
     claimed.current = true;
     (async () => {
-      let r = await actionsRef.current.setSlugAction({ id: invitation.id, slug: generateSlug(content) });
-      if (!r?.ok && r?.message === SLUG_TAKEN) r = await actionsRef.current.setSlugAction({ id: invitation.id, slug: generateSlug(content) });
+      let r = await call("setSlugAction", { id: invitation.id, slug: generateSlug(content) });
+      if (!r?.ok && r?.message === SLUG_TAKEN) r = await call("setSlugAction", { id: invitation.id, slug: generateSlug(content) });
       if (r?.ok) setLive((l) => ({ ...l, slug: r.slug }));
       else setPublishError(r?.message ?? "Couldn't save the link name. Try again.");
     })();
     // Runs when Review opens; the content at that moment is what the name comes from, so content is not a dependency.
   },[step, live.status, live.slug, invitation.id]);
 
-  const onNewPreviewLink = async () => {
-    setPublishError(null);
-    const r = await publishActions.newPreviewLinkAction({ id: invitation.id });
-    if (r?.ok) setLive((l) => ({ ...l, previewToken: r.previewToken }));
-    else setPublishError(r?.message ?? "Couldn't make a new preview link. Try again.");
-  };
+  const onNewPreviewLink = () =>
+    exclusive(async () => {
+      setPublishError(null);
+      const r = await call("newPreviewLinkAction", { id: invitation.id });
+      if (r?.ok) setLive((l) => ({ ...l, previewToken: r.previewToken }));
+      else setPublishError(r?.message ?? "Couldn't make a new preview link. Try again.");
+    });
   // Edits that are dirty, or saving with nothing queued, are saved by the autosave/unmount flush; the rest are at risk.
   const saveAtRisk = state.status === "error" || state.status === "conflict" || (state.status === "saving" && state.queued);
   const atRisk = uploads.busy || saveAtRisk;
@@ -204,7 +249,12 @@ export default function EditorShell({
         <SaveStatus state={state} />
       </div>
       <SaveBanners state={state} onRetry={retry} onReload={reload} />
-      {liveStatus === "changes" && step !== 8 ? <ChangesNote onUpdateLive={onUpdateLive} /> : null}
+      {step !== 8 && publishError ? (
+        <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          {publishError}
+        </p>
+      ) : null}
+      {liveStatus === "changes" && step !== 8 ? <ChangesNote pending={publishPending} onUpdateLive={onUpdateLive} /> : null}
 
       <div className="mt-6 flex flex-col gap-6 lg:flex-row">
         <aside className="lg:w-60 lg:shrink-0">
@@ -237,6 +287,7 @@ export default function EditorShell({
                 state: liveStatus,
                 busy: uploads.busy,
                 error: publishError,
+                pending: publishPending,
                 origin,
                 onSetSlug,
                 onCheckSlug,

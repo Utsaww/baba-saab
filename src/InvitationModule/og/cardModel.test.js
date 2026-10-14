@@ -19,5 +19,7 @@ describe("cardModel", () => {
     const m = cardModel(hi);
     expect(m.lang).toBe("hi");
     expect(m.names).toBe("प्रिया & राहुल");
+    expect(m.fontFamily).toBe("Devanagari, Display");
+    expect(cardModel(inv).fontFamily).toBe("Display");
   });
 });

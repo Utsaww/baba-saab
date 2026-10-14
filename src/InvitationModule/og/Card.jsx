@@ -1,7 +1,6 @@
 export function InvitationCard({ model }) {
-  const font = model.lang === "hi" ? "Devanagari" : "Display";
   return (
-    <div style={{ width: 1200, height: 630, display: "flex", position: "relative", background: model.colors.bg, fontFamily: font }}>
+    <div style={{ width: 1200, height: 630, display: "flex", position: "relative", background: model.colors.bg, fontFamily: model.fontFamily }}>
       {model.coverUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={model.coverUrl} width={1200} height={630} style={{ position: "absolute", inset: 0, objectFit: "cover" }} alt="" />

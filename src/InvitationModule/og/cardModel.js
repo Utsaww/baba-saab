@@ -10,6 +10,8 @@ export function cardModel(invitation) {
   const coverKey = invitation.media?.coverKey;
   return {
     lang,
+    // Devanagari subset has no Latin glyphs (&, digits), so hi cards fall back to the Latin face per glyph.
+    fontFamily: lang === "hi" ? "Devanagari, Display" : "Display",
     names: coupleTitle(invitation, lang),
     date: formatDate(invitation.mainDate, lang),
     coverUrl: coverKey ? mediaUrl(coverKey) : null,

@@ -13,7 +13,7 @@ This guide grows as new parts of the invitation system go live. Everything descr
 | **Staff** | *Owner only.* Invite people to the admin area and remove them. |
 | **Help** | This guide. |
 
-Creating, publishing and sharing real invitations arrives in the next releases. This guide will gain a section for each one.
+Guests' RSVP forms arrive in the next release. This guide will gain a section for it.
 
 ## Signing in
 
@@ -64,7 +64,7 @@ They can't sign in again. If they're signed in at that moment, their session end
 Open **Invitations** in the left menu to see every invitation, with the most recently edited at the top. Each row shows the couple's names, the design, the wedding date, its status and who edited it last.
 
 - **Search:** type part of a name (English or Hindi) or a phone number.
-- **Status:** choose a status to see only those invitations. New invitations are **Draft** until they are published.
+- **Status:** choose a status to see only those invitations. New invitations are **Draft** until they are published. After that, a badge shows **Live** (guests see the latest version) or **Changes not live** (you have edits guests can't see yet). Live invitations have an **Open** link that shows the guest page.
 - Click a row to open it in the editor.
 
 ## Creating an invitation
@@ -137,7 +137,55 @@ Choose which parts of the invitation guests see, and in what order. Untick **Sho
 
 ## Editor step 8: Review
 
-This step lists everything still needed before the invitation can be published, such as a missing date or an event without a time. Click **Go to step N** to fix each one. Publishing arrives in the next release. Until then, everything is saved as a draft.
+This step lists everything still needed before the invitation can be published, such as a missing date or an event without a time. Click **Go to step N** to fix each one. When the list is clear it says **Everything needed is filled in.** The rest of the step is where you choose the link name, share the customer preview link and publish. Each part is explained below.
+
+### Choosing the link name
+
+The **Link name** is the last part of the invitation's web address, for example `/invitation/riya-and-arjun`. A name is suggested from the couple's names, and saved for you when possible. To change it:
+
+1. Type a new name. Use lowercase letters, numbers and dashes only (capitals are changed to lowercase for you).
+2. Wait a moment for **✓ available**. If the name is taken or not allowed, a red message says why.
+3. Click **Save link name**.
+
+Choose the name before sharing any link, because it is **locked once the invitation is published**. Links already sent to guests keep working.
+
+### Preview links for customers
+
+As soon as the link name is saved, **Customer preview link** appears. Use it to show the customer their invitation before it goes live.
+
+- **Copy** copies the link. **Send on WhatsApp** opens WhatsApp with a ready message.
+- The preview always shows the **latest saved draft**, with a "Preview — not published yet" banner at the top. Guests never see the banner on the live link.
+- If the link went to the wrong person, click **New preview link** and confirm. The old link stops working ("This invitation is no longer available") and you get a fresh one.
+
+### Publishing
+
+Click **Publish** when the checklist is clear. The button is greyed out while anything is still needed, while photos or music are still uploading ("Wait for uploads to finish"), or until a link name is saved. A confirmation asks you to check, because the link name can't be changed afterwards.
+
+After publishing you'll see:
+
+- **Live link for guests:** the link to send. **Copy** and **Send on WhatsApp** work as above.
+- **Download QR code:** see QR codes below.
+- **Open:** shows the live invitation in a new tab.
+
+### Making changes after publishing
+
+Edits keep saving automatically, but they are private. Guests keep seeing the version that was published until you update it.
+
+- A yellow note says **You have changes guests can't see yet**, with an **Update live invitation** button. It also appears at the top of the other steps. Click it when you're ready, and guests see the change within seconds.
+- Before updating, the customer can check the changes on their **preview link**, which already shows your latest edits.
+- In the invitations list, the badge reads **Changes not live** until you update.
+
+### WhatsApp preview cards
+
+When the live link is pasted into WhatsApp, it shows a card with the cover photo, the couple's names and the wedding date. Preview links show a plain generic card, so nothing is given away early. WhatsApp keeps cards for a while, so people who already received the link may see an older card after you change the photo, names or date. New recipients see the latest.
+
+### QR codes
+
+After publishing, click **Download QR code**. It saves a file named like `riya-and-arjun-qr.png` that points to the live link. It prints sharply at any size. Always scan it with a phone before sending it to print.
+
+### RSVP forms
+
+Guests' RSVP forms don't appear on live invitations yet. They arrive in the next release. Anything you set in step 7 is saved and will be used then.
 
 ## Music Library
 

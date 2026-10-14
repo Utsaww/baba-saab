@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { render } from "@testing-library/react";
+import { vi } from "vitest";
+import EditorShell from "./EditorShell";
 import { cleanDraft } from "@/InvitationModule/schema/draft";
 import { useUploads } from "@/AdminModule/media/useUploads";
 import { getIn, setIn } from "./paths";
@@ -48,4 +50,37 @@ export function renderStep(Step, initial, extraProps = {}) {
   }
   const utils = render(<Harness />);
   return { ...utils, latest: () => current };
+}
+
+export const DRAFT_LIVE_FIELDS = { status: "draft", slug: "priya-weds-rahul-k3f9", previewToken: "tok_1", liveVersion: null, publishedContent: null };
+
+/** Everything the publish checklist needs. */
+export const COMPLETE_CONTENT = {
+  templateId: "royal",
+  theme: { palette: "maroon-gold" },
+  language: "en",
+  couple: { bride: { name: { en: "Priya" } }, groom: { name: { en: "Rahul" } } },
+  mainDate: "2027-02-14",
+  venue: { name: { en: "Riviera" }, address: { en: "MG Road" } },
+};
+
+/**
+ * Renders the whole editor for invitation "inv-test" with mocked server actions. Each save answers with the next version.
+ * Returns the invitation, `saveAction` and the `publishActions` mocks alongside the usual render result.
+ */
+export function renderEditor({ invitation = {}, publishActions = {}, saveAction, initialStep = 2 } = {}) {
+  const inv = { id: "inv-test", version: 5, content: COMPLETE_CONTENT, ...DRAFT_LIVE_FIELDS, ...invitation };
+  const save = saveAction ?? vi.fn(async ({ expectedVersion }) => ({ ok: true, version: expectedVersion + 1, savedAt: "2026-10-14T05:00:00.000Z" }));
+  const actions = {
+    checkSlugAction: vi.fn(async () => ({ status: "available" })),
+    setSlugAction: vi.fn(async ({ slug }) => ({ ok: true, slug })),
+    newPreviewLinkAction: vi.fn(async () => ({ ok: true, previewToken: "tok_2" })),
+    publishAction: vi.fn(async ({ expectedVersion, slug }) => ({ ok: true, status: "published", slug, liveVersion: expectedVersion })),
+    updateLiveAction: vi.fn(async ({ expectedVersion }) => ({ ok: true, liveVersion: expectedVersion })),
+    ...publishActions,
+  };
+  const utils = render(
+    <EditorShell invitation={inv} initialStep={initialStep} templates={TEMPLATE_CHOICES} saveAction={save} publishActions={actions} />,
+  );
+  return { ...utils, invitation: inv, saveAction: save, publishActions: actions };
 }

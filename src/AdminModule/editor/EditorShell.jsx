@@ -3,13 +3,17 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cleanDraft } from "@/InvitationModule/schema/draft";
-import { removedMediaKeys } from "@/InvitationModule/lib/mediaKeys";
+import { mediaKeysToDelete } from "@/InvitationModule/lib/mediaKeys";
+import { liveState } from "@/InvitationModule/lib/liveState";
+import { generateSlug } from "@/InvitationModule/lib/slug";
 import { deleteMedia } from "@/AdminModule/media/storage";
 import { useUploads } from "@/AdminModule/media/useUploads";
+import { SLUG_TAKEN } from "@/AdminModule/invitations/publishing";
 import { indexFields } from "@/InvitationModule/lib/indexFields";
 import { hasUnsavedChanges } from "./autosave";
 import { getIn, setIn } from "./paths";
 import PreviewPane from "./PreviewPane";
+import ChangesNote from "./publish/ChangesNote";
 import SaveStatus, { SaveBanners } from "./SaveStatus";
 import StepNav from "./StepNav";
 import { guideHref, STEPS } from "./steps";
@@ -18,27 +22,125 @@ import { LEAVE_MESSAGE, UPLOADING_MESSAGE, useLeaveGuard } from "./useLeaveGuard
 
 const navButton = "min-h-[44px] rounded-full border border-stone-300 px-5 text-sm hover:bg-stone-100";
 
-export default function EditorShell({ invitation, initialStep, templates, saveAction, musicTracks = [], musicTracksError = false }) {
+export default function EditorShell({
+  invitation,
+  initialStep,
+  templates,
+  saveAction,
+  publishActions = {},
+  musicTracks = [],
+  musicTracksError = false,
+}) {
   const [content, setContent] = useState(invitation.content);
   const [step, setStep] = useState(initialStep);
   const [showPreview, setShowPreview] = useState(false);
+  // What guests can see: the link name, the preview code and the published copy.
+  const [live, setLive] = useState(() => ({
+    status: invitation.status ?? "draft",
+    slug: invitation.slug ?? null,
+    previewToken: invitation.previewToken ?? null,
+    liveVersion: invitation.liveVersion ?? null,
+    publishedContent: invitation.publishedContent ?? null,
+  }));
+  const liveRef = useRef(live);
+  liveRef.current = live;
+  const [publishError, setPublishError] = useState(null);
+  // Set after mount so the server render and the first client render agree.
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
 
   const save = useCallback(
     ({ content: latest, expectedVersion }) => saveAction({ id: invitation.id, expectedVersion, content: latest }),
     [saveAction, invitation.id],
   );
   const uploads = useUploads();
-  // Files are deleted only after a save that no longer references them has succeeded.
+  // Files are deleted only after a save that no longer references them has succeeded,
+  // and never while the live copy guests see still uses them (Update live deletes those).
   const lastSaved = useRef(invitation.content);
   const onSaved = useCallback(
     (saved) => {
-      const removed = removedMediaKeys(lastSaved.current, saved, invitation.id);
+      const removed = mediaKeysToDelete({ before: lastSaved.current, after: saved, keep: [liveRef.current.publishedContent], invitationId: invitation.id });
       lastSaved.current = saved;
       if (removed.length > 0) deleteMedia(removed);
     },
     [invitation.id],
   );
-  const { state, retry, flushNow } = useAutosave({ content, initialVersion: invitation.version, save, onSaved });
+  const { state, retry, flushNow, settle } = useAutosave({ content, initialVersion: invitation.version, save, onSaved });
+  const liveStatus = liveState({ status: live.status, version: state.version, liveVersion: live.liveVersion });
+
+  // Publishing works on the stored copy, so pending edits are saved first and the version that save produced is sent.
+  // Returns the version, or null after showing why it couldn't be saved.
+  const savedVersion = useCallback(async () => {
+    const result = await settle();
+    if (result?.ok) return result.version;
+    setPublishError(result?.conflict ? "Updated by someone else — reload the page." : "Couldn't save your latest changes. Try again.");
+    return null;
+  }, [settle]);
+
+  const showFailure = (r) => {
+    if (r?.conflict) setPublishError("Updated by someone else — reload the page.");
+    else setPublishError([r?.message ?? "Couldn't publish. Check your connection and try again.", ...(r?.missing ?? [])].join(" "));
+  };
+
+  const onPublish = async (slug) => {
+    setPublishError(null);
+    const expectedVersion = await savedVersion();
+    if (expectedVersion === null) return;
+    const r = await publishActions.publishAction({ id: invitation.id, expectedVersion, slug });
+    if (r?.ok) setLive((l) => ({ ...l, status: "published", slug: r.slug, liveVersion: r.liveVersion, publishedContent: lastSaved.current }));
+    else showFailure(r);
+  };
+
+  const onUpdateLive = async () => {
+    setPublishError(null);
+    const expectedVersion = await savedVersion();
+    if (expectedVersion === null) return;
+    const r = await publishActions.updateLiveAction({ id: invitation.id, expectedVersion });
+    if (!r?.ok) {
+      showFailure(r);
+      return;
+    }
+    const old = liveRef.current.publishedContent;
+    const now = lastSaved.current;
+    // Files only the old live copy still used can go now that guests see the new one.
+    const removed = mediaKeysToDelete({ before: old, after: now, keep: [now], invitationId: invitation.id });
+    if (removed.length > 0) deleteMedia(removed);
+    setLive((l) => ({ ...l, liveVersion: r.liveVersion, publishedContent: now }));
+  };
+
+  const onSetSlug = async (slug) => {
+    setPublishError(null);
+    const r = await publishActions.setSlugAction({ id: invitation.id, slug });
+    if (r?.ok) setLive((l) => ({ ...l, slug: r.slug }));
+    else setPublishError(r?.message ?? "Couldn't save the link name. Try again.");
+    return r;
+  };
+
+  // Server actions can get a new identity after a revalidation; the slug check must not restart because of it.
+  const actionsRef = useRef(publishActions);
+  actionsRef.current = publishActions;
+  const onCheckSlug = useCallback((slug) => actionsRef.current.checkSlugAction({ id: invitation.id, slug }), [invitation.id]);
+
+  // A draft without a link name gets one from the couple's names the first time Review opens.
+  const claimed = useRef(false);
+  useEffect(() => {
+    if (step !== 8 || live.status !== "draft" || live.slug || claimed.current || !actionsRef.current.setSlugAction) return;
+    claimed.current = true;
+    (async () => {
+      let r = await actionsRef.current.setSlugAction({ id: invitation.id, slug: generateSlug(content) });
+      if (!r?.ok && r?.message === SLUG_TAKEN) r = await actionsRef.current.setSlugAction({ id: invitation.id, slug: generateSlug(content) });
+      if (r?.ok) setLive((l) => ({ ...l, slug: r.slug }));
+      else setPublishError(r?.message ?? "Couldn't save the link name. Try again.");
+    })();
+    // Runs when Review opens; the content at that moment is what the name comes from, so content is not a dependency.
+  },[step, live.status, live.slug, invitation.id]);
+
+  const onNewPreviewLink = async () => {
+    setPublishError(null);
+    const r = await publishActions.newPreviewLinkAction({ id: invitation.id });
+    if (r?.ok) setLive((l) => ({ ...l, previewToken: r.previewToken }));
+    else setPublishError(r?.message ?? "Couldn't make a new preview link. Try again.");
+  };
   // Edits that are dirty, or saving with nothing queued, are saved by the autosave/unmount flush; the rest are at risk.
   const saveAtRisk = state.status === "error" || state.status === "conflict" || (state.status === "saving" && state.queued);
   const atRisk = uploads.busy || saveAtRisk;
@@ -102,6 +204,7 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
         <SaveStatus state={state} />
       </div>
       <SaveBanners state={state} onRetry={retry} onReload={reload} />
+      {liveStatus === "changes" && step !== 8 ? <ChangesNote onUpdateLive={onUpdateLive} /> : null}
 
       <div className="mt-6 flex flex-col gap-6 lg:flex-row">
         <aside className="lg:w-60 lg:shrink-0">
@@ -129,6 +232,18 @@ export default function EditorShell({ invitation, initialStep, templates, saveAc
               musicTracks={musicTracks}
               musicTracksError={musicTracksError}
               uploads={uploads}
+              publishing={{
+                live,
+                state: liveStatus,
+                busy: uploads.busy,
+                error: publishError,
+                origin,
+                onSetSlug,
+                onCheckSlug,
+                onPublish,
+                onUpdateLive,
+                onNewPreviewLink,
+              }}
             />
           </div>
           <div className="mt-8 flex justify-between gap-3">

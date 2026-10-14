@@ -34,6 +34,26 @@ describe("InvitationList", () => {
     expect(screen.queryAllByRole("link")).toHaveLength(0);
   });
 
+  it("shows whether guests see the latest version, with an Open link for published invitations", () => {
+    const row = (id, extra) => ({ ...rows[0], id, coupleNames: `Couple ${id}`, ...extra });
+    const live = [
+      row("d", { status: "draft" }),
+      row("l", { status: "published", version: 7, liveVersion: 7, slug: "a-b" }),
+      row("c", { status: "published", version: 8, liveVersion: 7, slug: "c-d" }),
+    ];
+    render(<InvitationList rows={live} templateNames={templateNames} now={now} />);
+    const item = (name) => screen.getByText(name).closest("li");
+    expect(within(item("Couple d")).getByText("Draft")).toBeInTheDocument();
+    expect(within(item("Couple l")).getByText("Live")).toBeInTheDocument();
+    expect(within(item("Couple c")).getByText("Changes not live")).toBeInTheDocument();
+    expect(within(item("Couple d")).queryByRole("link", { name: "Open" })).not.toBeInTheDocument();
+    for (const [name, slug] of [["Couple l", "a-b"], ["Couple c", "c-d"]]) {
+      const open = within(item(name)).getByRole("link", { name: "Open" });
+      expect(open).toHaveAttribute("href", `/invitation/${slug}`);
+      expect(open).toHaveAttribute("target", "_blank");
+    }
+  });
+
   it("invites staff to create the first invitation", () => {
     render(<InvitationList rows={[]} templateNames={templateNames} now={now} />);
     expect(screen.getByText("No invitations yet.")).toBeInTheDocument();

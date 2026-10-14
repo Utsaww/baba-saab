@@ -1,7 +1,8 @@
 export const PUBLISH_FAILED = "Couldn't publish. Check your connection and try again.";
+export const SLUG_TAKEN = "That link name was just taken — try another.";
 
 const MESSAGES = {
-  SlugTaken: "That link name was just taken — try another.",
+  SlugTaken: SLUG_TAKEN,
   InvalidSlug: "That link name isn't allowed.",
   NotDraft: "This invitation is already published — reload the page.",
   NotPublished: "Publish the invitation first.",

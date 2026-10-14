@@ -9,7 +9,7 @@ vi.mock("@/AdminModule/media/photos", () => ({
 }));
 
 import EditorShell from "./EditorShell";
-import { TEMPLATE_CHOICES } from "./test-utils";
+import { COMPLETE_CONTENT, renderEditor, TEMPLATE_CHOICES } from "./test-utils";
 
 const invitation = {
   id: "inv-1",
@@ -228,5 +228,97 @@ describe("EditorShell upload leave message", () => {
     document.removeEventListener("click", stop);
     expect(confirm).toHaveBeenCalledWith("A photo or song is still uploading. Leave this page anyway?");
     confirm.mockRestore();
+  });
+});
+
+describe("EditorShell publishing", () => {
+  const COVER = "invitations/inv-test/a.jpg";
+  const withCover = { ...COMPLETE_CONTENT, media: { coverKey: COVER } };
+  const published = { status: "published", version: 5, liveVersion: 5, content: withCover, publishedContent: withCover };
+  // Lets chains of resolved promises (save, then publish) finish.
+  const settle = async () => {
+    for (let i = 0; i < 5; i += 1) await act(async () => {});
+  };
+  const goToReview = () => fireEvent.click(screen.getByRole("button", { name: /8\. Review/ }));
+  let storage;
+
+  beforeEach(async () => {
+    storage = await import("@/AdminModule/media/storage");
+    storage.deleteMedia.mockClear();
+  });
+
+  it("keeps a file the live copy still uses, and deletes it once Update live drops it", async () => {
+    const { publishActions } = renderEditor({ invitation: published, initialStep: 5 });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: "Remove cover photo" }));
+    confirm.mockRestore();
+    await act(async () => vi.advanceTimersByTime(3000));
+    expect(screen.getByText("Saved 10:30")).toBeInTheDocument();
+    expect(storage.deleteMedia).not.toHaveBeenCalled();
+
+    goToReview();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Update live invitation" })));
+    await settle();
+    expect(publishActions.updateLiveAction).toHaveBeenCalledWith({ id: "inv-test", expectedVersion: 6 });
+    expect(storage.deleteMedia).toHaveBeenCalledWith([COVER]);
+    expect(screen.queryByText("You have changes guests can't see yet")).not.toBeInTheDocument();
+  });
+
+  it("saves pending edits before publishing and sends the version that save produced", async () => {
+    const { publishActions, saveAction } = renderEditor();
+    fireEvent.change(screen.getByLabelText("Bride's name"), { target: { value: "Priyanka" } });
+    goToReview();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
+    await settle();
+    confirm.mockRestore();
+    expect(saveAction).toHaveBeenCalledTimes(1);
+    expect(publishActions.publishAction).toHaveBeenCalledWith({ id: "inv-test", expectedVersion: 6, slug: "priya-weds-rahul-k3f9" });
+    expect(screen.getByText("http://localhost:3000/invitation/priya-weds-rahul-k3f9")).toBeInTheDocument();
+    expect(screen.getByLabelText("Link name")).toHaveAttribute("readonly");
+  });
+
+  it("tells staff about changes guests can't see yet on every step", () => {
+    renderEditor({ invitation: { ...published, version: 6 } });
+    expect(screen.getByText("You have changes guests can't see yet")).toBeInTheDocument();
+  });
+
+  it("shows a conflict when someone else saved before publishing", async () => {
+    renderEditor({ initialStep: 8, publishActions: { publishAction: vi.fn(async () => ({ ok: false, conflict: true })) } });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
+    await settle();
+    confirm.mockRestore();
+    expect(screen.getByRole("alert")).toHaveTextContent("Updated by someone else — reload the page.");
+  });
+
+  it("shows what the server says is missing", async () => {
+    const publishAction = vi.fn(async () => ({ ok: false, message: "Some details are still missing.", missing: ["Add the venue"] }));
+    renderEditor({ initialStep: 8, publishActions: { publishAction } });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
+    await settle();
+    confirm.mockRestore();
+    expect(screen.getByRole("alert")).toHaveTextContent("Some details are still missing. Add the venue");
+  });
+
+  it("claims a link name from the couple's names on reaching Review", async () => {
+    const { publishActions } = renderEditor({ invitation: { slug: null } });
+    goToReview();
+    await settle();
+    expect(publishActions.setSlugAction).toHaveBeenCalledTimes(1);
+    expect(publishActions.setSlugAction.mock.calls[0][0].slug).toMatch(/^priya-weds-rahul-[a-z2-9]{4}$/);
+    expect(screen.getByLabelText("Link name").value).toMatch(/^priya-weds-rahul-[a-z2-9]{4}$/);
+  });
+
+  it("tries a second generated name when the first was just taken", async () => {
+    const setSlugAction = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, message: "That link name was just taken — try another." })
+      .mockImplementationOnce(async ({ slug }) => ({ ok: true, slug }));
+    renderEditor({ invitation: { slug: null }, initialStep: 8, publishActions: { setSlugAction } });
+    await settle();
+    expect(setSlugAction).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

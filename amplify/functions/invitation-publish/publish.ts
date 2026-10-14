@@ -24,8 +24,10 @@ export function isValidSlug(slug: unknown): slug is string {
   );
 }
 
+// Strongly consistent: the editor saves pending edits straight before publishing, and an eventually
+// consistent read could still return the version before that save and report a false conflict.
 async function load(db: Db, tables: Tables, id: string) {
-  const { Item } = await db.send(new GetCommand({ TableName: tables.invitation, Key: { id } }));
+  const { Item } = await db.send(new GetCommand({ TableName: tables.invitation, Key: { id }, ConsistentRead: true }));
   if (!Item) throw new PublishError("NotFound", "That invitation no longer exists.");
   return Item as { id: string; status: string; version: number; slug?: string | null; content: unknown };
 }

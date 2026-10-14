@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import ChangesNote from "./ChangesNote";
 import LinkBox from "./LinkBox";
+import PublishErrorNote from "./PublishErrorNote";
 import SlugField from "./SlugField";
 import { downloadQr, liveMessage, liveUrl, previewMessage, previewUrl } from "./links";
 
@@ -39,11 +40,7 @@ export default function PublishPanel({ publishing, ready }) {
 
   return (
     <div className="space-y-6">
-      {error ? (
-        <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-          {error}
-        </p>
-      ) : null}
+      <PublishErrorNote error={error} onGoToStep={publishing.onGoToStep} />
 
       <SlugField value={slug} onChange={setSlug} locked={published} saved={live.slug} onCheck={publishing.onCheckSlug} onSave={publishing.onSetSlug} />
 

@@ -8,13 +8,14 @@ import { liveState } from "@/InvitationModule/lib/liveState";
 import { generateSlug } from "@/InvitationModule/lib/slug";
 import { deleteMedia } from "@/AdminModule/media/storage";
 import { useUploads } from "@/AdminModule/media/useUploads";
-import { SLUG_TAKEN } from "@/AdminModule/invitations/publishing";
+import { PUBLISH_FAILED, SLUG_TAKEN } from "@/AdminModule/invitations/publishing";
 import { OFFLINE_MESSAGE } from "@/AdminModule/messages";
 import { indexFields } from "@/InvitationModule/lib/indexFields";
 import { hasUnsavedChanges } from "./autosave";
 import { getIn, setIn } from "./paths";
 import PreviewPane from "./PreviewPane";
 import ChangesNote from "./publish/ChangesNote";
+import PublishErrorNote from "./publish/PublishErrorNote";
 import SaveStatus, { SaveBanners } from "./SaveStatus";
 import StepNav from "./StepNav";
 import { guideHref, STEPS } from "./steps";
@@ -45,7 +46,10 @@ export default function EditorShell({
   }));
   const liveRef = useRef(live);
   liveRef.current = live;
+  // A sentence, or { message, missing } when the server lists what is still needed.
   const [publishError, setPublishError] = useState(null);
+  // Publish or Update live met a newer version: the conflict banner asks for a reload.
+  const [publishConflict, setPublishConflict] = useState(false);
   // Set after mount so the server render and the first client render agree.
   const [origin, setOrigin] = useState("");
   useEffect(() => setOrigin(window.location.origin), []);
@@ -60,9 +64,12 @@ export default function EditorShell({
   const lastSaved = useRef(invitation.content);
   // The copy a publish or Update live request is sending; it may become what guests see, so its files are kept.
   const sending = useRef(null);
+  // Copies sent by a publish or Update live whose outcome is unknown (no answer, or the generic failure):
+  // the server may have made one of them live, so their files are kept until the page reloads.
+  const maybeLive = useRef([]);
   const onSaved = useCallback(
     (saved) => {
-      const keep = [liveRef.current.publishedContent, sending.current];
+      const keep = [liveRef.current.publishedContent, sending.current, ...maybeLive.current];
       const removed = mediaKeysToDelete({ before: lastSaved.current, after: saved, keep, invitationId: invitation.id });
       lastSaved.current = saved;
       if (removed.length > 0) deleteMedia(removed);
@@ -104,26 +111,37 @@ export default function EditorShell({
   const savedCopy = async () => {
     const result = await settle();
     if (result?.ok) return result;
-    setPublishError(result?.conflict ? "Updated by someone else — reload the page." : "Couldn't save your latest changes. Try again.");
+    if (result?.conflict) setPublishConflict(true);
+    else setPublishError("Couldn't save your latest changes. Try again.");
     return null;
   };
 
   const showFailure = (r) => {
-    if (r?.conflict) setPublishError("Updated by someone else — reload the page.");
-    else setPublishError([r?.message ?? "Couldn't publish. Check your connection and try again.", ...(r?.missing ?? [])].join(" "));
+    if (r?.conflict) setPublishConflict(true);
+    else setPublishError({ message: r?.message ?? PUBLISH_FAILED, missing: r?.missing ?? [] });
   };
 
-  // Runs a publish-type request for the stored copy. While it runs, saves keep that copy's files. After a
-  // failure they are left alone: an unanswered request may still have made that copy live.
-  const sendLive = async (name, args, onOk) => {
+  // A refusal the server definitely made, so nothing went live: a conflict, missing details, or a known reason.
+  // No answer at all, or the generic failure, means the request may still have committed.
+  const definitelyRefused = (r) =>
+    Boolean(r?.conflict || r?.missing?.length || (r?.message && r.message !== OFFLINE_MESSAGE && r.message !== PUBLISH_FAILED));
+
+  // Runs a publish-type request for the stored copy. While it runs, saves keep that copy's files. When the
+  // outcome is unknown the copy may be live, so it joins `maybeLive` and its files are kept until reload.
+  const sendLive = async (name, args, onOk, onFail) => {
     setPublishError(null);
     const copy = await savedCopy();
     if (!copy) return;
     sending.current = copy.content;
     try {
       const r = await call(name, { id: invitation.id, expectedVersion: copy.version, ...args });
-      if (r?.ok) onOk(r, copy.content);
-      else showFailure(r);
+      if (r?.ok) {
+        onOk(r, copy.content);
+      } else {
+        if (!definitelyRefused(r)) maybeLive.current = [...maybeLive.current, copy.content];
+        showFailure(r);
+        onFail?.(r);
+      }
     } finally {
       sending.current = null;
     }
@@ -131,17 +149,25 @@ export default function EditorShell({
 
   const onPublish = (slug) =>
     exclusive(() =>
-      sendLive("publishAction", { slug }, (r, sent) => {
-        liveRef.current = { ...liveRef.current, publishedContent: sent };
-        setLive((l) => ({ ...l, status: "published", slug: r.slug, liveVersion: r.liveVersion, publishedContent: sent }));
-      }),
+      sendLive(
+        "publishAction",
+        { slug },
+        (r, sent) => {
+          liveRef.current = { ...liveRef.current, publishedContent: sent };
+          setLive((l) => ({ ...l, status: "published", slug: r.slug, liveVersion: r.liveVersion, publishedContent: sent }));
+        },
+        // A new link name saved before publishing failed: the old one is released, so links must use the new one.
+        (r) => {
+          if (r?.slug) setLive((l) => ({ ...l, slug: r.slug }));
+        },
+      ),
     );
 
   const onUpdateLive = () =>
     exclusive(() =>
       sendLive("updateLiveAction", {}, (r, sent) => {
         // Files only the old live copy used can go now that guests see the new one — unless the current draft uses them.
-        const removed = mediaKeysToDelete({ before: liveRef.current.publishedContent, after: sent, keep: [sent, lastSaved.current], invitationId: invitation.id });
+        const removed = mediaKeysToDelete({ before: liveRef.current.publishedContent, after: sent, keep: [sent, lastSaved.current, ...maybeLive.current], invitationId: invitation.id });
         if (removed.length > 0) deleteMedia(removed);
         liveRef.current = { ...liveRef.current, publishedContent: sent };
         setLive((l) => ({ ...l, liveVersion: r.liveVersion, publishedContent: sent }));
@@ -248,12 +274,8 @@ export default function EditorShell({
         </button>
         <SaveStatus state={state} />
       </div>
-      <SaveBanners state={state} onRetry={retry} onReload={reload} />
-      {step !== 8 && publishError ? (
-        <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-          {publishError}
-        </p>
-      ) : null}
+      <SaveBanners state={state} conflict={publishConflict} onRetry={retry} onReload={reload} />
+      {step !== 8 ? <PublishErrorNote error={publishError} onGoToStep={goTo} className="mt-4" /> : null}
       {liveStatus === "changes" && step !== 8 ? <ChangesNote pending={publishPending} onUpdateLive={onUpdateLive} /> : null}
 
       <div className="mt-6 flex flex-col gap-6 lg:flex-row">
@@ -294,6 +316,7 @@ export default function EditorShell({
                 onPublish,
                 onUpdateLive,
                 onNewPreviewLink,
+                onGoToStep: goTo,
               }}
             />
           </div>

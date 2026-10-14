@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 vi.mock("@/AdminModule/media/storage", () => ({
   uploadMedia: vi.fn(async ({ key }) => key),
   deleteMedia: vi.fn(async () => {}),
@@ -289,17 +289,93 @@ describe("EditorShell publishing", () => {
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
     await settle();
     confirm.mockRestore();
-    expect(screen.getByRole("alert")).toHaveTextContent("Updated by someone else — reload the page.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Updated by someone else — reload to see their changes.");
+    expect(screen.getByRole("button", { name: "Reload" })).toBeInTheDocument();
   });
 
-  it("shows what the server says is missing", async () => {
-    const publishAction = vi.fn(async () => ({ ok: false, message: "Some details are still missing.", missing: ["Add the venue"] }));
+  it("shows the conflict banner with Reload when Update live meets a newer version", async () => {
+    renderEditor({ invitation: { ...published, version: 6 }, publishActions: { updateLiveAction: vi.fn(async () => ({ ok: false, conflict: true })) } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Update live invitation" })));
+    await settle();
+    expect(screen.getByRole("alert")).toHaveTextContent("Updated by someone else — reload to see their changes.");
+    expect(screen.getByRole("button", { name: "Reload" })).toBeInTheDocument();
+  });
+
+  it("lists what the server says is missing, each linked to the step that fixes it", async () => {
+    const publishAction = vi.fn(async () => ({
+      ok: false,
+      message: "Some details are still missing.",
+      missing: [{ message: "Add the venue name", step: 3 }, { message: "Add the groom's name", step: 2 }],
+    }));
     renderEditor({ initialStep: 8, publishActions: { publishAction } });
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
     await settle();
     confirm.mockRestore();
-    expect(screen.getByRole("alert")).toHaveTextContent("Some details are still missing. Add the venue");
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Some details are still missing.");
+    const items = within(alert).getAllByRole("listitem");
+    expect(items.map((li) => li.textContent)).toEqual(["Add the venue nameGo to step 3", "Add the groom's nameGo to step 2"]);
+    fireEvent.click(within(alert).getByRole("button", { name: "Go to step 3" }));
+    expect(screen.getByRole("heading", { name: "3. Date, venue & travel" })).toBeInTheDocument();
+  });
+
+  it("shows the new link name in the preview link when publishing fails after saving it", async () => {
+    const publishAction = vi.fn(async () => ({ ok: false, message: "Couldn't publish. Check your connection and try again.", slug: "priya-rahul" }));
+    renderEditor({ initialStep: 8, publishActions: { publishAction } });
+    fireEvent.change(screen.getByLabelText("Link name"), { target: { value: "priya-rahul" } });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
+    await settle();
+    confirm.mockRestore();
+    expect(screen.getByText("http://localhost:3000/invitation/priya-rahul?preview=tok_1")).toBeInTheDocument();
+    expect(screen.queryByText(/invitation\/priya-weds-rahul-k3f9/)).not.toBeInTheDocument();
+  });
+
+  it("keeps the files of a copy whose Update live outcome is unknown, even after a save drops them", async () => {
+    const live = COMPLETE_CONTENT; // what guests saw before: no cover
+    const updateLiveAction = vi.fn(async () => Promise.reject(new TypeError("Failed to fetch")));
+    renderEditor({ invitation: { ...published, version: 6, publishedContent: live }, publishActions: { updateLiveAction } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Update live invitation" })));
+    await settle();
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't reach the server.");
+    // The request may still have made the copy with the cover live; staff now remove the cover.
+    fireEvent.click(screen.getByRole("button", { name: /5\./ }));
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: "Remove cover photo" }));
+    confirm.mockRestore();
+    await act(async () => vi.advanceTimersByTime(3000));
+    await settle();
+    expect(screen.getByText("Saved 10:30")).toBeInTheDocument();
+    expect(storage.deleteMedia).not.toHaveBeenCalled();
+  });
+
+  it("keeps the files of a copy whose publish outcome is unknown", async () => {
+    const publishAction = vi.fn(async () => ({ ok: false, message: "Couldn't publish. Check your connection and try again." }));
+    renderEditor({ invitation: { content: withCover }, initialStep: 8, publishActions: { publishAction } });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: /5\./ }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove cover photo" }));
+    confirm.mockRestore();
+    await act(async () => vi.advanceTimersByTime(3000));
+    await settle();
+    expect(storage.deleteMedia).not.toHaveBeenCalled();
+  });
+
+  it("deletes a dropped file as usual after a definite refusal", async () => {
+    const updateLiveAction = vi.fn(async () => ({ ok: false, message: "Some details are still missing.", missing: [{ message: "Add the venue name", step: 3 }] }));
+    renderEditor({ invitation: { ...published, version: 6, publishedContent: COMPLETE_CONTENT }, publishActions: { updateLiveAction } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Update live invitation" })));
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: /5\./ }));
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: "Remove cover photo" }));
+    confirm.mockRestore();
+    await act(async () => vi.advanceTimersByTime(3000));
+    await settle();
+    expect(storage.deleteMedia).toHaveBeenCalledWith([COVER]);
   });
 
   it("claims a link name from the couple's names on reaching Review", async () => {
@@ -359,9 +435,10 @@ describe("EditorShell publishing", () => {
     await settle();
     expect(button).toBeDisabled();
     expect(updateLiveAction).toHaveBeenCalledTimes(1);
-    await act(async () => finish({ ok: false, message: "Some details are still missing.", missing: ["Add the venue"] }));
+    await act(async () => finish({ ok: false, message: "Some details are still missing.", missing: [{ message: "Add the venue name", step: 3 }] }));
     await settle();
-    expect(screen.getByRole("alert")).toHaveTextContent("Some details are still missing. Add the venue");
+    expect(screen.getByRole("alert")).toHaveTextContent("Some details are still missing.");
+    expect(within(screen.getByRole("alert")).getByRole("button", { name: "Go to step 3" })).toBeInTheDocument();
     expect(button).toBeEnabled();
   });
 

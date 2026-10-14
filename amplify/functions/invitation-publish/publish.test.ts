@@ -74,6 +74,14 @@ describe("publish", () => {
     const db = fakeDb(draft, { failTransact: -1 });
     await expect(publish(db as any, tables, { id: "inv-1", expectedVersion: 4 }, NOW)).rejects.toMatchObject({ name: "VersionConflict" });
   });
+  it("reads the invitation strongly consistently, so a save made just before is seen", async () => {
+    const db = fakeDb(draft);
+    await publish(db as any, tables, { id: "inv-1", expectedVersion: 4 }, NOW);
+    await setSlug(db as any, tables, { id: "inv-1", slug: "new-name" }, NOW);
+    const gets = db.calls.filter((c) => c.constructor.name === "GetCommand");
+    expect(gets).toHaveLength(2);
+    for (const get of gets) expect(get.input.ConsistentRead).toBe(true);
+  });
   it("needs a slug", async () => {
     const db = fakeDb({ ...draft, slug: null });
     await expect(publish(db as any, tables, { id: "inv-1", expectedVersion: 4 }, NOW)).rejects.toMatchObject({ name: "NoSlug" });
@@ -88,6 +96,10 @@ describe("updateLive", () => {
   it("pushes the current content live for a published invitation", async () => {
     const db = fakeDb({ ...draft, status: "published", version: 9 });
     await expect(updateLive(db as any, tables, { id: "inv-1", expectedVersion: 9 }, NOW)).resolves.toEqual({ liveVersion: 9, liveUpdatedAt: NOW });
+  });
+  it("is a conflict when the stored version moved on", async () => {
+    const db = fakeDb({ ...draft, status: "published", version: 10 });
+    await expect(updateLive(db as any, tables, { id: "inv-1", expectedVersion: 9 }, NOW)).rejects.toMatchObject({ name: "VersionConflict" });
   });
   it("refuses a draft", async () => {
     const db = fakeDb(draft);

@@ -8,6 +8,8 @@ const data = vi.hoisted(() => ({
   publishRecord: vi.fn(), updateLiveRecord: vi.fn(),
 }));
 vi.mock("./data", () => data);
+const delay = vi.hoisted(() => ({ wait: vi.fn(async () => {}) }));
+vi.mock("./wait", () => delay);
 
 import { checkSlugAction, newPreviewLinkAction, publishAction, setSlugAction, updateLiveAction } from "./publishActions";
 
@@ -59,12 +61,36 @@ describe("publishAction", () => {
     data.getInvitation.mockResolvedValue(inv({ content: { ...ready, mainDate: undefined } }));
     const r = await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
     expect(r.ok).toBe(false);
-    expect(r.missing).toContain("Add the wedding date");
+    expect(r.missing).toContainEqual({ message: "Add the wedding date", step: 3 });
     expect(data.publishRecord).not.toHaveBeenCalled();
   });
-  it("is a conflict when the stored version moved on", async () => {
+  it("is a conflict at once when the stored version is newer", async () => {
     data.getInvitation.mockResolvedValue(inv({ version: 5 }));
     expect(await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" })).toEqual({ ok: false, conflict: true });
+    expect(data.getInvitation).toHaveBeenCalledTimes(1);
+    expect(delay.wait).not.toHaveBeenCalled();
+  });
+  it("re-reads a stale older version until the save just made shows up, then publishes", async () => {
+    data.getInvitation.mockResolvedValueOnce(inv({ version: 3 })).mockResolvedValueOnce(inv());
+    data.publishRecord.mockResolvedValue({ data: { status: "published", liveVersion: 4, publishedAt: "t", liveUpdatedAt: "t" } });
+    const r = await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
+    expect(r.ok).toBe(true);
+    expect(data.getInvitation).toHaveBeenCalledTimes(2);
+    expect(delay.wait).toHaveBeenCalledWith(200);
+    expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4 });
+  });
+  it("runs the checklist on the version being published, not the stale copy", async () => {
+    data.getInvitation.mockResolvedValueOnce(inv({ version: 3 })).mockResolvedValueOnce(inv({ content: { ...ready, mainDate: undefined } }));
+    const r = await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
+    expect(r.missing).toContainEqual({ message: "Add the wedding date", step: 3 });
+    expect(data.publishRecord).not.toHaveBeenCalled();
+  });
+  it("is a conflict when the stored version is still older after 3 re-reads", async () => {
+    data.getInvitation.mockResolvedValue(inv({ version: 3 }));
+    expect(await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" })).toEqual({ ok: false, conflict: true });
+    expect(data.getInvitation).toHaveBeenCalledTimes(4);
+    expect(delay.wait).toHaveBeenCalledTimes(3);
+    expect(data.publishRecord).not.toHaveBeenCalled();
   });
   it("saves a changed link name first, then publishes", async () => {
     data.getInvitation.mockResolvedValue(inv());
@@ -73,6 +99,26 @@ describe("publishAction", () => {
     const r = await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-rahul" });
     expect(data.setSlugRecord).toHaveBeenCalledWith({ id: "inv-1", slug: "priya-rahul" });
     expect(r).toEqual({ ok: true, status: "published", slug: "priya-rahul", liveVersion: 4, publishedAt: "t", liveUpdatedAt: "t" });
+  });
+  it("returns the new link name when publishing fails after it was saved", async () => {
+    data.getInvitation.mockResolvedValue(inv());
+    data.setSlugRecord.mockResolvedValue({ data: { slug: "priya-rahul" } });
+    data.publishRecord.mockResolvedValue({ errors: [{ errorType: "VersionConflict" }] });
+    expect(await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-rahul" })).toEqual({ ok: false, conflict: true, slug: "priya-rahul" });
+  });
+  it("returns the new link name when publishing throws after it was saved", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    data.getInvitation.mockResolvedValue(inv());
+    data.setSlugRecord.mockResolvedValue({ data: { slug: "priya-rahul" } });
+    data.publishRecord.mockRejectedValue(new Error("timeout"));
+    expect(await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-rahul" })).toEqual({
+      ok: false, message: "Couldn't publish. Check your connection and try again.", slug: "priya-rahul",
+    });
+  });
+  it("leaves the link name out of a failure when it was not changed", async () => {
+    data.getInvitation.mockResolvedValue(inv());
+    data.publishRecord.mockResolvedValue({ errors: [{ errorType: "VersionConflict" }] });
+    expect(await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" })).toEqual({ ok: false, conflict: true });
   });
   it("maps a taken slug", async () => {
     data.getInvitation.mockResolvedValue(inv());
@@ -94,6 +140,16 @@ describe("updateLiveAction", () => {
     data.getInvitation.mockResolvedValue(inv({ status: "published", version: 9 }));
     data.updateLiveRecord.mockResolvedValue({ data: { liveVersion: 9, liveUpdatedAt: "t" } });
     expect(await updateLiveAction({ id: "inv-1", expectedVersion: 9 })).toEqual({ ok: true, liveVersion: 9, liveUpdatedAt: "t" });
+  });
+  it("re-reads a stale older version before pushing live", async () => {
+    data.getInvitation.mockResolvedValueOnce(inv({ status: "published", version: 8 })).mockResolvedValueOnce(inv({ status: "published", version: 9 }));
+    data.updateLiveRecord.mockResolvedValue({ data: { liveVersion: 9, liveUpdatedAt: "t" } });
+    expect((await updateLiveAction({ id: "inv-1", expectedVersion: 9 })).ok).toBe(true);
+  });
+  it("is a conflict when the server reports one", async () => {
+    data.getInvitation.mockResolvedValue(inv({ status: "published", version: 9 }));
+    data.updateLiveRecord.mockResolvedValue({ errors: [{ errorType: "VersionConflict" }] });
+    expect(await updateLiveAction({ id: "inv-1", expectedVersion: 9 })).toEqual({ ok: false, conflict: true });
   });
 });
 

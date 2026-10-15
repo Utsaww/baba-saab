@@ -58,6 +58,8 @@ describe("calendar downloads", () => {
       return "blob:x";
     });
     URL.revokeObjectURL = vi.fn();
+    // jsdom can't navigate to the download link; stop the click so it doesn't log "Not implemented".
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     const royal = getTemplate("royal");
     render(<InvitationRenderer invitation={build(royal, { language: "en", id: "inv1" })} />);
     const downloads = screen.getAllByRole("button", { name: "Download (.ics)" });
@@ -72,6 +74,7 @@ describe("calendar downloads", () => {
       });
     const uids = await Promise.all(blobs.map(async (b) => /UID:(.*)/.exec(await readText(b))[1].trim()));
     expect(uids).toEqual(["inv1-haldi@babasaab", "inv1-mehendi@babasaab"]);
+    click.mockRestore();
   });
 });
 

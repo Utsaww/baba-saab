@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { foreignMediaKeys, invitationFolder, isSafeKey, mediaKeys, removedMediaKeys } from "./mediaKeys";
+import { foreignMediaKeys, invitationFolder, isSafeKey, mediaKeys, mediaKeysToDelete, removedMediaKeys } from "./mediaKeys";
 
 const ID = "inv-1";
 const own = (name) => `${invitationFolder(ID)}${name}`;
@@ -81,5 +81,30 @@ describe("removedMediaKeys", () => {
     const before = { media: { coverKey: own("a.jpg"), music: { type: "library", trackId: "t1", key: "music-library/t.mp3" } } };
     const after = { media: { gallery: [{ key: own("a.jpg") }] } };
     expect(removedMediaKeys(before, after, ID)).toEqual([]);
+  });
+});
+
+describe("mediaKeysToDelete", () => {
+  const id = "inv-1";
+  const withCover = (key) => ({ media: { coverKey: key, gallery: [] } });
+  it("deletes a removed file nobody else uses", () => {
+    expect(mediaKeysToDelete({ before: withCover("invitations/inv-1/a.jpg"), after: withCover(undefined), invitationId: id })).toEqual([
+      "invitations/inv-1/a.jpg",
+    ]);
+  });
+  it("keeps a removed file the live copy still shows", () => {
+    expect(
+      mediaKeysToDelete({
+        before: withCover("invitations/inv-1/a.jpg"),
+        after: withCover(undefined),
+        keep: [withCover("invitations/inv-1/a.jpg")],
+        invitationId: id,
+      }),
+    ).toEqual([]);
+  });
+  it("ignores null keep entries", () => {
+    expect(
+      mediaKeysToDelete({ before: withCover("invitations/inv-1/a.jpg"), after: {}, keep: [null, undefined], invitationId: id }),
+    ).toEqual(["invitations/inv-1/a.jpg"]);
   });
 });

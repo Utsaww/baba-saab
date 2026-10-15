@@ -5,6 +5,11 @@ describe("shareableUrl", () => {
   it("removes the personal guest code and preview token", () => {
     expect(shareableUrl("https://site.com/invitation/a-weds-b?g=k9f2&preview=tok#rsvp")).toBe("https://site.com/invitation/a-weds-b");
   });
+  it("strips the preview code from a preview page's share link", () => {
+    expect(shareableUrl("https://www.babasaab.com/invitation/priya-weds-rahul?preview=abc#top")).toBe(
+      "https://www.babasaab.com/invitation/priya-weds-rahul",
+    );
+  });
   it("keeps unrelated params", () => {
     expect(shareableUrl("https://site.com/invitation/x?lang=hi&g=1")).toBe("https://site.com/invitation/x?lang=hi");
   });

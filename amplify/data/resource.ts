@@ -1,4 +1,6 @@
 import { a, defineData, type ClientSchema } from "@aws-amplify/backend";
+import { invitationPublish } from "../functions/invitation-publish/resource";
+import { invitationPublic } from "../functions/invitation-public/resource";
 import { staffAdmin } from "../functions/staff-admin/resource";
 
 const schema = a.schema({
@@ -43,6 +45,12 @@ const schema = a.schema({
       version: a.integer().required(),
       createdBy: a.string().required(),
       updatedBy: a.string().required(),
+      slug: a.string(),
+      previewToken: a.string(),
+      publishedContent: a.json(),
+      liveVersion: a.integer(),
+      publishedAt: a.datetime(),
+      liveUpdatedAt: a.datetime(),
     })
     // Staff can create and read; every change goes through saveInvitation's version check.
     .authorization((allow) => [allow.group("admin").to(["create", "read"])]),
@@ -63,6 +71,54 @@ const schema = a.schema({
     .returns(a.ref("Invitation"))
     .authorization((allow) => [allow.group("admin")])
     .handler(a.handler.custom({ dataSource: a.ref("Invitation"), entry: "./saveInvitation.js" })),
+
+  InvitationSlug: a
+    .model({ slug: a.string().required(), invitationId: a.string().required() })
+    .identifier(["slug"])
+    // Written only by invitation-publish; staff read it to check whether a link name is free.
+    .authorization((allow) => [allow.group("admin").to(["read"])]),
+
+  setInvitationSlug: a
+    .mutation()
+    .arguments({ id: a.id().required(), slug: a.string().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationPublish)),
+
+  regeneratePreviewToken: a
+    .mutation()
+    .arguments({ id: a.id().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationPublish)),
+
+  publishInvitation: a
+    .mutation()
+    .arguments({ id: a.id().required(), expectedVersion: a.integer().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationPublish)),
+
+  updateLiveInvitation: a
+    .mutation()
+    .arguments({ id: a.id().required(), expectedVersion: a.integer().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationPublish)),
+
+  PublicInvitation: a.customType({
+    mode: a.string().required(),
+    templateId: a.string().required(),
+    content: a.json().required(),
+  }),
+
+  // The only thing guests (no login) can call. It enforces every visibility rule itself.
+  publicInvitation: a
+    .query()
+    .arguments({ slug: a.string().required(), previewToken: a.string() })
+    .returns(a.ref("PublicInvitation"))
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(invitationPublic)),
 
   MusicTrack: a
     .model({

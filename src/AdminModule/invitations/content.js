@@ -17,6 +17,23 @@ export function parseContent(value) {
   }
 }
 
+/**
+ * Strict AWSJSON parse: the value may arrive as an object, a JSON string or a double-encoded JSON string.
+ * Anything that isn't an object after at most two passes is a fault and throws.
+ */
+export function parseAwsJson(value) {
+  let v = value;
+  for (let pass = 0; pass < 2 && typeof v === "string"; pass++) {
+    try {
+      v = JSON.parse(v);
+    } catch {
+      throw new Error("AWSJSON value is not valid JSON");
+    }
+  }
+  if (!v || typeof v !== "object" || Array.isArray(v)) throw new Error("AWSJSON value is not an object");
+  return v;
+}
+
 export function prepareSave({ id, expectedVersion, content, libraryTrack = null }) {
   if (typeof id !== "string" || !id || !Number.isInteger(expectedVersion)) {
     return { ok: false, message: "That save request wasn't valid. Reload the page." };

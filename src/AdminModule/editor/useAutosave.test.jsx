@@ -185,3 +185,55 @@ describe("useAutosave onSaved", () => {
     expect(onSaved).toHaveBeenCalledWith({ n: 1 });
   });
 });
+
+describe("useAutosave settle", () => {
+  it("resolves with the current version without saving when nothing is pending", async () => {
+    const save = vi.fn();
+    const { result } = setup(save);
+    let settled;
+    await act(async () => {
+      settled = await result.current.settle();
+    });
+    expect(save).not.toHaveBeenCalled();
+    expect(settled).toEqual({ ok: true, version: 1, content: { n: 0 } });
+  });
+
+  it("waits for the save in progress, then saves edits queued behind it, and resolves with the final version", async () => {
+    const first = deferred();
+    const save = vi.fn().mockReturnValueOnce(first.promise).mockResolvedValueOnce({ ok: true, version: 3, savedAt: "x" });
+    const { result, rerender } = setup(save);
+    rerender({ content: { n: 1 } });
+    await act(async () => vi.advanceTimersByTime(3000));
+    rerender({ content: { n: 2 } });
+    let settled;
+    await act(async () => {
+      const p = result.current.settle();
+      first.resolve({ ok: true, version: 2, savedAt: "x" });
+      settled = await p;
+    });
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(save).toHaveBeenLastCalledWith({ content: { n: 2 }, expectedVersion: 2 });
+    expect(settled).toEqual({ ok: true, version: 3, content: { n: 2 } });
+  });
+
+  it("resolves with the failure when a save fails, and does not save after a conflict", async () => {
+    const save = vi.fn().mockResolvedValueOnce({ ok: false, message: "Couldn't save." });
+    const { result, rerender } = setup(save);
+    rerender({ content: { n: 1 } });
+    let settled;
+    await act(async () => {
+      settled = await result.current.settle();
+    });
+    expect(settled).toEqual({ ok: false, message: "Couldn't save." });
+
+    const conflicted = vi.fn().mockResolvedValueOnce({ ok: false, conflict: true });
+    const other = setup(conflicted);
+    other.rerender({ content: { n: 1 } });
+    await act(async () => vi.advanceTimersByTime(3000));
+    await act(async () => {
+      settled = await other.result.current.settle();
+    });
+    expect(conflicted).toHaveBeenCalledTimes(1);
+    expect(settled).toEqual({ ok: false, conflict: true });
+  });
+});

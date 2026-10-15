@@ -38,6 +38,13 @@ const nextConfig = {
       ...(IMAGE_HOST ? [{ protocol: "https", hostname: IMAGE_HOST }] : []),
     ],
   },
+  experimental: {
+    // The OG card routes read their font files at runtime; make sure the server bundle includes them.
+    outputFileTracingIncludes: {
+      "/invitation/[slug]/card": ["./src/InvitationModule/og/fonts/**"],
+      "/api/og/invitation-preview": ["./src/InvitationModule/og/fonts/**"],
+    },
+  },
   webpack(config) {
     // The staff guide in docs/ is bundled into /admin/help as a string.
     config.module.rules.push({ test: /\.md$/, type: "asset/source" });

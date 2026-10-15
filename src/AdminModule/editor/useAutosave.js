@@ -13,6 +13,9 @@ export function useAutosave({ content, initialVersion, save, onSaved, delay = SA
   latest.current.content = content;
   latest.current.version = state.version;
   const initialContent = useRef(content);
+  // The content and version of the last successful save, and whether a save has hit a conflict.
+  const lastGood = useRef({ content, version: initialVersion });
+  const conflicted = useRef(false);
   // The promise of the save in progress, or null.
   const inFlight = useRef(null);
   const statusRef = useRef(state.status);
@@ -43,9 +46,15 @@ export function useAutosave({ content, initialVersion, save, onSaved, delay = SA
       }
       inFlight.current = null;
       if (result?.ok) {
+        // Kept in refs straight away so a save started before the next render (see settle) uses the new version.
+        latest.current.version = result.version;
+        lastGood.current = { content: sent, version: result.version };
         dispatch({ type: "success", version: result.version, savedAt: result.savedAt });
         onSavedRef.current?.(sent);
-      } else if (result?.conflict) dispatch({ type: "conflict" });
+      } else if (result?.conflict) {
+        conflicted.current = true;
+        dispatch({ type: "conflict" });
+      }
       else dispatch({ type: "failure", message: result?.message ?? FAILED });
       return result;
     })();
@@ -83,5 +92,20 @@ export function useAutosave({ content, initialVersion, save, onSaved, delay = SA
   // Saves what is pending (or waits for the save in progress); resolves with the save result when it has finished.
   const flushNow = useCallback(() => runSave(), [runSave]);
 
-  return { state, retry, flushNow };
+  // Saves until nothing is pending — the save in progress, then any edits queued behind it — and resolves with
+  // { ok: true, version, content } of the stored copy, or the first failed save's result. Saves nothing when all is saved.
+  const settle = useCallback(async () => {
+    if (inFlight.current) {
+      const result = await inFlight.current;
+      if (!result?.ok) return result;
+    }
+    while (latest.current.content !== lastGood.current.content) {
+      if (conflicted.current) return { ok: false, conflict: true };
+      const result = await runSave();
+      if (!result?.ok) return result;
+    }
+    return { ok: true, version: lastGood.current.version, content: lastGood.current.content };
+  }, [runSave]);
+
+  return { state, retry, flushNow, settle };
 }

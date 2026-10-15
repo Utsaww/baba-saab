@@ -1,11 +1,22 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
+import { transformWithEsbuild } from "vite";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 
+// Next.js allows JSX in .js files (route handlers such as the share-card route); Vite only parses it in .jsx.
+const jsxInJs = {
+  name: "jsx-in-js",
+  enforce: "pre",
+  transform(code, id) {
+    if (!/\/src\/.*\.js$/.test(id) || id.includes("/node_modules/")) return null;
+    return transformWithEsbuild(code, id, { loader: "jsx", jsx: "automatic" });
+  },
+};
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [jsxInJs, react()],
   resolve: {
     alias: {
       "@": `${root}src`,

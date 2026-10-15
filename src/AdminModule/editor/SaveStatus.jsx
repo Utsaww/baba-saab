@@ -12,11 +12,15 @@ export default function SaveStatus({ state }) {
   );
 }
 
-export function SaveBanners({ state, onRetry, onReload }) {
-  if (state.status === "conflict") {
+// `conflict` is set when Publish or Update live met a newer version; the edits here were saved, so only a reload is asked for.
+export function SaveBanners({ state, conflict = false, onRetry, onReload }) {
+  if (state.status === "conflict" || conflict) {
     return (
       <div role="alert" className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-        <span className="flex-1">Updated by someone else — reload to see their changes. Your latest edits here were not saved.</span>
+        <span className="flex-1">
+          Updated by someone else — reload to see their changes.
+          {state.status === "conflict" ? " Your latest edits here were not saved." : ""}
+        </span>
         <button type="button" onClick={onReload} className={bannerButton}>
           Reload
         </button>

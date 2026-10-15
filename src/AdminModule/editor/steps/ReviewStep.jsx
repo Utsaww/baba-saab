@@ -3,8 +3,9 @@
 import { cleanDraft } from "@/InvitationModule/schema/draft";
 import { publishChecklist } from "@/InvitationModule/lib/checklist";
 import { Group } from "../fields";
+import PublishPanel from "../publish/PublishPanel";
 
-export default function ReviewStep({ content, onGoToStep }) {
+export default function ReviewStep({ content, onGoToStep, publishing }) {
   const items = publishChecklist(cleanDraft(content).draft ?? {});
   return (
     <div className="space-y-6">
@@ -28,12 +29,7 @@ export default function ReviewStep({ content, onGoToStep }) {
       ) : (
         <p className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">Everything needed is filled in.</p>
       )}
-      <div>
-        <button type="button" disabled className="min-h-[44px] rounded-full bg-stone-900 px-6 text-sm text-white disabled:opacity-40">
-          Publish
-        </button>
-        <p className="mt-2 text-xs text-stone-500">Publishing arrives in the next release. Your draft is saved automatically.</p>
-      </div>
+      {publishing ? <PublishPanel publishing={publishing} ready={items.length === 0} /> : null}
     </div>
   );
 }

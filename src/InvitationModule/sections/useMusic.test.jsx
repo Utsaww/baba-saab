@@ -9,8 +9,9 @@ const ACTIVATION_EVENTS = ["click", "touchend", "keydown"];
 // user-activation event (click, touchend, keydown) is being dispatched, or on an element that was
 // already started during one. pointerdown/pointermove/touchmove/wheel are not activations on touch devices.
 let activation = false;
+let suppressActivation = false;
 const startActivation = () => {
-  activation = true;
+  activation = !suppressActivation;
 };
 const endActivation = () => {
   activation = false;
@@ -36,7 +37,7 @@ afterEach(() => {
 function stubMedia({ holdFirst = false } = {}) {
   const proto = window.HTMLMediaElement.prototype;
   const calls = [];
-  let release = () => {};
+  let settle = () => {};
   const play = vi.spyOn(proto, "play").mockImplementation(function play() {
     calls.push({ muted: this.muted, activation });
     if (!activation && !this.unlocked) return Promise.reject(new Error("NotAllowedError"));
@@ -45,7 +46,11 @@ function stubMedia({ holdFirst = false } = {}) {
       Object.defineProperty(this, "paused", { value: false, configurable: true });
       this.dispatchEvent(new Event("play"));
     }
-    if (holdFirst && calls.length === 1) return new Promise((resolve) => (release = resolve));
+    if (holdFirst && calls.length === 1) {
+      return new Promise((resolve, reject) => {
+        settle = (ok) => (ok ? resolve() : reject(new Error("AbortError")));
+      });
+    }
     return Promise.resolve();
   });
   const pause = vi.spyOn(proto, "pause").mockImplementation(function pause() {
@@ -53,12 +58,13 @@ function stubMedia({ holdFirst = false } = {}) {
     Object.defineProperty(this, "paused", { value: true, configurable: true });
     this.dispatchEvent(new Event("pause"));
   });
-  return { play, pause, calls, release: () => release() };
+  return { play, pause, calls, release: (ok = true) => settle(ok) };
 }
 
+const SONG = "https://cdn.example.com/song.mp3";
 let music;
-function Harness() {
-  music = useMusic("https://cdn.example.com/song.mp3");
+function Harness({ src = SONG }) {
+  music = useMusic(src);
   return (
     <>
       <p>Cover</p>
@@ -69,7 +75,17 @@ function Harness() {
 
 const playLabel = () => screen.getByRole("button", { name: /music/ }).getAttribute("aria-label");
 const flush = () => act(async () => {});
+const toggleButton = () => screen.getByRole("button", { name: /music/ });
 
+// A touchend that does not grant activation, e.g. the end of a pan or a cancelled touch.
+function touchEndWithoutActivation(target) {
+  suppressActivation = true;
+  try {
+    fireEvent.touchEnd(target);
+  } finally {
+    suppressActivation = false;
+  }
+}
 
 // play() outside any user activation, like Royal's scratch (pointermove) or Floral's swipe (touchmove).
 async function playOutsideGesture() {
@@ -172,6 +188,91 @@ describe("useMusic", () => {
     const el = play.mock.contexts[0];
     expect(el.paused).toBe(false);
     expect(el.muted).toBe(false);
+    expect(playLabel()).toBe("Pause music");
+  });
+
+  it("keeps trying to prime until a touch really is an activation", async () => {
+    const { play } = stubMedia();
+    render(<Harness />);
+    await act(async () => touchEndWithoutActivation(document.body));
+    expect(play).toHaveBeenCalledTimes(1);
+    await act(async () => fireEvent.touchEnd(document.body));
+    expect(play).toHaveBeenCalledTimes(2);
+    expect(playLabel()).toBe("Play music");
+
+    await playOutsideGesture();
+    expect(playLabel()).toBe("Pause music");
+    expect(play.mock.contexts[2].muted).toBe(false);
+  });
+
+  it("does not restart music at the reveal after the guest turned it off", async () => {
+    const { play } = stubMedia();
+    render(<Harness />);
+    await act(async () => fireEvent.click(toggleButton()));
+    expect(playLabel()).toBe("Pause music");
+    await act(async () => fireEvent.click(toggleButton()));
+    expect(playLabel()).toBe("Play music");
+    const calls = play.mock.calls.length;
+
+    await playOutsideGesture();
+    expect(play).toHaveBeenCalledTimes(calls);
+    expect(playLabel()).toBe("Play music");
+
+    await act(async () => fireEvent.click(toggleButton()));
+    expect(playLabel()).toBe("Pause music");
+  });
+
+  it("honours the last toggle made while priming is in flight", async () => {
+    const { play, release } = stubMedia({ holdFirst: true });
+    render(<Harness />);
+    await act(async () => fireEvent.touchEnd(document.body));
+    const el = play.mock.contexts[0];
+    await act(async () => fireEvent.click(toggleButton())); // on
+    await act(async () => fireEvent.click(toggleButton())); // off again
+    await act(async () => release());
+    await flush();
+    expect(el.paused).toBe(true);
+    expect(el.muted).toBe(false);
+    expect(playLabel()).toBe("Play music");
+  });
+
+  it("plays unmuted when the guest turns music on while priming is in flight", async () => {
+    const { play, release } = stubMedia({ holdFirst: true });
+    render(<Harness />);
+    await act(async () => fireEvent.touchEnd(document.body));
+    const el = play.mock.contexts[0];
+    await act(async () => fireEvent.click(toggleButton()));
+    await act(async () => release());
+    await flush();
+    expect(el.paused).toBe(false);
+    expect(el.muted).toBe(false);
+    expect(playLabel()).toBe("Pause music");
+  });
+
+  it("drops the old track's pending retry when the song changes", async () => {
+    const { play } = stubMedia();
+    const { rerender } = render(<Harness />);
+    await playOutsideGesture();
+    const old = play.mock.contexts[0];
+    rerender(<Harness src="https://cdn.example.com/other.mp3" />);
+    const before = play.mock.calls.length;
+    await act(async () => fireEvent.touchEnd(document.body));
+    expect(play.mock.contexts.slice(before)).not.toContain(old);
+  });
+
+  it("ignores a prime from the old track that settles after the song changed", async () => {
+    const { play, release } = stubMedia({ holdFirst: true });
+    const { rerender } = render(<Harness />);
+    await act(async () => fireEvent.touchEnd(document.body));
+    const old = play.mock.contexts[0];
+    rerender(<Harness src="https://cdn.example.com/other.mp3" />);
+    await playOutsideGesture(); // new track blocked: retry armed on the new element
+    await act(async () => release(false)); // the old prime is aborted
+    const before = play.mock.calls.length;
+    await act(async () => fireEvent.touchEnd(document.body));
+    const later = play.mock.contexts.slice(before);
+    expect(later).not.toContain(old);
+    expect(later.length).toBeGreaterThan(0);
     expect(playLabel()).toBe("Pause music");
   });
 

@@ -8,7 +8,9 @@ export function request(ctx) {
   return ddb.update({
     key: { id },
     update: {
-      content,
+      // AWSJSON arrives parsed; a plain object here would become per-field paths that DynamoDB
+      // rejects when a nested map is new, so the whole content is replaced in one SET.
+      content: ddb.operations.replace(content),
       templateId,
       mainDate: mainDate ?? null,
       coupleNames,

@@ -11,7 +11,10 @@ vi.mock("@aws-appsync/utils", () => ({
 
 vi.mock("@aws-appsync/utils/dynamodb", () => ({
   update: (input: unknown) => ({ operation: "UpdateItem", input }),
-  operations: { increment: (by: number) => ({ increment: by }) },
+  operations: {
+    increment: (by: number) => ({ increment: by }),
+    replace: (value: unknown) => ({ replace: value }),
+  },
 }));
 
 import { request, response } from "./saveInvitation.js";
@@ -32,7 +35,7 @@ describe("saveInvitation request", () => {
     expect(req.input.key).toEqual({ id: "inv-1" });
     expect(req.input.condition).toEqual({ version: { eq: 3 } });
     expect(req.input.update).toEqual({
-      content: '{"templateId":"royal"}',
+      content: { replace: '{"templateId":"royal"}' },
       templateId: "royal",
       mainDate: null,
       coupleNames: "Priya & Rahul",
@@ -42,6 +45,15 @@ describe("saveInvitation request", () => {
       updatedAt: "2026-10-08T10:00:00.000Z",
       version: { increment: 1 },
     });
+  });
+
+  // AppSync hands AWSJSON arguments to the resolver as parsed objects. A plain nested object in
+  // ddb.update becomes per-field document paths, which DynamoDB rejects when a parent map is new
+  // (e.g. the first event or photo), so the whole content must be replaced in one SET.
+  it("replaces the whole content even when it arrives as a nested object", () => {
+    const content = { templateId: "royal", events: [{ id: "e1" }], media: { gallery: [] } };
+    const req = request({ args: { ...args, content } } as any) as any;
+    expect(req.input.update.content).toEqual({ replace: content });
   });
 
   it("stores the wedding date when given", () => {

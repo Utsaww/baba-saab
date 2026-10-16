@@ -13,7 +13,7 @@ This guide grows as new parts of the invitation system go live. Everything descr
 | **Staff** | *Owner only.* Invite people to the admin area and remove them. |
 | **Help** | This guide. |
 
-Guests' RSVP forms arrive in the next release. This guide will gain a section for it.
+Guests' RSVP forms are coming later. This guide will gain a section for them then.
 
 ## Signing in
 
@@ -104,7 +104,7 @@ Change the design, colour palette or language at any time. Nothing you've typed 
 - **Bride and groom:** names, and the parents line, for example "D/o Smt. Sunita & Shri Rajesh Sharma".
 - **Blessing at the top:** the symbol (Shri Ganesh, Om or none) and a shloka. Pick one of the ready-made shlokas, or choose **Our own text** and type the family's own.
 - **Families:** add each family's name for the closing message. **Closing line** is the sign-off, for example "With love and blessings from the Sharma and Mehra families".
-- **Family contact phone:** shown to guests once RSVPs close. Search on the Invitations page also finds invitations by this number.
+- **Family contact phone:** shown to guests in the closing message at the end of the invitation. Search on the Invitations page also finds invitations by this number.
 
 For a **Both** invitation, each field has an English box and a Hindi box.
 
@@ -200,8 +200,9 @@ Guests' RSVP forms don't appear on live invitations yet. They are coming later, 
 
 Every live invitation goes offline by itself some time after the wedding, so old links don't stay up forever.
 
-- **Default:** 7 days after the last event, in India time. It is set when you publish.
-- **Changing it:** open the invitation's step 7 (**Settings**), change **Take offline on** and click **Save date**. The date must be after today. If it falls before the last event, a note says so, but you can still save it.
+- **Default:** 7 days after the last event, in India time. It is set when you publish. If you publish after that day has already passed, it is set to tomorrow instead, so the invitation doesn't go offline the same night.
+- **Invitations published before this feature:** the daily job gives each one a date the first night it runs: 7 days after its last event, and never earlier than the next day. Check step 7 if a customer needs a different date.
+- **Changing it:** open the invitation's step 7 (**Settings**), change **Take offline on** and click **Save date**. Today or any later date is allowed; today means it goes offline at the next daily run. If it falls before the last event, a note says so, but you can still save it.
 - The daily job runs around 3 am India time and takes offline everything whose date has arrived.
 - The invitations list warns you when invitations are due to go offline in the next 7 days.
 
@@ -219,7 +220,7 @@ An offline invitation shows a grey bar saying **Offline since [date] — will be
 
 A deleted invitation is **read-only**. You can look at it but not change it. Its grey bar says **Deleted — will be erased on [date]**.
 
-**Restoring:** click **Restore** on the bar. The invitation comes back as it was: a draft is a draft again, and a live one is live again. If the invitation was live and its **Take offline on** date has already passed, you are asked for a new date first. Pick a date after today and click **Restore with this date**.
+**Restoring:** click **Restore** on the bar. The invitation comes back as it was: a draft is a draft again, and a live one is live again. If the invitation was live and its **Take offline on** date is today, has already passed, or was never set, you are asked for a new date first. Pick a date after today and click **Restore with this date**.
 
 ## Permanent erase
 
@@ -271,7 +272,7 @@ On a template's preview page:
 
 Every design includes the same sections. Ones without details are hidden automatically:
 
-Invocation (Shri Ganesh / Om and a shloka) · The couple and their parents · Save the date · Live countdown · Venue with Google Maps · Travel notes · Schedule of functions with "Add to calendar" · Photo gallery · Invitation film · RSVP form · Closing message with family names and a WhatsApp share button
+Invocation (Shri Ganesh / Om and a shloka) · The couple and their parents · Save the date · Live countdown · Venue with Google Maps · Travel notes · Schedule of functions with "Add to calendar" · Photo gallery · Invitation film · Closing message with family names and a WhatsApp share button
 
 ## Choosing a template with a customer — tips
 
@@ -293,5 +294,3 @@ Gather these before invitations can be created, so the next step is quick:
 - The invitation film: a YouTube link, or a video file under 100 MB
 - Background music: a song from our Music Library, or their own MP3 (under 10 MB) — only music they have the rights to use
 - Which shloka to show: Ganesh Vandana (वक्रतुण्ड महाकाय…), Shri Ganeshaya Namah, Mangal Shloka, Shubh Vivah, Om, or their own text
-- RSVP deadline, and whether to ask for the number of guests and meal preference
-- Guest list for personal links (names, and which functions each guest is invited to)

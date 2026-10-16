@@ -53,6 +53,13 @@ const newButtonClass = "inline-flex min-h-[44px] items-center rounded-full bg-st
 
 export default function InvitationList({ rows: initialRows, templateNames, now, actions = {} }) {
   const [rows, setRows] = useState(initialRows);
+  const [seen, setSeen] = useState(initialRows);
+  // A refreshed `rows` prop (after revalidation) replaces the local copy.
+  if (seen !== initialRows) {
+    setSeen(initialRows);
+    setRows(initialRows);
+  }
+  const [done, setDone] = useState("");
   const [pending, setPending] = useState({});
   const [errors, setErrors] = useState({});
   const [q, setQ] = useState("");
@@ -66,23 +73,31 @@ export default function InvitationList({ rows: initialRows, templateNames, now, 
   );
 
   // Runs one row action: the row's buttons stay disabled until it answers; a success merges its fields into the row.
-  const run = async (row, call, args = {}) => {
+  const run = async (row, call, { base = {}, doneText }) => {
     const id = row.id;
     setPending((p) => ({ ...p, [id]: true }));
     setErrors((e) => ({ ...e, [id]: null }));
+    setDone("");
     try {
-      const { ok, conflict, message, ...fields } = (await call?.({ id, expectedVersion: row.version, ...args })) ?? {};
-      if (ok) setRows((all) => all.map((r) => (r.id === id ? { ...r, ...fields } : r)));
-      else setErrors((e) => ({ ...e, [id]: { text: conflict ? CONFLICT_MESSAGE : message ?? OFFLINE_MESSAGE, pickDate: message === PICK_DATE } }));
+      const { ok, conflict, message, ...fields } = (await call?.({ id, expectedVersion: row.version })) ?? {};
+      if (ok) {
+        // What the action implies first, then only the fields the server actually answered.
+        const defined = Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== undefined));
+        setRows((all) => all.map((r) => (r.id === id ? { ...r, ...base, ...defined } : r)));
+        setDone(`${doneText}: ${row.coupleNames}`);
+      } else setErrors((e) => ({ ...e, [id]: { text: conflict ? CONFLICT_MESSAGE : message ?? OFFLINE_MESSAGE, pickDate: message === PICK_DATE } }));
     } catch {
       setErrors((e) => ({ ...e, [id]: { text: OFFLINE_MESSAGE } }));
     } finally {
       setPending((p) => ({ ...p, [id]: false }));
     }
   };
-  const ask = (message, row, call) => {
-    if (window.confirm(message)) run(row, call);
+  const ask = (message, row, call, opts) => {
+    if (window.confirm(message)) run(row, call, opts);
   };
+  const TAKE_OFFLINE = { base: { status: "offline" }, doneText: "Taken offline" };
+  const DELETE = { base: { status: "deleted" }, doneText: "Deleted" };
+  const RESTORE = { base: { deletedAt: null, statusBeforeDelete: null, purgeAt: null }, doneText: "Restored" };
 
   if (rows.length === 0) {
     return (
@@ -97,6 +112,9 @@ export default function InvitationList({ rows: initialRows, templateNames, now, 
 
   return (
     <div className="mt-6">
+      <p role="status" aria-live="polite" className="mb-3 text-sm text-green-800 empty:hidden">
+        {done}
+      </p>
       {notices.goingOffline > 0 || notices.erasingSoon > 0 ? (
         <div className="mb-4 flex flex-wrap gap-3">
           {notices.goingOffline > 0 ? (
@@ -167,10 +185,10 @@ export default function InvitationList({ rows: initialRows, templateNames, now, 
               {["live", "changes"].includes(statusBadge(row)) ? (
                 <button
                   type="button"
-                  aria-label="Take offline"
+                  aria-label={`Take offline: ${row.coupleNames}`}
                   title="Take offline"
                   disabled={pending[row.id]}
-                  onClick={() => ask(TAKE_OFFLINE_CONFIRM, row, actions.takeOfflineAction)}
+                  onClick={() => ask(TAKE_OFFLINE_CONFIRM, row, actions.takeOfflineAction, TAKE_OFFLINE)}
                   className={`mr-2 ${iconButton}`}
                 >
                   <Icon>
@@ -182,10 +200,10 @@ export default function InvitationList({ rows: initialRows, templateNames, now, 
               {row.status !== "deleted" ? (
                 <button
                   type="button"
-                  aria-label="Delete"
+                  aria-label={`Delete: ${row.coupleNames}`}
                   title="Delete"
                   disabled={pending[row.id]}
-                  onClick={() => ask(deleteConfirm(), row, actions.deleteInvitationAction)}
+                  onClick={() => ask(deleteConfirm(), row, actions.deleteInvitationAction, DELETE)}
                   className={`mr-4 text-red-800 ${iconButton}`}
                 >
                   <Icon>
@@ -199,7 +217,8 @@ export default function InvitationList({ rows: initialRows, templateNames, now, 
                 <button
                   type="button"
                   disabled={pending[row.id]}
-                  onClick={() => run(row, actions.restoreInvitationAction)}
+                  onClick={() => run(row, actions.restoreInvitationAction, RESTORE)}
+                  aria-label={`Restore: ${row.coupleNames}`}
                   className="mr-4 inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center rounded-full border border-stone-300 px-4 text-sm hover:bg-stone-100 disabled:opacity-40"
                 >
                   Restore

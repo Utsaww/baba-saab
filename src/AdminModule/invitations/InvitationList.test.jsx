@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { OFFLINE_MESSAGE } from "@/AdminModule/messages";
 import { deleteConfirm, TAKE_OFFLINE_CONFIRM } from "@/AdminModule/editor/lifecycle/InvitationMenu";
@@ -175,7 +175,7 @@ describe("InvitationList", () => {
 
     it("shows Take offline on live and changes rows, Delete on all but deleted, Restore only on deleted", async () => {
       setup([live, changes, draft, offline, deleted]);
-      const has = (name, label) => within(item(name)).queryByRole("button", { name: label }) !== null;
+      const has = (name, label) => within(item(name)).queryByRole("button", { name: `${label}: ${name}` }) !== null;
       expect(["l", "c", "d", "o"].map((k) => has(`Couple ${k}`, "Take offline"))).toEqual([true, true, false, false]);
       expect(["l", "c", "d", "o"].map((k) => has(`Couple ${k}`, "Delete"))).toEqual([true, true, true, true]);
       expect(["l", "c", "d", "o"].map((k) => has(`Couple ${k}`, "Restore"))).toEqual([false, false, false, false]);
@@ -188,9 +188,9 @@ describe("InvitationList", () => {
     it("makes no call when the confirm is declined", async () => {
       const a = setup([live]);
       const spy = confirm(false);
-      await userEvent.click(screen.getByRole("button", { name: "Take offline" }));
+      await userEvent.click(screen.getByRole("button", { name: "Take offline: Couple l" }));
       expect(spy).toHaveBeenCalledWith(TAKE_OFFLINE_CONFIRM);
-      await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+      await userEvent.click(screen.getByRole("button", { name: "Delete: Couple l" }));
       expect(spy).toHaveBeenCalledWith(deleteConfirm());
       expect(a.takeOfflineAction).not.toHaveBeenCalled();
       expect(a.deleteInvitationAction).not.toHaveBeenCalled();
@@ -199,28 +199,28 @@ describe("InvitationList", () => {
     it("takes a row offline and updates its badge", async () => {
       const a = setup([live], { takeOfflineAction: vi.fn(async () => ({ ok: true, status: "offline", offlineAt: "2026-10-08T12:00:00.000Z", purgeAt: "2026-11-07T12:00:00.000Z" })) });
       confirm(true);
-      await userEvent.click(screen.getByRole("button", { name: "Take offline" }));
+      await userEvent.click(screen.getByRole("button", { name: "Take offline: Couple l" }));
       expect(a.takeOfflineAction).toHaveBeenCalledWith({ id: "l", expectedVersion: 7 });
       expect(await within(item("Couple l")).findByText("Offline")).toBeInTheDocument();
-      expect(within(item("Couple l")).queryByRole("button", { name: "Take offline" })).not.toBeInTheDocument();
+      expect(within(item("Couple l")).queryByRole("button", { name: "Take offline: Couple l" })).not.toBeInTheDocument();
     });
 
     it("deletes a row: gone from All, present under Deleted with its Restore button", async () => {
       const a = setup([live], { deleteInvitationAction: vi.fn(async () => ({ ok: true, status: "deleted", deletedAt: "2026-10-08T12:00:00.000Z", purgeAt: "2026-11-07T12:00:00.000Z" })) });
       confirm(true);
-      await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+      await userEvent.click(screen.getByRole("button", { name: "Delete: Couple l" }));
       expect(a.deleteInvitationAction).toHaveBeenCalledWith({ id: "l", expectedVersion: 7 });
       expect(await screen.findByText("No invitations match your search.")).toBeInTheDocument();
       await userEvent.selectOptions(filter(), "deleted");
       expect(within(item("Couple l")).getByText(/^Deleted · erased on/)).toBeInTheDocument();
-      expect(within(item("Couple l")).getByRole("button", { name: "Restore" })).toBeInTheDocument();
+      expect(within(item("Couple l")).getByRole("button", { name: "Restore: Couple l" })).toBeInTheDocument();
     });
 
     it("restores a deleted row without asking", async () => {
       const a = setup([deleted], { restoreInvitationAction: vi.fn(async () => ({ ok: true, status: "draft", offlineAt: null, deletedAt: null, purgeAt: null })) });
       const spy = confirm(false);
       await userEvent.selectOptions(filter(), "deleted");
-      await userEvent.click(screen.getByRole("button", { name: "Restore" }));
+      await userEvent.click(screen.getByRole("button", { name: "Restore: Couple x" }));
       expect(spy).not.toHaveBeenCalled();
       expect(a.restoreInvitationAction).toHaveBeenCalledWith({ id: "x", expectedVersion: 7 });
       await userEvent.selectOptions(filter(), "draft");
@@ -234,7 +234,7 @@ describe("InvitationList", () => {
         .mockRejectedValueOnce(new Error("net"));
       setup([live, draft], { takeOfflineAction: take });
       confirm(true);
-      const btn = () => within(item("Couple l")).getByRole("button", { name: "Take offline" });
+      const btn = () => within(item("Couple l")).getByRole("button", { name: "Take offline: Couple l" });
       await userEvent.click(btn());
       expect(await within(item("Couple l")).findByRole("alert")).toHaveTextContent("This invitation changed — reload the page.");
       expect(within(item("Couple d")).queryByRole("alert")).not.toBeInTheDocument();
@@ -249,22 +249,46 @@ describe("InvitationList", () => {
       let finish;
       setup([live, changes], { takeOfflineAction: vi.fn(() => new Promise((r) => { finish = r; })) });
       confirm(true);
-      await userEvent.click(within(item("Couple l")).getByRole("button", { name: "Take offline" }));
-      expect(within(item("Couple l")).getByRole("button", { name: "Take offline" })).toBeDisabled();
-      expect(within(item("Couple l")).getByRole("button", { name: "Delete" })).toBeDisabled();
-      expect(within(item("Couple c")).getByRole("button", { name: "Delete" })).toBeEnabled();
+      await userEvent.click(within(item("Couple l")).getByRole("button", { name: "Take offline: Couple l" }));
+      expect(within(item("Couple l")).getByRole("button", { name: "Take offline: Couple l" })).toBeDisabled();
+      expect(within(item("Couple l")).getByRole("button", { name: "Delete: Couple l" })).toBeDisabled();
+      expect(within(item("Couple c")).getByRole("button", { name: "Delete: Couple c" })).toBeEnabled();
       finish({ ok: false, message: "x" });
       await within(item("Couple l")).findByRole("alert");
-      expect(within(item("Couple l")).getByRole("button", { name: "Delete" })).toBeEnabled();
+      expect(within(item("Couple l")).getByRole("button", { name: "Delete: Couple l" })).toBeEnabled();
     });
 
     it("sends staff to the editor when a restore needs a new offline date", async () => {
       setup([deleted], { restoreInvitationAction: vi.fn(async () => ({ ok: false, message: "Pick a date after today" })) });
       await userEvent.selectOptions(filter(), "deleted");
-      await userEvent.click(screen.getByRole("button", { name: "Restore" }));
+      await userEvent.click(screen.getByRole("button", { name: "Restore: Couple x" }));
       const li = item("Couple x");
       expect(await within(li).findByRole("alert")).toHaveTextContent("Pick a date after today");
       expect(within(li).getByRole("link", { name: "Open it to choose a date" })).toHaveAttribute("href", "/admin/invitations/x/edit");
+    });
+    it("keeps a row's offline date through delete then restore when the results omit it, and announces each result", async () => {
+      const list = [row("l", { status: "published", liveVersion: 7, slug: "l-l", offlineOn: "2026-10-10" })];
+      setup(list, {
+        deleteInvitationAction: vi.fn(async () => ({ ok: true, status: "deleted", deletedAt: "2026-10-08T12:00:00.000Z", purgeAt: "2026-11-07T12:00:00.000Z" })),
+        restoreInvitationAction: vi.fn(async () => ({ ok: true, status: "published" })),
+      });
+      confirm(true);
+      expect(screen.getByRole("button", { name: "1 invitation goes offline in the next 7 days" })).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Delete: Couple l" }));
+      expect(await screen.findByRole("status")).toHaveTextContent("Deleted: Couple l");
+      await userEvent.selectOptions(filter(), "deleted");
+      await userEvent.click(screen.getByRole("button", { name: "Restore: Couple l" }));
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Restored: Couple l"));
+      await userEvent.selectOptions(filter(), "all");
+      expect(within(item("Couple l")).getByText("Live")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "1 invitation goes offline in the next 7 days" })).toBeInTheDocument();
+      expect(within(item("Couple l")).queryByText(/erased on/)).not.toBeInTheDocument();
+    });
+
+    it("takes a refreshed rows prop", () => {
+      const { rerender } = render(<InvitationList rows={[draft]} templateNames={templateNames} now={now} actions={{}} />);
+      rerender(<InvitationList rows={[draft, row("n", { status: "draft" })]} templateNames={templateNames} now={now} actions={{}} />);
+      expect(screen.getByText("Couple n")).toBeInTheDocument();
     });
   });
 

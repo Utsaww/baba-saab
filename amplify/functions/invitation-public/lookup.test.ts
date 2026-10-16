@@ -64,6 +64,14 @@ describe("lookup", () => {
     await expect(run({ ...item, status: "deleted" }, { slug: "a-b" })).resolves.toBeNull();
     await expect(run({ ...item, status: "deleted" }, { slug: "a-b", previewToken: item.previewToken })).resolves.toBeNull();
   });
+  it("previews an offline invitation with the right token, and hides it otherwise", async () => {
+    const off = { ...item, status: "offline" };
+    await expect(run(off, { slug: "a-b", previewToken: item.previewToken })).resolves.toEqual({
+      mode: "preview", templateId: "royal", content: '{"draft":true}',
+    });
+    await expect(run(off, { slug: "a-b" })).resolves.toBeNull();
+    await expect(run(off, { slug: "a-b", previewToken: "nope" })).resolves.toBeNull();
+  });
   it("returns null for a missing invitation", async () => {
     await expect(run(undefined, { slug: "a-b" })).resolves.toBeNull();
   });

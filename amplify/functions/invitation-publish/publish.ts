@@ -82,15 +82,29 @@ export async function setSlug(db: Db, tables: Tables, { id, slug }: { id: string
   return { slug };
 }
 
-async function goLive(db: Db, tables: Tables, id: string, expectedVersion: number, now: string, first: boolean) {
+// A real calendar date (the regex alone would accept 2027-02-30).
+const isIsoDate = (d: unknown): d is string =>
+  typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d)) && new Date(d).toISOString().startsWith(d);
+
+async function goLive(
+  db: Db,
+  tables: Tables,
+  id: string,
+  expectedVersion: number,
+  now: string,
+  first: boolean,
+  offlineOn?: string | null,
+) {
   const inv = await load(db, tables, id);
   if (first && inv.status !== "draft") throw new PublishError("NotDraft", "This invitation is already published.");
   if (!first && inv.status !== "published") throw new PublishError("NotPublished", "Publish the invitation first.");
   if (first && !inv.slug) throw new PublishError("NoSlug", "Choose a link name first.");
   if (inv.version !== expectedVersion) throw new PublishError("VersionConflict", "Updated by someone else — reload");
 
+  // The date it goes offline by itself is chosen once, at first publish; a malformed one is ignored.
+  const off = first && isIsoDate(offlineOn) ? offlineOn : undefined;
   const set = first
-    ? "SET publishedContent = :content, liveVersion = :v, #status = :published, publishedAt = :now, liveUpdatedAt = :now"
+    ? `SET publishedContent = :content, liveVersion = :v, #status = :published, publishedAt = :now, liveUpdatedAt = :now${off ? ", offlineOn = :off" : ""}`
     : "SET publishedContent = :content, liveVersion = :v, liveUpdatedAt = :now";
   try {
     await db.send(
@@ -106,6 +120,7 @@ async function goLive(db: Db, tables: Tables, id: string, expectedVersion: numbe
           ":now": now,
           ":published": "published",
           ...(first ? { ":draft": "draft" } : {}),
+          ...(off ? { ":off": off } : {}),
         },
       }),
     );
@@ -118,8 +133,12 @@ async function goLive(db: Db, tables: Tables, id: string, expectedVersion: numbe
     : { liveVersion: expectedVersion, liveUpdatedAt: now };
 }
 
-export const publish = (db: Db, t: Tables, a: { id: string; expectedVersion: number }, now: string) =>
-  goLive(db, t, a.id, a.expectedVersion, now, true);
+export const publish = (
+  db: Db,
+  t: Tables,
+  a: { id: string; expectedVersion: number; offlineOn?: string | null },
+  now: string,
+) => goLive(db, t, a.id, a.expectedVersion, now, true, a.offlineOn);
 export const updateLive = (db: Db, t: Tables, a: { id: string; expectedVersion: number }, now: string) =>
   goLive(db, t, a.id, a.expectedVersion, now, false);
 

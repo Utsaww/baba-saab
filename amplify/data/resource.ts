@@ -1,5 +1,6 @@
 import { a, defineData, type ClientSchema } from "@aws-amplify/backend";
 import { invitationPublish } from "../functions/invitation-publish/resource";
+import { invitationLifecycle } from "../functions/invitation-lifecycle/resource";
 import { invitationPublic } from "../functions/invitation-public/resource";
 import { staffAdmin } from "../functions/staff-admin/resource";
 
@@ -51,7 +52,16 @@ const schema = a.schema({
       liveVersion: a.integer(),
       publishedAt: a.datetime(),
       liveUpdatedAt: a.datetime(),
+      // Lifecycle (invitation-lifecycle): the date it goes offline by itself, when it did, and when it is erased.
+      offlineOn: a.date(),
+      offlineAt: a.datetime(),
+      deletedAt: a.datetime(),
+      statusBeforeDelete: a.string(),
+      purgeAt: a.datetime(),
     })
+    // No generated hard delete (staff were never allowed it): invitations are removed only through
+    // softDeleteInvitation and the erase in invitation-lifecycle.
+    .disableOperations(["delete"])
     // Staff can create and read; every change goes through saveInvitation's version check.
     .authorization((allow) => [allow.group("admin").to(["create", "read"])]),
 
@@ -94,7 +104,7 @@ const schema = a.schema({
 
   publishInvitation: a
     .mutation()
-    .arguments({ id: a.id().required(), expectedVersion: a.integer().required() })
+    .arguments({ id: a.id().required(), expectedVersion: a.integer().required(), offlineOn: a.date() })
     .returns(a.json())
     .authorization((allow) => [allow.group("admin")])
     .handler(a.handler.function(invitationPublish)),
@@ -105,6 +115,51 @@ const schema = a.schema({
     .returns(a.json())
     .authorization((allow) => [allow.group("admin")])
     .handler(a.handler.function(invitationPublish)),
+
+  // Offline, delete, restore and erase. Each staff change is conditioned on the version and status it read.
+  takeInvitationOffline: a
+    .mutation()
+    .arguments({ id: a.id().required(), expectedVersion: a.integer().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationLifecycle)),
+
+  putInvitationOnline: a
+    .mutation()
+    .arguments({ id: a.id().required(), expectedVersion: a.integer().required(), offlineOn: a.date().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationLifecycle)),
+
+  setInvitationOfflineOn: a
+    .mutation()
+    .arguments({ id: a.id().required(), expectedVersion: a.integer().required(), offlineOn: a.date().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationLifecycle)),
+
+  // Not "deleteInvitation": that name belonged to the model's generated delete, and replacing its resolver with a
+  // custom one in the same deploy fails (the old resolver is only removed in CloudFormation's cleanup phase).
+  softDeleteInvitation: a
+    .mutation()
+    .arguments({ id: a.id().required(), expectedVersion: a.integer().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationLifecycle)),
+
+  restoreInvitation: a
+    .mutation()
+    .arguments({ id: a.id().required(), expectedVersion: a.integer().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationLifecycle)),
+
+  eraseInvitationNow: a
+    .mutation()
+    .arguments({ id: a.id().required(), confirm: a.string().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationLifecycle)),
 
   PublicInvitation: a.customType({
     mode: a.string().required(),

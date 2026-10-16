@@ -2,12 +2,21 @@ import { defineBackend } from "@aws-amplify/backend";
 import { AnyPrincipal, Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
+import { invitationLifecycle } from "./functions/invitation-lifecycle/resource";
 import { invitationPublic } from "./functions/invitation-public/resource";
 import { invitationPublish } from "./functions/invitation-publish/resource";
 import { staffAdmin } from "./functions/staff-admin/resource";
 import { storage } from "./storage/resource";
 
-const backend = defineBackend({ auth, data, staffAdmin, storage, invitationPublish, invitationPublic });
+const backend = defineBackend({
+  auth,
+  data,
+  staffAdmin,
+  storage,
+  invitationPublish,
+  invitationPublic,
+  invitationLifecycle,
+});
 
 // Staff accounts are created only by the owner (admin:create, /admin/staff); nobody can sign themselves up.
 backend.auth.resources.cfnResources.cfnUserPool.addPropertyOverride(
@@ -49,3 +58,24 @@ bucket.addToResourcePolicy(
     resources: [bucket.arnForObjects("invitations/*"), bucket.arnForObjects("music-library/*")],
   }),
 );
+
+// invitation-lifecycle (staff transitions + the daily 03:00 IST job) changes invitations and erases expired ones:
+// their record, their link name and their own files under invitations/<id>/ — nothing else in the bucket.
+const lifecycleFn = backend.invitationLifecycle.resources.lambda;
+tables["Invitation"].grantReadWriteData(lifecycleFn);
+tables["InvitationSlug"].grantReadWriteData(lifecycleFn);
+// bucket.grantRead would allow s3:List* on the whole bucket (no prefix condition) plus GetObject, which erasing
+// doesn't need. Instead: list only under invitations/, and delete only objects under invitations/.
+lifecycleFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "ListInvitationMediaOnly",
+    effect: Effect.ALLOW,
+    actions: ["s3:ListBucket"],
+    resources: [bucket.bucketArn],
+    conditions: { StringLike: { "s3:prefix": ["invitations/*"] } },
+  }),
+);
+bucket.grantDelete(lifecycleFn, "invitations/*");
+backend.invitationLifecycle.addEnvironment("INVITATION_MEDIA_BUCKET", bucket.bucketName);
+backend.invitationLifecycle.addEnvironment("INVITATION_TABLE", tables["Invitation"].tableName);
+backend.invitationLifecycle.addEnvironment("INVITATION_SLUG_TABLE", tables["InvitationSlug"].tableName);

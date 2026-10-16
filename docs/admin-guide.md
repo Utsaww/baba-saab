@@ -67,6 +67,12 @@ Open **Invitations** in the left menu to see every invitation, with the most rec
 - **Status:** choose a status to see only those invitations. New invitations are **Draft** until they are published. After that, a badge shows **Live** (guests see the latest version) or **Changes not live** (you have edits guests can't see yet). Live invitations have an **Open** link that shows the guest page. **Offline** and **Deleted** invitations are covered in the sections below.
 - **All** hides deleted invitations. Choose **Deleted** to find them.
 - Click a row to open it in the editor.
+- **Quick buttons on each row**, next to **Open**, save a trip into the editor. Each one asks you to confirm first (Restore doesn't), and the row updates straight away:
+  - **Take offline** (the power icon) appears on live invitations. Guests then see "no longer available". You can put it back online for 30 days.
+  - **Delete** (the bin icon) appears on every invitation that isn't already deleted. It moves to Deleted and is erased after 30 days unless restored.
+  - **Restore** appears on deleted invitations and brings them back. If a live invitation's **Take offline on** date has already passed, the row says **Pick a date after today** with a link to open the invitation and choose a new date.
+  - If something goes wrong, a red message appears on that row. **This invitation changed — reload the page** means someone else edited it, so reload and try again.
+  - **Put back online** and **Delete permanently now** are only in the editor.
 
 **Notices above the list** appear only when they apply, and clicking one filters the list:
 

@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { deleteConfirm, TAKE_OFFLINE_CONFIRM } from "@/AdminModule/editor/lifecycle/InvitationMenu";
+import { PICK_DATE } from "@/AdminModule/editor/lifecycle/LifecycleBanner";
+import { OFFLINE_MESSAGE } from "@/AdminModule/messages";
 import { formatDate } from "@/InvitationModule/lib/datetime";
 import { isEraseDue, listNotices, STATUS_LABEL, statusBadge, todayIST } from "@/InvitationModule/lib/lifecycle";
 import { filterInvitations, formatEdited, sortByRecent } from "./listing";
@@ -32,11 +35,26 @@ function badgeLabel(row, now) {
   return `${STATUS_LABEL.deleted} · ${at <= now ? "erasing…" : `erased on ${formatDate(todayIST(at))}`}`;
 }
 
+const CONFLICT_MESSAGE = "This invitation changed — reload the page.";
+
+const iconButton = "inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full border border-stone-300 hover:bg-stone-100 disabled:opacity-40";
+
+function Icon({ children }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {children}
+    </svg>
+  );
+}
+
 const noticeClass = "min-h-[44px] rounded-xl border px-4 text-left text-sm hover:underline";
 
 const newButtonClass = "inline-flex min-h-[44px] items-center rounded-full bg-stone-900 px-5 text-sm text-white";
 
-export default function InvitationList({ rows, templateNames, now }) {
+export default function InvitationList({ rows: initialRows, templateNames, now, actions = {} }) {
+  const [rows, setRows] = useState(initialRows);
+  const [pending, setPending] = useState({});
+  const [errors, setErrors] = useState({});
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const shown = useMemo(() => sortByRecent(filterInvitations(rows, { q, status })), [rows, q, status]);
@@ -46,6 +64,25 @@ export default function InvitationList({ rows, templateNames, now }) {
     () => (rows.some((row) => row.status === "deleted" && isEraseDue(row, now + DAY_MS)) ? "deleted" : "offline"),
     [rows, now],
   );
+
+  // Runs one row action: the row's buttons stay disabled until it answers; a success merges its fields into the row.
+  const run = async (row, call, args = {}) => {
+    const id = row.id;
+    setPending((p) => ({ ...p, [id]: true }));
+    setErrors((e) => ({ ...e, [id]: null }));
+    try {
+      const { ok, conflict, message, ...fields } = (await call?.({ id, expectedVersion: row.version, ...args })) ?? {};
+      if (ok) setRows((all) => all.map((r) => (r.id === id ? { ...r, ...fields } : r)));
+      else setErrors((e) => ({ ...e, [id]: { text: conflict ? CONFLICT_MESSAGE : message ?? OFFLINE_MESSAGE, pickDate: message === PICK_DATE } }));
+    } catch {
+      setErrors((e) => ({ ...e, [id]: { text: OFFLINE_MESSAGE } }));
+    } finally {
+      setPending((p) => ({ ...p, [id]: false }));
+    }
+  };
+  const ask = (message, row, call) => {
+    if (window.confirm(message)) run(row, call);
+  };
 
   if (rows.length === 0) {
     return (
@@ -104,7 +141,7 @@ export default function InvitationList({ rows, templateNames, now }) {
       ) : (
         <ul className="mt-4 divide-y divide-stone-200 rounded-xl border border-stone-200 bg-white">
           {shown.map((row) => (
-            <li key={row.id} className="flex items-center hover:bg-stone-50">
+            <li key={row.id} className="flex flex-wrap items-center hover:bg-stone-50">
               <Link
                 href={`/admin/invitations/${row.id}/edit`}
                 className="flex min-h-[44px] min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3"
@@ -126,6 +163,60 @@ export default function InvitationList({ rows, templateNames, now }) {
                 >
                   Open
                 </a>
+              ) : null}
+              {["live", "changes"].includes(statusBadge(row)) ? (
+                <button
+                  type="button"
+                  aria-label="Take offline"
+                  title="Take offline"
+                  disabled={pending[row.id]}
+                  onClick={() => ask(TAKE_OFFLINE_CONFIRM, row, actions.takeOfflineAction)}
+                  className={`mr-2 ${iconButton}`}
+                >
+                  <Icon>
+                    <path d="M12 2v10" />
+                    <path d="M18.4 6.6a9 9 0 1 1-12.8 0" />
+                  </Icon>
+                </button>
+              ) : null}
+              {row.status !== "deleted" ? (
+                <button
+                  type="button"
+                  aria-label="Delete"
+                  title="Delete"
+                  disabled={pending[row.id]}
+                  onClick={() => ask(deleteConfirm(), row, actions.deleteInvitationAction)}
+                  className={`mr-4 text-red-800 ${iconButton}`}
+                >
+                  <Icon>
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M19 6l-1 14H6L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                  </Icon>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={pending[row.id]}
+                  onClick={() => run(row, actions.restoreInvitationAction)}
+                  className="mr-4 inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center rounded-full border border-stone-300 px-4 text-sm hover:bg-stone-100 disabled:opacity-40"
+                >
+                  Restore
+                </button>
+              )}
+              {errors[row.id] ? (
+                <p role="alert" className="w-full px-4 pb-3 text-sm text-red-700">
+                  {errors[row.id].text}
+                  {errors[row.id].pickDate ? (
+                    <>
+                      {" "}
+                      <Link href={`/admin/invitations/${row.id}/edit`} className="underline">
+                        Open it to choose a date
+                      </Link>
+                    </>
+                  ) : null}
+                </p>
               ) : null}
             </li>
           ))}

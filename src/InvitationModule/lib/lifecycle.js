@@ -17,15 +17,22 @@ export function addDays(isoDate, n) {
   return new Date(Date.parse(`${isoDate}T00:00:00Z`) + n * DAY_MS).toISOString().slice(0, 10);
 }
 
+/** A real calendar date written YYYY-MM-DD (2027-02-31 is not). */
+export function isIsoDate(d) {
+  if (typeof d !== "string" || !ISO_DATE.test(d)) return false;
+  const t = Date.parse(`${d}T00:00:00Z`);
+  return Number.isFinite(t) && new Date(t).toISOString().slice(0, 10) === d;
+}
+
 /** Latest event date (or the wedding date) plus 7 days; null when the draft has no date at all. */
 export function defaultOfflineOn(content) {
-  const dates = [...(content?.events ?? []).map((e) => e?.date), content?.mainDate].filter((d) => ISO_DATE.test(d ?? ""));
+  const dates = [...(content?.events ?? []).map((e) => e?.date), content?.mainDate].filter(isIsoDate);
   if (dates.length === 0) return null;
   return addDays(dates.sort().at(-1), OFFLINE_AFTER_DAYS);
 }
 
 export function isOfflineDue(row, now = Date.now()) {
-  return row?.status === "published" && ISO_DATE.test(row.offlineOn ?? "") && row.offlineOn <= todayIST(now);
+  return row?.status === "published" && isIsoDate(row.offlineOn) && row.offlineOn <= todayIST(now);
 }
 
 export function isEraseDue(row, now = Date.now()) {
@@ -45,7 +52,7 @@ export function listNotices(rows, now = Date.now()) {
   let goingOffline = 0;
   let erasingSoon = 0;
   for (const row of rows) {
-    if (row.status === "published" && ISO_DATE.test(row.offlineOn ?? "") && row.offlineOn <= weekAhead) goingOffline += 1;
+    if (row.status === "published" && isIsoDate(row.offlineOn) && row.offlineOn <= weekAhead) goingOffline += 1;
     if (isEraseDue(row, now + DAY_MS)) erasingSoon += 1;
   }
   return { goingOffline, erasingSoon };

@@ -3,6 +3,9 @@ import { requireStaff } from "@/AdminModule/auth/server";
 import { saveInvitationAction } from "@/AdminModule/invitations/actions";
 import { getInvitation, regenerateTokenRecord } from "@/AdminModule/invitations/data";
 import { checkSlugAction, newPreviewLinkAction, publishAction, setSlugAction, updateLiveAction } from "@/AdminModule/invitations/publishActions";
+import {
+  deleteInvitationAction, eraseNowAction, putOnlineAction, restoreInvitationAction, setOfflineOnAction, takeOfflineAction,
+} from "@/AdminModule/invitations/lifecycleActions";
 import { listMusicTracks } from "@/AdminModule/music/data";
 import { templateChoices } from "@/AdminModule/invitations/templateChoices";
 import EditorShell from "@/AdminModule/editor/EditorShell";

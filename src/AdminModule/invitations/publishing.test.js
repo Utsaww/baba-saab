@@ -12,6 +12,9 @@ describe("publishFailure", () => {
     ["NotPublished", "Publish the invitation first."],
     ["NoSlug", "Choose a link name first."],
     ["NotFound", "That invitation no longer exists."],
+    ["WrongStatus", "This invitation changed — reload the page."],
+    ["BadDate", "Pick a date after today"],
+    ["BadConfirm", "That doesn't match — type it exactly as shown."],
   ])("maps %s", (type, message) => expect(publishFailure([{ errorType: type }])).toEqual({ ok: false, message }));
   it("falls back to the connection message", () => {
     expect(publishFailure([{ errorType: "Lambda:Unhandled" }])).toEqual({ ok: false, message: PUBLISH_FAILED });

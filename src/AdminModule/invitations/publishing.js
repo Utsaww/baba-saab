@@ -8,6 +8,9 @@ const MESSAGES = {
   NotPublished: "Publish the invitation first.",
   NoSlug: "Choose a link name first.",
   NotFound: "That invitation no longer exists.",
+  WrongStatus: "This invitation changed — reload the page.",
+  BadDate: "Pick a date after today",
+  BadConfirm: "That doesn't match — type it exactly as shown.",
 };
 
 /** Turns a GraphQL error list from invitation-publish into what the editor shows. */

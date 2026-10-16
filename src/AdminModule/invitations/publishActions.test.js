@@ -77,7 +77,13 @@ describe("publishAction", () => {
     expect(r.ok).toBe(true);
     expect(data.getInvitation).toHaveBeenCalledTimes(2);
     expect(delay.wait).toHaveBeenCalledWith(200);
-    expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4 });
+    expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4, offlineOn: "2027-02-21" });
+  });
+  it("passes the latest event date plus 7 as offlineOn", async () => {
+    data.getInvitation.mockResolvedValue(inv({ content: { ...ready, events: [{ id: "e1", name: { en: "Reception" }, date: "2027-02-16", time: "19:00", venueName: { en: "Rambagh" }, address: { en: "Jaipur" } }] } }));
+    data.publishRecord.mockResolvedValue({ data: { status: "published" } });
+    await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
+    expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4, offlineOn: "2027-02-23" });
   });
   it("runs the checklist on the version being published, not the stale copy", async () => {
     data.getInvitation.mockResolvedValueOnce(inv({ version: 3 })).mockResolvedValueOnce(inv({ content: { ...ready, mainDate: undefined } }));

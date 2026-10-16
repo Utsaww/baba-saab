@@ -64,8 +64,16 @@ They can't sign in again. If they're signed in at that moment, their session end
 Open **Invitations** in the left menu to see every invitation, with the most recently edited at the top. Each row shows the couple's names, the design, the wedding date, its status and who edited it last.
 
 - **Search:** type part of a name (English or Hindi) or a phone number.
-- **Status:** choose a status to see only those invitations. New invitations are **Draft** until they are published. After that, a badge shows **Live** (guests see the latest version) or **Changes not live** (you have edits guests can't see yet). Live invitations have an **Open** link that shows the guest page.
+- **Status:** choose a status to see only those invitations. New invitations are **Draft** until they are published. After that, a badge shows **Live** (guests see the latest version) or **Changes not live** (you have edits guests can't see yet). Live invitations have an **Open** link that shows the guest page. **Offline** and **Deleted** invitations are covered in the sections below.
+- **All** hides deleted invitations. Choose **Deleted** to find them.
 - Click a row to open it in the editor.
+
+**Notices above the list** appear only when they apply, and clicking one filters the list:
+
+- **N invitations go offline in the next 7 days** shows the live invitations that will soon go offline by themselves.
+- **N will be erased in the next 24 hours** shows the offline or deleted invitations about to be permanently erased.
+
+A deleted invitation's badge also says when it will be erased, for example **Deleted · erased on 4 November 2026**. It reads **erasing…** once that moment has passed and the daily job hasn't reached it yet.
 
 ## Creating an invitation
 
@@ -131,9 +139,10 @@ Choose which parts of the invitation guests see, and in what order. Untick **Sho
 
 ## Editor step 7: Settings
 
-- Tick **Ask guests to RSVP** to add the RSVP form, then set the **Last day to RSVP**. After that day the form closes and shows the family's phone number.
-- Choose whether to ask **how many people are coming** and about **meal preference**.
+- **Take offline on** appears here once the invitation is live. It is the date the invitation goes offline by itself. See **After the wedding** below.
 - **Show "Created by Baba Saab Events"** adds a small credit at the bottom. Untick it if the customer prefers.
+
+RSVP settings aren't shown here yet. Guests' RSVP forms are coming later.
 
 ## Editor step 8: Review
 
@@ -185,7 +194,42 @@ After publishing, click **Download QR code**. It saves a file named like `riya-a
 
 ### RSVP forms
 
-Guests' RSVP forms don't appear on live invitations yet. They arrive in the next release. Anything you set in step 7 is saved and will be used then.
+Guests' RSVP forms don't appear on live invitations yet. They are coming later, and step 7 has no RSVP settings until then.
+
+## After the wedding
+
+Every live invitation goes offline by itself some time after the wedding, so old links don't stay up forever.
+
+- **Default:** 7 days after the last event, in India time. It is set when you publish.
+- **Changing it:** open the invitation's step 7 (**Settings**), change **Take offline on** and click **Save date**. The date must be after today. If it falls before the last event, a note says so, but you can still save it.
+- The daily job runs around 3 am India time and takes offline everything whose date has arrived.
+- The invitations list warns you when invitations are due to go offline in the next 7 days.
+
+## Taking an invitation offline and putting it back
+
+**Take it offline now:** open the live invitation, click the **⋯** menu at the top right and choose **Take offline now**. Confirm. Guests who open the link see "This invitation is no longer available". The same happens when the **Take offline on** date arrives.
+
+An offline invitation shows a grey bar saying **Offline since [date] — will be erased on [date]**. Its badge in the list is **Offline**.
+
+**Put it back online:** click **Put back online** on that bar, choose a new **Take offline on** date (it must be after today) and click **Put online**. The same link works again straight away. This only works until the invitation is erased, 30 days after it went offline.
+
+## Deleting and restoring
+
+**Deleting:** open the **⋯** menu on any invitation that isn't already deleted and choose **Delete**. Confirm. The invitation disappears from **All** and appears under **Deleted**. If it was live, its link stops working.
+
+A deleted invitation is **read-only**. You can look at it but not change it. Its grey bar says **Deleted — will be erased on [date]**.
+
+**Restoring:** click **Restore** on the bar. The invitation comes back as it was: a draft is a draft again, and a live one is live again. If the invitation was live and its **Take offline on** date has already passed, you are asked for a new date first. Pick a date after today and click **Restore with this date**.
+
+## Permanent erase
+
+Offline and deleted invitations are erased for good **30 days** after they went offline or were deleted. The daily job (around 3 am India time) does this. Erasing can't be undone.
+
+**What is erased:** the invitation, its photos, its film link, music uploaded for this invitation and its link name, which can then be used again.
+
+**What is kept:** songs in the Music Library, even if the invitation used them.
+
+**Erasing sooner:** on a deleted invitation click **Delete permanently now**. Type the invitation's link name (or the word `delete` if it has none) exactly as shown, then click **Erase now**.
 
 ## Music Library
 

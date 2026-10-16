@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { claimForErase, LifecycleError, putOnline, remove, restore, setOfflineOn, takeOffline } from "./transitions";
+import { claimDueForErase, claimForErase, ERASE_CLAIM, LifecycleError, putOnline, remove, restore, setOfflineOn, takeOffline } from "./transitions";
 
 const NOW = "2027-02-22T10:00:00.000Z"; // 15:30 IST on 22 Feb
 const PURGE = "2027-03-24T10:00:00.000Z"; // NOW + 30 days
@@ -255,9 +255,20 @@ describe("restore to published needs a future offline date", () => {
     await expect(restore(db as any, tables, { id: ID, expectedVersion: 7, offlineOn }, NOW)).rejects.toMatchObject({ name: "BadDate" });
     expect(update(db)).toBeUndefined();
   });
-  it("allows a published invitation that never had an offline date", async () => {
+  it.each([null, undefined])("treats a missing stored offline date (%j) like a past one", async (offlineOn) => {
+    const db = fakeDb({ ...deleted, offlineOn });
+    await expect(restore(db as any, tables, { id: ID, expectedVersion: 7 }, NOW)).rejects.toMatchObject({
+      name: "BadDate",
+      message: "Pick a date after today",
+    });
+    expect(update(db)).toBeUndefined();
+  });
+  it("restores a published invitation that never had an offline date once a future one is given", async () => {
     const db = fakeDb({ ...deleted, offlineOn: null });
-    await expect(restore(db as any, tables, { id: ID, expectedVersion: 7 }, NOW)).resolves.toMatchObject({ status: "published" });
+    await expect(restore(db as any, tables, { id: ID, expectedVersion: 7, offlineOn: "2027-02-23" }, NOW)).resolves.toMatchObject({
+      status: "published",
+    });
+    expect(update(db).ExpressionAttributeValues[":d"]).toBe("2027-02-23");
   });
   it.each(["draft", "offline"])("skips the date check, and ignores a new date, when restoring to %s", async (statusBeforeDelete) => {
     const db = fakeDb({ ...deleted, statusBeforeDelete, offlineOn: "2027-01-01" });
@@ -269,22 +280,62 @@ describe("restore to published needs a future offline date", () => {
 });
 
 describe("claimForErase", () => {
-  it("sets purgeAt to now, conditioned on the version and status it read", async () => {
+  it("sets purgeAt to the epoch, conditioned on the version and status it read", async () => {
     const db = fakeDb(offline);
-    await claimForErase(db as any, tables, { id: ID, version: 7, status: "offline" }, NOW);
+    await claimForErase(db as any, tables, { id: ID, version: 7, status: "offline" });
     expect(update(db)).toEqual({
       TableName: "Inv",
       Key: { id: ID },
-      UpdateExpression: "SET purgeAt = :now",
+      UpdateExpression: "SET purgeAt = :epoch",
       ConditionExpression: "version = :v AND #status = :from",
       ExpressionAttributeNames: { "#status": "status" },
-      ExpressionAttributeValues: { ":now": NOW, ":v": 7, ":from": "offline" },
+      ExpressionAttributeValues: { ":epoch": "1970-01-01T00:00:00.000Z", ":v": 7, ":from": "offline" },
     });
+  });
+  it("uses a claim no racing restore can pass, whatever clock it read", () => {
+    // The guard is `purgeAt > :now`; even a restore whose `now` is earlier than the erase's must fail it.
+    expect(ERASE_CLAIM).toBe("1970-01-01T00:00:00.000Z");
+    for (const now of ["2000-01-01T00:00:00.000Z", NOW]) expect(ERASE_CLAIM > now).toBe(false);
+  });
+  it("makes every staff transition refuse the claimed row", async () => {
+    await expect(restore(fakeDb({ ...deleted, purgeAt: ERASE_CLAIM }) as any, tables, { id: ID, expectedVersion: 7 }, NOW)).rejects.toMatchObject({
+      message: "This invitation is being erased",
+    });
+    await expect(
+      putOnline(fakeDb({ ...offline, purgeAt: ERASE_CLAIM }) as any, tables, { id: ID, expectedVersion: 7, offlineOn: "2027-03-01" }, NOW),
+    ).rejects.toMatchObject({ message: "This invitation is being erased" });
   });
   it("is a conflict when the row changed since it was read", async () => {
     const db = fakeDb(offline, { failUpdate: true });
-    await expect(claimForErase(db as any, tables, { id: ID, version: 7, status: "offline" }, NOW)).rejects.toMatchObject({
+    await expect(claimForErase(db as any, tables, { id: ID, version: 7, status: "offline" })).rejects.toMatchObject({
       name: "VersionConflict",
     });
+  });
+});
+
+describe("claimDueForErase", () => {
+  const row = { id: ID, status: "offline", purgeAt: "2027-02-20T00:00:00.000Z" };
+  it("sets purgeAt to the epoch, conditioned on the status and purgeAt it read", async () => {
+    const db = fakeDb(offline);
+    await expect(claimDueForErase(db as any, tables, row)).resolves.toBe(true);
+    expect(update(db)).toEqual({
+      TableName: "Inv",
+      Key: { id: ID },
+      UpdateExpression: "SET purgeAt = :epoch",
+      ConditionExpression: "#status = :seenStatus AND purgeAt = :seen",
+      ExpressionAttributeNames: { "#status": "status" },
+      ExpressionAttributeValues: { ":epoch": ERASE_CLAIM, ":seenStatus": "offline", ":seen": "2027-02-20T00:00:00.000Z" },
+    });
+  });
+  it("is false when the row changed (or went) since it was read", async () => {
+    await expect(claimDueForErase(fakeDb(offline, { failUpdate: true }) as any, tables, row)).resolves.toBe(false);
+  });
+  it("rethrows anything else", async () => {
+    const db = {
+      send: vi.fn(async () => {
+        throw new Error("Throttled");
+      }),
+    };
+    await expect(claimDueForErase(db as any, tables, row)).rejects.toThrow("Throttled");
   });
 });

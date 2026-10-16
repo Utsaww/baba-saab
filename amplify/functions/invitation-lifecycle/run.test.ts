@@ -55,7 +55,7 @@ describe("runLifecycle", () => {
     await runLifecycle({ db, s3 } as any, cfg, NOW);
     expect(db.calls[0].input).toEqual({
       TableName: "Inv",
-      ProjectionExpression: "id, #status, version, slug, offlineOn, purgeAt",
+      ProjectionExpression: "id, #status, version, slug, offlineOn, purgeAt, publishedContent, content",
       ExpressionAttributeNames: { "#status": "status" },
       ConsistentRead: true,
       ExclusiveStartKey: undefined,
@@ -64,7 +64,7 @@ describe("runLifecycle", () => {
 
   it("takes a due published row offline, conditioned on what it read", async () => {
     const db = fakeDb([[due]]);
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 1, erased: 0, skipped: 0, failed: 0 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 1, backfilled: 0, erased: 0, skipped: 0, failed: 0 });
     expect(updates(db)).toEqual([
       {
         TableName: "Inv",
@@ -85,40 +85,53 @@ describe("runLifecycle", () => {
 
   it("leaves a row that isn't due yet, and live or draft rows alone", async () => {
     const db = fakeDb([[notYet, { id: "inv-draft-01", status: "draft", version: 1 }]]);
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, skipped: 0, failed: 0 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, backfilled: 0, erased: 0, skipped: 0, failed: 0 });
     expect(updates(db)).toEqual([]);
     expect(eraseInvitation).not.toHaveBeenCalled();
   });
 
   it("skips a row changed between scan and write without counting a failure", async () => {
     const db = fakeDb([[due]], { failUpdate: () => true });
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, skipped: 0, failed: 0 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, backfilled: 0, erased: 0, skipped: 0, failed: 0 });
     expect(err).not.toHaveBeenCalled();
   });
 
   it("erases offline and deleted rows past purgeAt", async () => {
     const db = fakeDb([[old, gone]]);
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 2, skipped: 0, failed: 0 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, backfilled: 0, erased: 2, skipped: 0, failed: 0 });
     expect(eraseInvitation).toHaveBeenCalledWith({ db, s3 }, cfg, { id: "inv-old-0001", slug: "old" }, "2027-02-21T21:30:00.000Z");
     expect(eraseInvitation).toHaveBeenCalledWith({ db, s3 }, cfg, { id: "inv-gone-001", slug: null }, "2027-02-21T21:30:00.000Z");
   });
 
-  it("re-reads a row before erasing and skips it if it was restored or its clock restarted", async () => {
-    const restored = fakeDb([[old]], { fresh: () => ({ ...old, status: "published", purgeAt: undefined }) });
-    await expect(runLifecycle({ db: restored, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, skipped: 0, failed: 0 });
-    const restarted = fakeDb([[old]], { fresh: () => ({ ...old, purgeAt: "2027-03-23T00:00:00.000Z" }) });
-    await expect(runLifecycle({ db: restarted, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, skipped: 0, failed: 0 });
-    const vanished = fakeDb([[old]], { fresh: () => undefined });
-    await expect(runLifecycle({ db: vanished, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, skipped: 0, failed: 0 });
-    expect(eraseInvitation).not.toHaveBeenCalled();
-    const get = restored.calls.find((c) => c.constructor.name === "GetCommand").input;
-    expect(get).toEqual({ TableName: "Inv", Key: { id: "inv-old-0001" }, ConsistentRead: true });
+  it("claims each due row (purgeAt = the epoch), conditioned on the status and purgeAt it read, before erasing", async () => {
+    const db = fakeDb([[old]]);
+    await runLifecycle({ db, s3 } as any, cfg, NOW);
+    expect(updates(db)).toEqual([
+      {
+        TableName: "Inv",
+        Key: { id: "inv-old-0001" },
+        UpdateExpression: "SET purgeAt = :epoch",
+        ConditionExpression: "#status = :seenStatus AND purgeAt = :seen",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: { ":epoch": "1970-01-01T00:00:00.000Z", ":seenStatus": "offline", ":seen": "2027-02-20T00:00:00.000Z" },
+      },
+    ]);
+    const claim = db.send.mock.invocationCallOrder[db.calls.findIndex((c) => c.constructor.name === "UpdateCommand")];
+    expect(claim).toBeLessThan(vi.mocked(eraseInvitation).mock.invocationCallOrder[0]);
+  });
+
+  it("skips a due row whose claim fails (restored, deleted again or gone since the scan)", async () => {
+    const db = fakeDb([[old, gone]], { failUpdate: (id) => id === "inv-old-0001" });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, backfilled: 0, erased: 1, skipped: 1, failed: 0 });
+    expect(eraseInvitation).toHaveBeenCalledTimes(1);
+    expect(eraseInvitation).toHaveBeenCalledWith({ db, s3 }, cfg, { id: "inv-gone-001", slug: null }, "2027-02-21T21:30:00.000Z");
+    expect(err).not.toHaveBeenCalled();
   });
 
   it("counts a row as skipped, not erased, when its record delete fails its condition", async () => {
     vi.mocked(eraseInvitation).mockResolvedValueOnce(false);
     const db = fakeDb([[old, gone]]);
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 1, skipped: 1, failed: 0 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, backfilled: 0, erased: 1, skipped: 1, failed: 0 });
     expect(err).not.toHaveBeenCalled();
   });
 
@@ -126,7 +139,7 @@ describe("runLifecycle", () => {
     const boom = new Error("AccessDenied");
     vi.mocked(eraseInvitation).mockRejectedValueOnce(boom);
     const db = fakeDb([[old, gone, due]]);
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 1, erased: 1, skipped: 0, failed: 1 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 1, backfilled: 0, erased: 1, skipped: 0, failed: 1 });
     expect(err).toHaveBeenCalledWith("lifecycle: erase failed", "inv-old-0001", boom);
   });
 
@@ -134,23 +147,94 @@ describe("runLifecycle", () => {
     const db = fakeDb([[due, old]]);
     const send = db.send.getMockImplementation()!;
     db.send.mockImplementation(async (cmd: any) => {
-      if (cmd.constructor.name === "UpdateCommand") throw new Error("Throttled");
+      if (cmd.constructor.name === "UpdateCommand" && cmd.input.Key.id === "inv-due-0001") throw new Error("Throttled");
       return send(cmd);
     });
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 1, skipped: 0, failed: 1 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, backfilled: 0, erased: 1, skipped: 0, failed: 1 });
     expect(err).toHaveBeenCalledWith("lifecycle: offline failed", "inv-due-0001", expect.any(Error));
   });
 
   it("pages through the whole table", async () => {
     const db = fakeDb([[due], [old], [gone]]);
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 1, erased: 2, skipped: 0, failed: 0 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 1, backfilled: 0, erased: 2, skipped: 0, failed: 0 });
     const scans = db.calls.filter((c) => c.constructor.name === "ScanCommand").map((c) => c.input.ExclusiveStartKey);
     expect(scans).toEqual([undefined, { page: "1" }, { page: "2" }]);
+  });
+
+  describe("published rows from before Phase 5 (no offlineOn)", () => {
+    // NOW is 03:00 IST on 22 Feb, so tomorrow is 23 Feb.
+    const legacy = (over: Record<string, unknown> = {}) => ({
+      id: "inv-legacy-01",
+      status: "published",
+      version: 4,
+      slug: "legacy",
+      publishedContent: { mainDate: "2027-03-01", events: [{ date: "2027-03-02" }] },
+      content: { mainDate: "2027-04-01" },
+      ...over,
+    });
+    const backfillOf = (offlineOn: string) => ({
+      TableName: "Inv",
+      Key: { id: "inv-legacy-01" },
+      UpdateExpression: "SET offlineOn = :d",
+      ConditionExpression: "#status = :published AND (attribute_not_exists(offlineOn) OR attribute_type(offlineOn, :null))",
+      ExpressionAttributeNames: { "#status": "status" },
+      ExpressionAttributeValues: { ":d": offlineOn, ":published": "published", ":null": "NULL" },
+    });
+
+    it("sets offlineOn from the live content's dates + 7", async () => {
+      const db = fakeDb([[legacy()]]);
+      await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, backfilled: 1, erased: 0, skipped: 0, failed: 0 });
+      expect(updates(db)).toEqual([backfillOf("2027-03-09")]);
+    });
+    it("backfills a null offlineOn too, and reads AWSJSON stored as a string", async () => {
+      const db = fakeDb([[legacy({ offlineOn: null, publishedContent: JSON.stringify({ mainDate: "2027-03-01" }) })]]);
+      await runLifecycle({ db, s3 } as any, cfg, NOW);
+      expect(updates(db)).toEqual([backfillOf("2027-03-08")]);
+    });
+    it("falls back to the draft content when there is no live content", async () => {
+      const db = fakeDb([[legacy({ publishedContent: undefined })]]);
+      await runLifecycle({ db, s3 } as any, cfg, NOW);
+      expect(updates(db)).toEqual([backfillOf("2027-04-08")]);
+    });
+    it("never sets a date before tomorrow, so a wedding long past isn't taken offline that night", async () => {
+      const db = fakeDb([[legacy({ publishedContent: { mainDate: "2026-01-01" } })]]);
+      await runLifecycle({ db, s3 } as any, cfg, NOW);
+      expect(updates(db)).toEqual([backfillOf("2027-02-23")]);
+    });
+    it("uses tomorrow + 7 days when no date can be found", async () => {
+      const db = fakeDb([[legacy({ publishedContent: {}, content: "not json" })]]);
+      await runLifecycle({ db, s3 } as any, cfg, NOW);
+      expect(updates(db)).toEqual([backfillOf("2027-03-02")]);
+    });
+    it("leaves rows that have a date, and drafts, alone", async () => {
+      const db = fakeDb([[notYet, legacy({ status: "draft" })]]);
+      await runLifecycle({ db, s3 } as any, cfg, NOW);
+      expect(updates(db)).toEqual([]);
+    });
+    it("doesn't count a row whose date was set meanwhile", async () => {
+      const db = fakeDb([[legacy()]], { failUpdate: () => true });
+      await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, backfilled: 0, erased: 0, skipped: 0, failed: 0 });
+      expect(err).not.toHaveBeenCalled();
+    });
+    it("counts an unexpected backfill failure and carries on", async () => {
+      const db = fakeDb([[legacy(), old]]);
+      const send = db.send.getMockImplementation()!;
+      db.send.mockImplementation(async (cmd: any) => {
+        if (cmd.constructor.name === "UpdateCommand" && cmd.input.Key.id === "inv-legacy-01") throw new Error("Throttled");
+        return send(cmd);
+      });
+      await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, backfilled: 0, erased: 1, skipped: 0, failed: 1 });
+      expect(err).toHaveBeenCalledWith("lifecycle: backfill failed", "inv-legacy-01", expect.any(Error));
+    });
+    it("shows backfilled rows in the summary line", async () => {
+      await runLifecycle({ db: fakeDb([[legacy()]]), s3 } as any, cfg, NOW);
+      expect(log).toHaveBeenCalledWith("lifecycle: offline=0 backfilled=1 erased=0 skipped=0 failed=0");
+    });
   });
 
   it("logs a one-line summary", async () => {
     vi.mocked(eraseInvitation).mockRejectedValueOnce(new Error("x"));
     await runLifecycle({ db: fakeDb([[due, old, gone]]), s3 } as any, cfg, NOW);
-    expect(log).toHaveBeenCalledWith("lifecycle: offline=1 erased=1 skipped=0 failed=1");
+    expect(log).toHaveBeenCalledWith("lifecycle: offline=1 backfilled=0 erased=1 skipped=0 failed=1");
   });
 });

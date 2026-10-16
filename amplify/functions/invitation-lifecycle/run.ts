@@ -1,34 +1,73 @@
 import type { S3Client } from "@aws-sdk/client-s3";
-import { GetCommand, ScanCommand, UpdateCommand, type DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { ScanCommand, UpdateCommand, type DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { eraseInvitation } from "./erase";
-import { isEraseDue, isOfflineDue } from "./rules";
-import { purgeAtFrom } from "./transitions";
+import { addDays, asContent, defaultOfflineOn, isEraseDue, isOfflineDue, OFFLINE_AFTER_DAYS, todayIST } from "./rules";
+import { claimDueForErase, purgeAtFrom } from "./transitions";
 
 type Clients = { db: Pick<DynamoDBDocumentClient, "send">; s3: Pick<S3Client, "send"> };
 type Config = { tables: { invitation: string; slug: string }; bucket: string };
-type Row = { id: string; status?: string; version?: number; slug?: string | null; offlineOn?: string | null; purgeAt?: string | null };
+type Row = {
+  id: string;
+  status?: string;
+  version?: number;
+  slug?: string | null;
+  offlineOn?: string | null;
+  purgeAt?: string | null;
+  publishedContent?: unknown;
+  content?: unknown;
+};
 
 const isConditionFailure = (err: any) => err?.name === "ConditionalCheckFailedException";
 
-/** The daily job: takes due invitations offline and erases those whose 30 days have run out. */
+/**
+ * The Take offline on date for a row published before offline dates existed: the live content's dates + 7,
+ * never before tomorrow (so a long-past wedding isn't taken offline that night), or tomorrow + 7 with no date at all.
+ */
+export function backfillOfflineOn(row: Row, nowMs: number): string {
+  const tomorrow = addDays(todayIST(nowMs), 1);
+  const date = defaultOfflineOn(asContent(row.publishedContent) ?? asContent(row.content));
+  if (!date) return addDays(tomorrow, OFFLINE_AFTER_DAYS);
+  return date < tomorrow ? tomorrow : date;
+}
+
+/** The daily job: dates legacy live rows, takes due invitations offline and erases those whose 30 days have run out. */
 export async function runLifecycle(clients: Clients, cfg: Config, now: Date) {
   const { db } = clients;
   const nowMs = now.getTime();
   const nowIso = now.toISOString();
-  const counts = { offline: 0, erased: 0, skipped: 0, failed: 0 };
+  const counts = { offline: 0, backfilled: 0, erased: 0, skipped: 0, failed: 0 };
   let ExclusiveStartKey: Record<string, unknown> | undefined;
   do {
     const page = await db.send(
       new ScanCommand({
         TableName: cfg.tables.invitation,
-        ProjectionExpression: "id, #status, version, slug, offlineOn, purgeAt",
+        ProjectionExpression: "id, #status, version, slug, offlineOn, purgeAt, publishedContent, content",
         ExpressionAttributeNames: { "#status": "status" },
         ConsistentRead: true,
         ExclusiveStartKey,
       }),
     );
     for (const row of (page.Items ?? []) as Row[]) {
-      if (isOfflineDue(row, nowMs)) {
+      if (row.status === "published" && row.offlineOn == null) {
+        try {
+          await db.send(
+            new UpdateCommand({
+              TableName: cfg.tables.invitation,
+              Key: { id: row.id },
+              UpdateExpression: "SET offlineOn = :d",
+              // Only if it is still live with no date: staff may have set one since the scan. Never touches version.
+              ConditionExpression: "#status = :published AND (attribute_not_exists(offlineOn) OR attribute_type(offlineOn, :null))",
+              ExpressionAttributeNames: { "#status": "status" },
+              ExpressionAttributeValues: { ":d": backfillOfflineOn(row, nowMs), ":published": "published", ":null": "NULL" },
+            }),
+          );
+          counts.backfilled += 1;
+        } catch (err) {
+          if (isConditionFailure(err)) continue; // changed meanwhile: tomorrow's run looks again
+          counts.failed += 1;
+          console.error("lifecycle: backfill failed", row.id, err);
+        }
+      } else if (isOfflineDue(row, nowMs)) {
         try {
           await db.send(
             new UpdateCommand({
@@ -55,15 +94,15 @@ export async function runLifecycle(clients: Clients, cfg: Config, now: Date) {
         }
       } else if (isEraseDue(row, nowMs)) {
         try {
-          // Erasing files can't be made conditional, so re-read first: skip it if it was restored,
-          // or deleted again with a fresh 30 days, since the scan.
-          const { Item } = await db.send(
-            new GetCommand({ TableName: cfg.tables.invitation, Key: { id: row.id }, ConsistentRead: true }),
-          );
-          const fresh = Item as Row | undefined;
-          if (!fresh || !isEraseDue(fresh, nowMs) || fresh.purgeAt !== row.purgeAt) continue;
+          // Erasing files can't be made conditional, so claim the row first (purgeAt = the epoch), conditioned on the
+          // status and purgeAt the scan saw. It fails if the row was restored, deleted again with a fresh 30 days, or
+          // went since; once it succeeds, restore and put-online are refused until the erase is done.
+          if (!(await claimDueForErase(db, cfg.tables, { id: row.id, status: row.status!, purgeAt: row.purgeAt }))) {
+            counts.skipped += 1;
+            continue;
+          }
           // Counts as erased only if the record itself went; a failed condition means it changed meanwhile.
-          if (await eraseInvitation(clients, cfg, { id: fresh.id, slug: fresh.slug ?? null }, nowIso)) counts.erased += 1;
+          if (await eraseInvitation(clients, cfg, { id: row.id, slug: row.slug ?? null }, nowIso)) counts.erased += 1;
           else counts.skipped += 1;
         } catch (err) {
           counts.failed += 1;
@@ -73,6 +112,8 @@ export async function runLifecycle(clients: Clients, cfg: Config, now: Date) {
     }
     ExclusiveStartKey = page.LastEvaluatedKey;
   } while (ExclusiveStartKey);
-  console.log(`lifecycle: offline=${counts.offline} erased=${counts.erased} skipped=${counts.skipped} failed=${counts.failed}`);
+  console.log(
+    `lifecycle: offline=${counts.offline} backfilled=${counts.backfilled} erased=${counts.erased} skipped=${counts.skipped} failed=${counts.failed}`,
+  );
   return counts;
 }

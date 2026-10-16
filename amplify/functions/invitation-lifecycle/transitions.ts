@@ -35,7 +35,13 @@ const conflict = () => new LifecycleError("VersionConflict", "Updated by someone
 const isConditionFailure = (err: any) => err?.name === "ConditionalCheckFailedException";
 export const purgeAtFrom = (now: string) => new Date(Date.parse(now) + PURGE_DAYS * DAY_MS).toISOString();
 
-/** True once the erase may have started: the daily job erases rows whose purgeAt has passed, and erase-now sets it to now. */
+/**
+ * What an erase writes to purgeAt before it touches any file. The epoch is at or before every clock, so a restore
+ * or put-back-online racing the erase fails `purgeAt > :now` whatever `now` it computed.
+ */
+export const ERASE_CLAIM = "1970-01-01T00:00:00.000Z";
+
+/** True once the erase may have started: purgeAt has passed (the daily job), or was claimed (ERASE_CLAIM). */
 const beingErased = (inv: Invitation, now: string) => typeof inv.purgeAt === "string" && inv.purgeAt <= now;
 
 /**
@@ -140,9 +146,10 @@ export async function restore(db: Db, tables: Tables, args: Args & { offlineOn?:
       };
     }
     if (target === "published") {
+      // A missing stored date (published before offline dates existed) counts as past: it needs a new one.
       const given = args.offlineOn != null;
       if (given && !afterToday(args.offlineOn, now)) throw badFutureDate();
-      if (!given && isIsoDate(inv.offlineOn) && !afterToday(inv.offlineOn, now)) throw badFutureDate();
+      if (!given && !afterToday(inv.offlineOn, now)) throw badFutureDate();
       if (given) {
         return {
           expr: "SET #status = :target, offlineOn = :d REMOVE deletedAt, statusBeforeDelete, purgeAt",
@@ -156,23 +163,46 @@ export async function restore(db: Db, tables: Tables, args: Args & { offlineOn?:
 }
 
 /**
- * Erase-now's first step: makes the row erase-due (purgeAt = now), conditioned on the version and status just read.
+ * Erase-now's first step: claims the row (purgeAt = ERASE_CLAIM), conditioned on the version and status just read.
  * From here restore and put-online are refused, so the erase that follows can't be undone halfway.
  */
-export async function claimForErase(db: Db, tables: Tables, inv: Pick<Invitation, "id" | "version" | "status">, now: string) {
+export async function claimForErase(db: Db, tables: Tables, inv: Pick<Invitation, "id" | "version" | "status">) {
   try {
     await db.send(
       new UpdateCommand({
         TableName: tables.invitation,
         Key: { id: inv.id },
-        UpdateExpression: "SET purgeAt = :now",
+        UpdateExpression: "SET purgeAt = :epoch",
         ConditionExpression: "version = :v AND #status = :from",
         ExpressionAttributeNames: { "#status": "status" },
-        ExpressionAttributeValues: { ":now": now, ":v": inv.version, ":from": inv.status },
+        ExpressionAttributeValues: { ":epoch": ERASE_CLAIM, ":v": inv.version, ":from": inv.status },
       }),
     );
   } catch (err) {
     if (isConditionFailure(err)) throw conflict();
+    throw err;
+  }
+}
+
+/**
+ * The daily job's claim on a row it found erase-due, conditioned on the status and purgeAt it read. False when the
+ * row was restored, deleted again with a fresh 30 days, or erased since: the job then leaves it alone.
+ */
+export async function claimDueForErase(db: Db, tables: Tables, row: Pick<Invitation, "id" | "status" | "purgeAt">) {
+  try {
+    await db.send(
+      new UpdateCommand({
+        TableName: tables.invitation,
+        Key: { id: row.id },
+        UpdateExpression: "SET purgeAt = :epoch",
+        ConditionExpression: "#status = :seenStatus AND purgeAt = :seen",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: { ":epoch": ERASE_CLAIM, ":seenStatus": row.status, ":seen": row.purgeAt },
+      }),
+    );
+    return true;
+  } catch (err) {
+    if (isConditionFailure(err)) return false;
     throw err;
   }
 }

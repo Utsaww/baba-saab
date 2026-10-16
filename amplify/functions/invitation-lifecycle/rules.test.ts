@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, isEraseDue, isIsoDate, isOfflineDue, PURGE_DAYS, todayIST } from "./rules";
+import { addDays, asContent, defaultOfflineOn, isEraseDue, isIsoDate, isOfflineDue, PURGE_DAYS, todayIST } from "./rules";
 
 // Same cases as src/InvitationModule/lib/lifecycle.test.js: the two copies must agree.
 const at = (iso: string) => Date.parse(iso);
@@ -15,6 +15,30 @@ describe("addDays", () => {
   it("crosses months and years", () => {
     expect(addDays("2027-02-25", 7)).toBe("2027-03-04");
     expect(addDays("2026-12-28", 7)).toBe("2027-01-04");
+  });
+});
+
+describe("defaultOfflineOn", () => {
+  it("is the latest event date + 7", () => {
+    const content = { mainDate: "2027-02-14", events: [{ date: "2027-02-12" }, { date: "2027-02-15" }, { date: "" }] };
+    expect(defaultOfflineOn(content)).toBe("2027-02-22");
+  });
+  it("falls back to the wedding date", () => {
+    expect(defaultOfflineOn({ mainDate: "2027-02-14", events: [] })).toBe("2027-02-21");
+  });
+  it("is null without any date", () => expect(defaultOfflineOn({})).toBeNull());
+  it("is null for missing content", () => expect(defaultOfflineOn(null)).toBeNull());
+});
+
+describe("asContent", () => {
+  it("reads AWSJSON stored as an object, a string or a double-encoded string", () => {
+    const content = { mainDate: "2027-02-14" };
+    expect(asContent(content)).toEqual(content);
+    expect(asContent(JSON.stringify(content))).toEqual(content);
+    expect(asContent(JSON.stringify(JSON.stringify(content)))).toEqual(content);
+  });
+  it("is null for anything that isn't an object", () => {
+    for (const v of [undefined, null, "", "not json", "[1]", "3", 3, [1]]) expect(asContent(v)).toBeNull();
   });
 });
 

@@ -51,8 +51,9 @@ async function eraseNow(id: string, confirm: unknown, now: string) {
     throw new LifecycleError("WrongStatus", "Take it offline or delete it first");
   }
   if (confirm !== (inv.slug || "delete")) throw new LifecycleError("BadConfirm", "Type the link name exactly to confirm.");
-  // Claim first (purgeAt = now): from here nobody can restore it or put it back online mid-erase.
-  await claimForErase(db, tables, inv, now);
-  await eraseInvitation({ db, s3 }, cfg, { id: inv.id, slug: inv.slug || null }, now);
+  // Claim first (purgeAt = the epoch): from here nobody can restore it or put it back online mid-erase.
+  await claimForErase(db, tables, inv);
+  const erased = await eraseInvitation({ db, s3 }, cfg, { id: inv.id, slug: inv.slug || null }, now);
+  if (!erased) throw new LifecycleError("WrongStatus", "This invitation changed — reload the page.");
   return { erased: true };
 }

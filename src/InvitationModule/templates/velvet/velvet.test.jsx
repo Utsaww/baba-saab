@@ -1,11 +1,12 @@
-import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import InvitationRenderer from "../../InvitationRenderer";
 import { parseInvitation, TEMPLATE_IDS } from "../../schema/invitation";
 import { visibleSections } from "../../lib/sections";
 import { getTemplate, TEMPLATES } from "../registry";
 import { velvetFontVars, velvetPalettes } from "./palettes";
 import { velvetSample } from "./sample";
+import own from "./velvet.module.scss";
 
 // WCAG 2 relative luminance and contrast ratio for #rrggbb colours.
 function luminance(hex) {
@@ -45,7 +46,7 @@ describe("velvet registration", () => {
     expect(inv.events.map((e) => e.name.en)).toEqual(["Mehendi", "Haldi", "Sangeet", "Wedding"]);
   });
 
-  it("uses the script, text and Hindi fonts", () => {
+  it("uses Great Vibes for display and Cormorant Garamond for text", () => {
     expect(velvetFontVars["--font-display"]).toBe("var(--font-greatvibes)");
     expect(velvetFontVars["--font-body"]).toBe("var(--font-cormorant)");
   });
@@ -112,5 +113,66 @@ describe("velvet rendering", () => {
     const cover = screen.getByRole("dialog", { name: "Invitation cover" });
     const envelope = within(cover).getByRole("button", { name: "खोलने के लिए टैप करें" });
     expect(within(envelope).getByText("मीरा & अर्जुन")).toHaveAttribute("lang", "hi");
+  });
+});
+
+describe("velvet envelope card names", () => {
+  const longNames = {
+    language: "en",
+    couple: {
+      ...velvetSample.couple,
+      bride: { ...velvetSample.couple.bride, name: { en: "Venkatalakshmi", hi: "वेंकटलक्ष्मी" } },
+      groom: { ...velvetSample.couple.groom, name: { en: "Raghunandan", hi: "रघुनंदन" } },
+    },
+  };
+  const cardNames = (text) =>
+    within(screen.getByRole("dialog", { name: "Invitation cover" })).getByText(text);
+
+  it("marks short names as short", () => {
+    render(<InvitationRenderer invitation={build({ language: "en" })} />);
+    expect(cardNames("Meera & Arjun")).toHaveAttribute("data-length", "short");
+  });
+
+  it("keeps long names whole and steps the size down instead of cutting them off", () => {
+    render(<InvitationRenderer invitation={build(longNames)} />);
+    const names = cardNames("Venkatalakshmi & Raghunandan");
+    expect(names).toHaveAttribute("data-length", "long");
+    expect(names.textContent).not.toContain("…");
+  });
+});
+
+describe("velvet fade-up wiring", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("hands its sections to the fade-up hook when IntersectionObserver exists", () => {
+    const observers = [];
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(cb) {
+          this.cb = cb;
+          this.targets = [];
+          observers.push(this);
+        }
+        observe(el) {
+          this.targets.push(el);
+        }
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    vi.stubGlobal("matchMedia", (query) => ({ matches: false, media: query }));
+    const inv = build();
+    const { container } = render(<InvitationRenderer invitation={inv} ctx={{ mode: "preview", skipOpening: true }} />);
+    const [observer] = observers;
+    expect(observer.targets.map((el) => el.dataset.section)).toEqual(visibleSections(inv));
+    act(() => observer.cb(observer.targets.map((target) => ({ target, isIntersecting: false }))));
+    for (const el of container.querySelectorAll("[data-section]")) expect(el).toHaveClass(own.fadePending);
+  });
+
+  it("leaves every section visible without IntersectionObserver", () => {
+    vi.stubGlobal("IntersectionObserver", undefined);
+    const { container } = render(<InvitationRenderer invitation={build()} ctx={{ mode: "preview", skipOpening: true }} />);
+    for (const el of container.querySelectorAll("[data-section]")) expect(el).not.toHaveClass(own.fadePending);
   });
 });

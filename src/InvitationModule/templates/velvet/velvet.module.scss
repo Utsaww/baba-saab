@@ -338,6 +338,7 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   background: transparent;
   cursor: pointer;
   perspective: 1100px;
+  container-type: inline-size; // card text sizes follow the envelope, not the viewport
   -webkit-tap-highlight-color: transparent;
   &:focus-visible { outline: 2px solid var(--primary); outline-offset: 10px; border-radius: 6px; }
 }
@@ -375,17 +376,22 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 .letterNames {
   max-width: 100%;
   font-family: var(--font-display), cursive;
-  font-size: clamp(24px, 8vw, 31px);
-  line-height: 1.25;
+  font-size: 28px;
+  font-size: 9cqi;
+  line-height: 1.2;
   color: var(--ivory);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  &[lang="hi"] { font-size: clamp(17px, 5.4vw, 21px); line-height: 1.6; }
+  // A wedding card never cuts a name off: wrap onto a second line, balanced, instead.
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  &[data-length="medium"] { font-size: 24px; font-size: 7.6cqi; }
+  &[data-length="long"] { font-size: 21px; font-size: 6.6cqi; }
+  &[lang="hi"] { font-size: 19px; font-size: 6.2cqi; line-height: 1.5; }
+  &[lang="hi"][data-length="long"] { font-size: 17px; font-size: 5.2cqi; }
 }
 .letterDate {
   font-family: var(--font-body), Georgia, serif;
   font-size: 11px;
+  font-size: max(10px, 3.3cqi);
   font-weight: 600;
   letter-spacing: 0.3em;
   padding-left: 0.3em;
@@ -497,8 +503,20 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   50% { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 55%, transparent)); }
 }
 @keyframes hintPulse {
-  0%, 100% { opacity: 0.65; }
+  0%, 100% { opacity: 0.85; }
   50% { opacity: 1; }
+}
+
+// Short or landscape phones: size the envelope by height so the rising card stays on screen.
+// The card rises about half the envelope's height above it, over the faded eyebrow.
+@media (max-height: 560px) {
+  .opening { padding-block: 12px; }
+  .openingInner { gap: 12px; }
+  .envelope { width: min(340px, 86vw, 64vh); }
+}
+@media (max-height: 380px) {
+  .openingEyebrow { display: none; }
+  .envelope { width: min(340px, 86vw, 58vh); margin-top: 22vh; }
 }
 
 // Reduced motion: no 3D flap, sliding card or scroll fades — the overlay simply fades out.
@@ -507,9 +525,16 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   .openingClosing { transform: none; }
   .flap, .letter { transition: none; }
   .seal, .tapHint { animation: none; }
+  .seal { transition: opacity 0.3s ease; }
   .envelope[data-open="true"] {
     .flap { transform: none; z-index: 3; }
     .letter { transform: none; }
+    .seal { transform: translate(-50%, -50%); }
   }
   .fadePending, .fadePending.fadeIn { opacity: 1; transform: none; transition: none; }
+}
+
+// Printing: every section shows, whether or not it has scrolled into view yet.
+@media print {
+  .fadePending { opacity: 1; transform: none; transition: none; }
 }

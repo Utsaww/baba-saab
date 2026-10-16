@@ -14,10 +14,18 @@ import { mergeStyles } from "../../lib/styles";
 import useFadeUp from "./useFadeUp";
 
 const s = mergeStyles(base, own);
-const FADE = { pending: s.fadePending, shown: s.fadeIn };
+// Fade classes exist only in this template's module, so take them from it directly.
+const FADE = { pending: own.fadePending, shown: own.fadeIn };
+
+// Step the envelope card's script down for long names so they wrap onto two lines at most.
+function nameLength(title) {
+  const n = Array.from(title).length;
+  return n > 24 ? "long" : n > 16 ? "medium" : "short";
+}
 
 function Opening({ inv, lang, open }) {
   const cardLang = lang === "hi" ? "hi" : "en";
+  const title = coupleTitle(inv, cardLang);
   return (
     <div className={s.openingInner}>
       <T as="p" v={UI.weddingOf} lang={lang} className={s.openingEyebrow} />
@@ -26,8 +34,8 @@ function Opening({ inv, lang, open }) {
         {/* The card that slides out: the same plum card the invitation is printed on. */}
         <span className={s.letter}>
           <span className={s.letterOrnament} aria-hidden="true" />
-          <span className={s.letterNames} lang={cardLang === "hi" ? "hi" : undefined}>
-            {coupleTitle(inv, cardLang)}
+          <span className={s.letterNames} lang={cardLang === "hi" ? "hi" : undefined} data-length={nameLength(title)}>
+            {title}
           </span>
           <span className={s.letterDate}>{formatDots(inv.mainDate)}</span>
         </span>

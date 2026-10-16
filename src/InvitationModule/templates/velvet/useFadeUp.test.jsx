@@ -49,18 +49,34 @@ describe("useFadeUp", () => {
     for (const el of sections(container)) expect(el.className).toBe("");
   });
 
-  it("hides sections until they scroll into view, then shows them once", () => {
+  it("hides sections below the fold until they scroll into view, then shows them once", () => {
     mockReducedMotion(false);
     const instances = mockObserver();
     render(<Page />);
     const [observer] = instances;
     const [a, b] = observer.observed;
+    // The observer's first report gives each section's starting position.
+    act(() => observer.cb([{ target: a, isIntersecting: false }, { target: b, isIntersecting: false }]));
     expect(a).toHaveClass("pending");
     expect(b).toHaveClass("pending");
-    act(() => observer.cb([{ target: a, isIntersecting: true }, { target: b, isIntersecting: false }]));
+    act(() => observer.cb([{ target: a, isIntersecting: true }]));
     expect(a).toHaveClass("shown");
     expect(b).not.toHaveClass("shown");
     expect(observer.unobserve).toHaveBeenCalledWith(a);
+  });
+
+  it("leaves sections that are already in view alone, so they never flash", () => {
+    mockReducedMotion(false);
+    const instances = mockObserver();
+    const { container } = render(<Page />);
+    const [observer] = instances;
+    const [a, b] = observer.observed;
+    // Nothing is hidden before the first report arrives.
+    for (const el of sections(container)) expect(el.className).toBe("");
+    act(() => observer.cb([{ target: a, isIntersecting: true }, { target: b, isIntersecting: false }]));
+    expect(a.className).toBe("");
+    expect(observer.unobserve).toHaveBeenCalledWith(a);
+    expect(b).toHaveClass("pending");
   });
 
   it("does nothing under reduced motion", () => {

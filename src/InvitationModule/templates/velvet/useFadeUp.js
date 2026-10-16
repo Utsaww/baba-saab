@@ -9,20 +9,25 @@ export default function useFadeUp(ref, { pending, shown, selector = "[data-secti
     if (!root || typeof IntersectionObserver === "undefined") return undefined;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return undefined;
 
+    // The first report for each section says where it starts. Sections already on screen are
+    // left alone (hiding them would flash); the rest are hidden and fade up when they arrive.
+    const placed = new WeakSet();
     const observer = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          entry.target.classList.add(shown);
-          observer.unobserve(entry.target);
+        for (const { target, isIntersecting } of entries) {
+          const first = !placed.has(target);
+          placed.add(target);
+          if (!isIntersecting) {
+            if (first) target.classList.add(pending);
+            continue;
+          }
+          if (!first) target.classList.add(shown);
+          observer.unobserve(target);
         }
       },
-      { rootMargin: "0px 0px -8% 0px", threshold: 0.08 },
+      { threshold: 0.08 },
     );
-    for (const el of root.querySelectorAll(selector)) {
-      el.classList.add(pending);
-      observer.observe(el);
-    }
+    for (const el of root.querySelectorAll(selector)) observer.observe(el);
     return () => observer.disconnect();
   }, [ref, pending, shown, selector]);
 }

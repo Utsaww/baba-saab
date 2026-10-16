@@ -11,7 +11,11 @@ import { useUploads } from "@/AdminModule/media/useUploads";
 import { PUBLISH_FAILED, SLUG_TAKEN } from "@/AdminModule/invitations/publishing";
 import { OFFLINE_MESSAGE } from "@/AdminModule/messages";
 import { indexFields } from "@/InvitationModule/lib/indexFields";
+import { defaultOfflineOn, isIsoDate } from "@/InvitationModule/lib/lifecycle";
 import { hasUnsavedChanges } from "./autosave";
+import EraseDialog from "./lifecycle/EraseDialog";
+import InvitationMenu from "./lifecycle/InvitationMenu";
+import LifecycleBanner, { PICK_DATE } from "./lifecycle/LifecycleBanner";
 import { getIn, setIn } from "./paths";
 import PreviewPane from "./PreviewPane";
 import ChangesNote from "./publish/ChangesNote";
@@ -23,6 +27,21 @@ import { useAutosave } from "./useAutosave";
 import { LEAVE_MESSAGE, UPLOADING_MESSAGE, useLeaveGuard } from "./useLeaveGuard";
 
 const navButton = "min-h-[44px] rounded-full border border-stone-300 px-5 text-sm hover:bg-stone-100";
+const LIFECYCLE_FAILED = "Couldn't save that change. Check your connection and try again.";
+const LIFECYCLE_KEYS = ["status", "offlineOn", "offlineAt", "deletedAt", "purgeAt"];
+
+/** The lifecycle fields after a staff change: `base` first (what the change implies), then what the server answered. */
+function applyResult(l, r, base = {}) {
+  const next = { ...l, ...base };
+  for (const key of LIFECYCLE_KEYS) if (r[key] !== undefined) next[key] = r[key];
+  return next;
+}
+
+/** The latest day of the wedding: the last dated event, or the wedding date. */
+function lastEventDate(content) {
+  const dates = [...(content?.events ?? []).map((e) => e?.date), content?.mainDate].filter(isIsoDate).sort();
+  return dates.at(-1) ?? null;
+}
 
 export default function EditorShell({
   invitation,
@@ -30,20 +49,33 @@ export default function EditorShell({
   templates,
   saveAction,
   publishActions = {},
+  lifecycleActions = {},
   musicTracks = [],
   musicTracksError = false,
 }) {
   const [content, setContent] = useState(invitation.content);
   const [step, setStep] = useState(initialStep);
   const [showPreview, setShowPreview] = useState(false);
-  // What guests can see: the link name, the preview code and the published copy.
-  const [live, setLive] = useState(() => ({
+  // Where the invitation is in its life and the dates that go with it. The only place `status` is kept.
+  const [lifecycle, setLifecycle] = useState(() => ({
     status: invitation.status ?? "draft",
+    offlineOn: invitation.offlineOn ?? null,
+    offlineAt: invitation.offlineAt ?? null,
+    deletedAt: invitation.deletedAt ?? null,
+    purgeAt: invitation.purgeAt ?? null,
+  }));
+  // A deleted invitation can't be edited: nothing changes, so nothing is saved.
+  const readOnly = lifecycle.status === "deleted";
+  const readOnlyRef = useRef(readOnly);
+  readOnlyRef.current = readOnly;
+  // What guests can see: the link name, the preview code and the published copy (status comes from `lifecycle`).
+  const [liveFields, setLive] = useState(() => ({
     slug: invitation.slug ?? null,
     previewToken: invitation.previewToken ?? null,
     liveVersion: invitation.liveVersion ?? null,
     publishedContent: invitation.publishedContent ?? null,
   }));
+  const live = useMemo(() => ({ status: lifecycle.status, ...liveFields }), [lifecycle.status, liveFields]);
   const liveRef = useRef(live);
   liveRef.current = live;
   // A sentence, or { message, missing } when the server lists what is still needed.
@@ -80,8 +112,8 @@ export default function EditorShell({
   const liveStatus = liveState({ status: live.status, version: state.version, liveVersion: live.liveVersion });
 
   // Server actions can get a new identity after a revalidation; always call the latest ones.
-  const actionsRef = useRef(publishActions);
-  actionsRef.current = publishActions;
+  const actionsRef = useRef(null);
+  actionsRef.current = { ...publishActions, ...lifecycleActions };
   // A server action that never answers (dropped connection) rejects on the client; staff get a sentence instead.
   const call = async (name, args) => {
     try {
@@ -154,7 +186,9 @@ export default function EditorShell({
         { slug },
         (r, sent) => {
           liveRef.current = { ...liveRef.current, publishedContent: sent };
-          setLive((l) => ({ ...l, status: "published", slug: r.slug, liveVersion: r.liveVersion, publishedContent: sent }));
+          setLive((l) => ({ ...l, slug: r.slug, liveVersion: r.liveVersion, publishedContent: sent }));
+          // The server stored the default take-offline date for the copy it published (latest event + 7 days).
+          setLifecycle((l) => ({ ...l, status: "published", offlineOn: defaultOfflineOn(sent) ?? l.offlineOn }));
         },
         // A new link name saved before publishing failed: the old one is released, so links must use the new one.
         (r) => {
@@ -222,10 +256,55 @@ export default function EditorShell({
     message: uploads.busy && !saveAtRisk ? UPLOADING_MESSAGE : LEAVE_MESSAGE,
   });
 
-  const update = useCallback(
-    (path, value) => setContent((c) => setIn(c, path, typeof value === "function" ? value(getIn(c, path)) : value)),
-    [],
-  );
+  // Offline, delete, restore and erase. Each runs alone (shared with publishing), saves pending edits first so the
+  // version sent is the stored one (a deleted invitation has none), and none of them changes the version.
+  const [lifecycleError, setLifecycleError] = useState(null);
+  const [erasing, setErasing] = useState(false);
+  const runLifecycle = async (name, args, apply) => {
+    let result;
+    await exclusive(async () => {
+      setLifecycleError(null);
+      let expectedVersion = state.version;
+      if (!readOnlyRef.current) {
+        const copy = await savedCopy();
+        if (!copy) return;
+        expectedVersion = copy.version;
+      }
+      result = await call(name, { id: invitation.id, expectedVersion, ...args });
+      if (result?.ok) {
+        setLifecycle((l) => apply(l, result));
+        setErasing(false);
+      } else if (result?.conflict) setPublishConflict(true);
+      // "Pick a date after today" is answered by the banner's date prompt.
+      else if (result?.message !== PICK_DATE) setLifecycleError(result?.message ?? LIFECYCLE_FAILED);
+    });
+    return result;
+  };
+
+  const onTakeOffline = () => runLifecycle("takeOfflineAction", {}, (l, r) => applyResult(l, r));
+  const onPutOnline = (offlineOn) =>
+    runLifecycle("putOnlineAction", { offlineOn }, (l, r) => applyResult(l, r, { status: "published", offlineOn, offlineAt: null, purgeAt: null }));
+  const onSetOfflineOn = (offlineOn) => runLifecycle("setOfflineOnAction", { offlineOn }, (l, r) => applyResult(l, r, { offlineOn }));
+  const onDelete = () => runLifecycle("deleteInvitationAction", {}, (l, r) => applyResult(l, r, { status: "deleted" }));
+  const onRestore = (offlineOn) =>
+    runLifecycle("restoreInvitationAction", offlineOn ? { offlineOn } : {}, (l, r) =>
+      applyResult(l, r, { deletedAt: null, purgeAt: null, ...(offlineOn ? { offlineOn } : {}) }),
+    );
+  const onErase = (confirm) =>
+    exclusive(async () => {
+      setLifecycleError(null);
+      const r = await call("eraseNowAction", { id: invitation.id, confirm });
+      if (r?.ok) {
+        allowLeave();
+        window.location.assign("/admin/invitations");
+      } else if (r?.conflict) setPublishConflict(true);
+      else setLifecycleError(r?.message ?? LIFECYCLE_FAILED);
+    });
+
+  const update = useCallback((path, value) => {
+    if (readOnlyRef.current) return;
+    setContent((c) => setIn(c, path, typeof value === "function" ? value(getIn(c, path)) : value));
+  }, []);
 
   const { errors } = useMemo(() => cleanDraft(content), [content]);
 
@@ -272,11 +351,28 @@ export default function EditorShell({
         >
           {showPreview ? "Hide preview" : "Preview"}
         </button>
-        <SaveStatus state={state} />
+        <div className="flex items-center gap-3">
+          <SaveStatus state={state} />
+          <InvitationMenu status={lifecycle.status} pending={publishPending} onTakeOffline={onTakeOffline} onDelete={onDelete} />
+        </div>
       </div>
       <SaveBanners state={state} conflict={publishConflict} onRetry={retry} onReload={reload} />
+      <LifecycleBanner
+        key={lifecycle.status}
+        {...lifecycle}
+        pending={publishPending}
+        onPutOnline={onPutOnline}
+        onRestore={onRestore}
+        onEraseNow={() => setErasing(true)}
+      />
+      {lifecycleError ? (
+        <p role="alert" className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+          {lifecycleError}
+        </p>
+      ) : null}
+      {erasing && readOnly ? <EraseDialog slug={live.slug} pending={publishPending} onConfirm={onErase} onCancel={() => setErasing(false)} /> : null}
       {step !== 8 ? <PublishErrorNote error={publishError} onGoToStep={goTo} className="mt-4" /> : null}
-      {liveStatus === "changes" && step !== 8 ? <ChangesNote pending={publishPending} onUpdateLive={onUpdateLive} /> : null}
+      {liveStatus === "changes" && step !== 8 && !readOnly ? <ChangesNote pending={publishPending} onUpdateLive={onUpdateLive} /> : null}
 
       <div className="mt-6 flex flex-col gap-6 lg:flex-row">
         <aside className="lg:w-60 lg:shrink-0">
@@ -292,7 +388,7 @@ export default function EditorShell({
               ? Help for this step
             </a>
           </div>
-          <div className="mt-4">
+          <fieldset disabled={readOnly} className="mt-4 min-w-0">
             <Step
               content={content}
               update={update}
@@ -308,6 +404,7 @@ export default function EditorShell({
                 live,
                 state: liveStatus,
                 busy: uploads.busy,
+                readOnly,
                 error: publishError,
                 pending: publishPending,
                 origin,
@@ -318,22 +415,29 @@ export default function EditorShell({
                 onNewPreviewLink,
                 onGoToStep: goTo,
               }}
+              offlineField={
+                lifecycle.status === "published" || lifecycle.status === "offline"
+                  ? { value: lifecycle.offlineOn, onSave: onSetOfflineOn, pending: publishPending, lastEventDate: lastEventDate(content) }
+                  : null
+              }
             />
-          </div>
-          <div className="mt-8 flex justify-between gap-3">
-            {step > 1 ? (
-              <button type="button" onClick={() => goTo(step - 1)} className={navButton}>
-                ← Back
-              </button>
-            ) : (
-              <span />
-            )}
-            {step < STEPS.length && (
-              <button type="button" onClick={() => goTo(step + 1)} className={navButton}>
-                Next →
-              </button>
-            )}
-          </div>
+          </fieldset>
+          {readOnly ? null : (
+            <div className="mt-8 flex justify-between gap-3">
+              {step > 1 ? (
+                <button type="button" onClick={() => goTo(step - 1)} className={navButton}>
+                  ← Back
+                </button>
+              ) : (
+                <span />
+              )}
+              {step < STEPS.length && (
+                <button type="button" onClick={() => goTo(step + 1)} className={navButton}>
+                  Next →
+                </button>
+              )}
+            </div>
+          )}
         </section>
 
         <aside id="live-preview" aria-label="Live preview" className={`${showPreview ? "block" : "hidden"} order-first lg:order-none lg:block lg:w-[262px] lg:shrink-0`}>

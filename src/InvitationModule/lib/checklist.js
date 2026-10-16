@@ -53,7 +53,8 @@ export function publishChecklist(draft) {
     if (!event.date) add(`event${i}.date`, `Add a date for ${name}`, 4);
     if (!event.time) add(`event${i}.time`, `Add a time for ${name}`, 4);
   });
-  if (draft.rsvp?.enabled && !draft.rsvp.deadline) add("rsvpDeadline", "Add the last day to RSVP", 7);
+  // RSVPs are parked: step 7 no longer shows their settings, so a stored `rsvp.enabled` can't block publishing.
+  // The "Add the last day to RSVP" item returns when RSVPs do.
 
   // Anything the strict schema still rejects once the obvious gaps are filled.
   if (items.length === 0) {

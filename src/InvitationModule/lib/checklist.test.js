@@ -64,9 +64,9 @@ describe("publishChecklist", () => {
     ]);
   });
 
-  it("asks for an RSVP deadline when RSVP is on", () => {
+  it("doesn't ask for an RSVP deadline while RSVPs are parked, even when an old draft has RSVP on", () => {
     const draft = { ...complete(), rsvp: { enabled: true } };
-    expect(publishChecklist(draft)).toEqual([{ id: "rsvpDeadline", message: "Add the last day to RSVP", step: 7 }]);
+    expect(publishChecklist(draft)).toEqual([]);
     expect(publishChecklist({ ...draft, rsvp: { enabled: true, deadline: "2027-02-01" } })).toEqual([]);
   });
 

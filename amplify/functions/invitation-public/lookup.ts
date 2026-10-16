@@ -25,7 +25,8 @@ export async function lookup(
     previewToken !== "" &&
     typeof item.previewToken === "string" &&
     previewToken === item.previewToken;
-  if ((item.status === "draft" || item.status === "published") && tokenOk) {
+  // Staff can still preview an offline invitation; a deleted one is never shown.
+  if ((item.status === "draft" || item.status === "published" || item.status === "offline") && tokenOk) {
     return { mode: "preview", templateId: item.templateId, content: item.content };
   }
   if (item.status === "published" && item.publishedContent) {

@@ -11,13 +11,14 @@ describe("STEPS", () => {
       "Events",
       "Photos, film & music",
       "Sections",
-      "RSVP & settings",
+      "Settings",
       "Review",
     ]);
   });
 
   it("links each step to its guide section", () => {
     expect(guideHref(STEPS[2])).toBe("/admin/help#editor-step-3-date-venue-travel");
+    expect(guideHref(STEPS[6])).toBe("/admin/help#editor-step-7-settings");
   });
 });
 
@@ -38,5 +39,11 @@ describe("stepHasContent", () => {
     expect(stepHasContent(3, content)).toBe(false);
     expect(stepHasContent(4, { events: [{ id: "a" }] })).toBe(true);
     expect(stepHasContent(8, content)).toBe(false);
+  });
+  it("ticks step 7 from what it shows, not from the hidden RSVP switch", () => {
+    expect(stepHasContent(7, { rsvp: { enabled: true } })).toBe(false);
+    expect(stepHasContent(7, {})).toBe(false);
+    expect(stepHasContent(7, { showCredit: true })).toBe(false);
+    expect(stepHasContent(7, { showCredit: false })).toBe(true);
   });
 });

@@ -17,7 +17,7 @@ export const handler = async (event: Event) => {
       case "setInvitationSlug":
         return await setSlug(db, tables, { id: a.id, slug: a.slug }, now);
       case "publishInvitation":
-        return await publish(db, tables, { id: a.id, expectedVersion: a.expectedVersion }, now);
+        return await publish(db, tables, { id: a.id, expectedVersion: a.expectedVersion, offlineOn: a.offlineOn }, now);
       case "updateLiveInvitation":
         return await updateLive(db, tables, { id: a.id, expectedVersion: a.expectedVersion }, now);
       case "regeneratePreviewToken":

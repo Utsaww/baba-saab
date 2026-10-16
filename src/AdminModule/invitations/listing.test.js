@@ -26,6 +26,16 @@ describe("filterInvitations", () => {
   it("filters by status", () => {
     expect(filterInvitations(rows, { status: "published" }).map((r) => r.id)).toEqual(["c"]);
   });
+
+  it("all hides deleted", () => {
+    const withDeleted = [...rows, { id: "d", status: "deleted", searchText: "old wedding" }, { id: "e", status: "offline", searchText: "gone" }];
+    expect(filterInvitations(withDeleted, { status: "all" }).map((r) => r.id)).toEqual(["a", "b", "c", "e"]);
+  });
+
+  it("deleted filter shows only deleted", () => {
+    const withDeleted = [...rows, { id: "d", status: "deleted", searchText: "old wedding" }];
+    expect(filterInvitations(withDeleted, { status: "deleted" }).map((r) => r.id)).toEqual(["d"]);
+  });
 });
 
 describe("sortByRecent", () => {

@@ -52,7 +52,17 @@ export function renderStep(Step, initial, extraProps = {}) {
   return { ...utils, latest: () => current };
 }
 
-export const DRAFT_LIVE_FIELDS = { status: "draft", slug: "priya-weds-rahul-k3f9", previewToken: "tok_1", liveVersion: null, publishedContent: null };
+export const DRAFT_LIVE_FIELDS = {
+  status: "draft",
+  slug: "priya-weds-rahul-k3f9",
+  previewToken: "tok_1",
+  liveVersion: null,
+  publishedContent: null,
+  offlineOn: null,
+  offlineAt: null,
+  deletedAt: null,
+  purgeAt: null,
+};
 
 /** Everything the publish checklist needs. */
 export const COMPLETE_CONTENT = {
@@ -66,9 +76,9 @@ export const COMPLETE_CONTENT = {
 
 /**
  * Renders the whole editor for invitation "inv-test" with mocked server actions. Each save answers with the next version.
- * Returns the invitation, `saveAction` and the `publishActions` mocks alongside the usual render result.
+ * Returns the invitation, `saveAction`, and the `publishActions` and `lifecycleActions` mocks alongside the usual render result.
  */
-export function renderEditor({ invitation = {}, publishActions = {}, saveAction, initialStep = 2 } = {}) {
+export function renderEditor({ invitation = {}, publishActions = {}, lifecycleActions = {}, saveAction, initialStep = 2 } = {}) {
   const inv = { id: "inv-test", version: 5, content: COMPLETE_CONTENT, ...DRAFT_LIVE_FIELDS, ...invitation };
   const save = saveAction ?? vi.fn(async ({ expectedVersion }) => ({ ok: true, version: expectedVersion + 1, savedAt: "2026-10-14T05:00:00.000Z" }));
   const actions = {
@@ -79,8 +89,24 @@ export function renderEditor({ invitation = {}, publishActions = {}, saveAction,
     updateLiveAction: vi.fn(async ({ expectedVersion }) => ({ ok: true, liveVersion: expectedVersion })),
     ...publishActions,
   };
+  const lifecycle = {
+    takeOfflineAction: vi.fn(async () => ({ ok: true, status: "offline", offlineAt: "2026-10-14T05:00:00.000Z", purgeAt: "2026-11-13T05:00:00.000Z" })),
+    putOnlineAction: vi.fn(async ({ offlineOn }) => ({ ok: true, status: "published", offlineOn })),
+    setOfflineOnAction: vi.fn(async ({ offlineOn }) => ({ ok: true, offlineOn })),
+    deleteInvitationAction: vi.fn(async () => ({ ok: true, status: "deleted", deletedAt: "2026-10-14T05:00:00.000Z", purgeAt: "2026-11-13T05:00:00.000Z" })),
+    restoreInvitationAction: vi.fn(async () => ({ ok: true, status: "draft", purgeAt: null })),
+    eraseNowAction: vi.fn(async () => ({ ok: true })),
+    ...lifecycleActions,
+  };
   const utils = render(
-    <EditorShell invitation={inv} initialStep={initialStep} templates={TEMPLATE_CHOICES} saveAction={save} publishActions={actions} />,
+    <EditorShell
+      invitation={inv}
+      initialStep={initialStep}
+      templates={TEMPLATE_CHOICES}
+      saveAction={save}
+      publishActions={actions}
+      lifecycleActions={lifecycle}
+    />,
   );
-  return { ...utils, invitation: inv, saveAction: save, publishActions: actions };
+  return { ...utils, invitation: inv, saveAction: save, publishActions: actions, lifecycleActions: lifecycle };
 }

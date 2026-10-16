@@ -10,6 +10,7 @@ vi.mock("@/AdminModule/media/photos", () => ({
 
 import EditorShell from "./EditorShell";
 import { COMPLETE_CONTENT, renderEditor, TEMPLATE_CHOICES } from "./test-utils";
+import { addDays, todayIST } from "@/InvitationModule/lib/lifecycle";
 
 const invitation = {
   id: "inv-1",
@@ -461,5 +462,169 @@ describe("EditorShell publishing", () => {
     await settle();
     expect(setSlugAction).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("EditorShell lifecycle", () => {
+  const published = { status: "published", version: 5, liveVersion: 5, publishedContent: COMPLETE_CONTENT, offlineOn: "2027-02-21" };
+  const offline = { ...published, status: "offline", offlineOn: "2026-10-01", offlineAt: "2026-10-02T05:00:00.000Z", purgeAt: "2026-11-01T05:00:00.000Z" };
+  const deleted = { status: "deleted", deletedAt: "2026-10-05T05:00:00.000Z", purgeAt: "2026-11-04T05:00:00.000Z" };
+  const settle = async () => {
+    for (let i = 0; i < 5; i += 1) await act(async () => {});
+  };
+  const menu = async (name) => {
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name })));
+    await settle();
+    confirm.mockRestore();
+  };
+  const banner = () => screen.queryByText(/will be erased on/);
+
+  it("takes a live invitation offline, saving pending edits first, and shows the offline banner", async () => {
+    const { lifecycleActions, saveAction } = renderEditor({ invitation: published });
+    fireEvent.change(screen.getByLabelText("Bride's name"), { target: { value: "Priyanka" } });
+    await menu("Take offline now");
+    expect(saveAction).toHaveBeenCalledTimes(1);
+    expect(lifecycleActions.takeOfflineAction).toHaveBeenCalledWith({ id: "inv-test", expectedVersion: 6 });
+    expect(banner()).toHaveTextContent("Offline since Wednesday, 14 October 2026 — will be erased on Friday, 13 November 2026");
+    // Editing still works while offline.
+    expect(screen.getByLabelText("Bride's name")).toBeEnabled();
+  });
+
+  it("puts an offline invitation back online with a date after today", async () => {
+    const { lifecycleActions } = renderEditor({ invitation: offline });
+    expect(banner()).toHaveTextContent("Offline since Friday, 2 October 2026");
+    fireEvent.click(screen.getByRole("button", { name: "Put back online" }));
+    const date = addDays(todayIST(), 3);
+    fireEvent.change(screen.getByLabelText("Take offline on"), { target: { value: date } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Put online" })));
+    await settle();
+    expect(lifecycleActions.putOnlineAction).toHaveBeenCalledWith({ id: "inv-test", expectedVersion: 5, offlineOn: date });
+    expect(banner()).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    expect(screen.getByRole("button", { name: "Take offline now" })).toBeInTheDocument();
+  });
+
+  it("makes a deleted invitation read-only, and Restore returns it to how it was", async () => {
+    const { lifecycleActions, saveAction } = renderEditor({ invitation: { ...published, version: 6 } });
+    expect(screen.getByText("You have changes guests can't see yet")).toBeInTheDocument();
+    await menu("Delete");
+    expect(lifecycleActions.deleteInvitationAction).toHaveBeenCalledWith({ id: "inv-test", expectedVersion: 6 });
+    expect(banner()).toHaveTextContent("Deleted — will be erased on Friday, 13 November 2026");
+    expect(screen.queryByText("You have changes guests can't see yet")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Next/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Back/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "More actions" })).not.toBeInTheDocument();
+    const bride = screen.getByLabelText("Bride's name");
+    expect(bride.closest("fieldset")).toBeDisabled();
+    fireEvent.change(bride, { target: { value: "Someone else" } });
+    await act(async () => vi.advanceTimersByTime(3000));
+    expect(saveAction).not.toHaveBeenCalled();
+    expect(bride).toHaveValue("Priya");
+
+    lifecycleActions.restoreInvitationAction.mockResolvedValueOnce({ ok: true, status: "published", purgeAt: null });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Restore" })));
+    await settle();
+    expect(lifecycleActions.restoreInvitationAction).toHaveBeenCalledWith({ id: "inv-test", expectedVersion: 6 });
+    expect(banner()).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Bride's name").closest("fieldset")).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Next/ })).toBeInTheDocument();
+    expect(screen.getByText("You have changes guests can't see yet")).toBeInTheDocument();
+  });
+
+  it("hides the publish actions of a deleted invitation", () => {
+    renderEditor({ invitation: deleted, initialStep: 8 });
+    expect(screen.queryByRole("button", { name: "Publish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "New preview link" })).not.toBeInTheDocument();
+    expect(screen.getByText("Restore this invitation to publish or share it.")).toBeInTheDocument();
+  });
+
+  it("asks for a new date when restoring to live after the offline date has passed", async () => {
+    const restoreInvitationAction = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, message: "Pick a date after today" })
+      .mockResolvedValueOnce({ ok: true, status: "published", purgeAt: null });
+    const { lifecycleActions } = renderEditor({ invitation: deleted, lifecycleActions: { restoreInvitationAction } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Restore" })));
+    await settle();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    const date = addDays(todayIST(), 2);
+    fireEvent.change(screen.getByLabelText("Take offline on"), { target: { value: date } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Restore with this date" })));
+    await settle();
+    expect(lifecycleActions.restoreInvitationAction).toHaveBeenLastCalledWith({ id: "inv-test", expectedVersion: 5, offlineOn: date });
+    expect(banner()).not.toBeInTheDocument();
+  });
+
+  it("erases at once after the link name is typed, then goes back to the list", async () => {
+    const { lifecycleActions } = renderEditor({ invitation: deleted });
+    fireEvent.click(screen.getByRole("button", { name: "Delete permanently now" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Confirmation"), { target: { value: "priya-weds-rahul-k3f9" } });
+    const assign = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign });
+    try {
+      await act(async () => fireEvent.click(within(dialog).getByRole("button", { name: "Erase now" })));
+      await settle();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(lifecycleActions.eraseNowAction).toHaveBeenCalledWith({ id: "inv-test", confirm: "priya-weds-rahul-k3f9" });
+    expect(assign).toHaveBeenCalledWith("/admin/invitations");
+  });
+
+  it("shows the conflict banner when an action meets a newer version", async () => {
+    renderEditor({ invitation: published, lifecycleActions: { takeOfflineAction: vi.fn(async () => ({ ok: false, conflict: true })) } });
+    await menu("Take offline now");
+    expect(screen.getByRole("alert")).toHaveTextContent("Updated by someone else — reload to see their changes.");
+    expect(screen.getByRole("button", { name: "Reload" })).toBeInTheDocument();
+    expect(banner()).not.toBeInTheDocument();
+  });
+
+  it("shows the conflict banner when a deleted invitation's Restore meets a newer version", async () => {
+    renderEditor({ invitation: deleted, lifecycleActions: { restoreInvitationAction: vi.fn(async () => ({ ok: false, conflict: true })) } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Restore" })));
+    await settle();
+    expect(screen.getByRole("alert")).toHaveTextContent("Updated by someone else — reload to see their changes.");
+  });
+
+  it("says the server couldn't be reached when an action call fails", async () => {
+    const deleteInvitationAction = vi.fn(async () => Promise.reject(new TypeError("Failed to fetch")));
+    renderEditor({ lifecycleActions: { deleteInvitationAction } });
+    await menu("Delete");
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't reach the server. Check your connection and try again.");
+    expect(banner()).not.toBeInTheDocument();
+  });
+
+  it("saves the take-offline date from step 7", async () => {
+    const { lifecycleActions } = renderEditor({ invitation: published, initialStep: 7 });
+    const field = screen.getByLabelText("Take offline on");
+    expect(field).toHaveValue("2027-02-21");
+    expect(screen.queryByRole("checkbox", { name: /Ask guests to RSVP/ })).not.toBeInTheDocument();
+    fireEvent.change(field, { target: { value: "2027-03-01" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Save date" })));
+    await settle();
+    expect(lifecycleActions.setOfflineOnAction).toHaveBeenCalledWith({ id: "inv-test", expectedVersion: 5, offlineOn: "2027-03-01" });
+  });
+
+  it("warns in step 7 when the take-offline date is before the last event", () => {
+    renderEditor({ invitation: { ...published, offlineOn: "2027-02-10" }, initialStep: 7 });
+    expect(screen.getByText("This is before the last event (Sunday, 14 February 2027)")).toBeInTheDocument();
+  });
+
+  it("shows no take-offline date for drafts", () => {
+    renderEditor({ initialStep: 7 });
+    expect(screen.queryByLabelText("Take offline on")).not.toBeInTheDocument();
+  });
+
+  it("fills in the take-offline date the server chose on publishing", async () => {
+    renderEditor({ initialStep: 8 });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
+    await settle();
+    confirm.mockRestore();
+    fireEvent.click(screen.getByRole("button", { name: /7\./ }));
+    expect(screen.getByLabelText("Take offline on")).toHaveValue("2027-02-21");
   });
 });

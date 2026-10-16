@@ -82,15 +82,34 @@ export async function setSlug(db: Db, tables: Tables, { id, slug }: { id: string
   return { slug };
 }
 
-async function goLive(db: Db, tables: Tables, id: string, expectedVersion: number, now: string, first: boolean) {
+// Identical copy of isIsoDate in amplify/functions/invitation-lifecycle/rules.ts (Lambdas don't share code):
+// a real calendar date in strict YYYY-MM-DD form, so 2027-02-31 and 2027-13-01 are rejected.
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+function isIsoDate(d: unknown): d is string {
+  if (typeof d !== "string" || !ISO_DATE.test(d)) return false;
+  const t = Date.parse(`${d}T00:00:00Z`);
+  return Number.isFinite(t) && new Date(t).toISOString().slice(0, 10) === d;
+}
+
+async function goLive(
+  db: Db,
+  tables: Tables,
+  id: string,
+  expectedVersion: number,
+  now: string,
+  first: boolean,
+  offlineOn?: string | null,
+) {
   const inv = await load(db, tables, id);
   if (first && inv.status !== "draft") throw new PublishError("NotDraft", "This invitation is already published.");
   if (!first && inv.status !== "published") throw new PublishError("NotPublished", "Publish the invitation first.");
   if (first && !inv.slug) throw new PublishError("NoSlug", "Choose a link name first.");
   if (inv.version !== expectedVersion) throw new PublishError("VersionConflict", "Updated by someone else — reload");
 
+  // The date it goes offline by itself is chosen once, at first publish; a malformed one is ignored.
+  const off = first && isIsoDate(offlineOn) ? offlineOn : undefined;
   const set = first
-    ? "SET publishedContent = :content, liveVersion = :v, #status = :published, publishedAt = :now, liveUpdatedAt = :now"
+    ? `SET publishedContent = :content, liveVersion = :v, #status = :published, publishedAt = :now, liveUpdatedAt = :now${off ? ", offlineOn = :off" : ""}`
     : "SET publishedContent = :content, liveVersion = :v, liveUpdatedAt = :now";
   try {
     await db.send(
@@ -106,6 +125,7 @@ async function goLive(db: Db, tables: Tables, id: string, expectedVersion: numbe
           ":now": now,
           ":published": "published",
           ...(first ? { ":draft": "draft" } : {}),
+          ...(off ? { ":off": off } : {}),
         },
       }),
     );
@@ -118,8 +138,12 @@ async function goLive(db: Db, tables: Tables, id: string, expectedVersion: numbe
     : { liveVersion: expectedVersion, liveUpdatedAt: now };
 }
 
-export const publish = (db: Db, t: Tables, a: { id: string; expectedVersion: number }, now: string) =>
-  goLive(db, t, a.id, a.expectedVersion, now, true);
+export const publish = (
+  db: Db,
+  t: Tables,
+  a: { id: string; expectedVersion: number; offlineOn?: string | null },
+  now: string,
+) => goLive(db, t, a.id, a.expectedVersion, now, true, a.offlineOn);
 export const updateLive = (db: Db, t: Tables, a: { id: string; expectedVersion: number }, now: string) =>
   goLive(db, t, a.id, a.expectedVersion, now, false);
 

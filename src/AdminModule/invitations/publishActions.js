@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireStaff } from "@/AdminModule/auth/server";
 import { cleanDraft } from "@/InvitationModule/schema/draft";
+import { addDays, defaultOfflineOn, todayIST } from "@/InvitationModule/lib/lifecycle";
 import { publishChecklist } from "@/InvitationModule/lib/checklist";
 import { validateSlug } from "@/InvitationModule/lib/slug";
 import { getInvitation, publishRecord, regenerateTokenRecord, setSlugRecord, slugOwner, updateLiveRecord } from "./data";
@@ -70,9 +71,18 @@ async function approved(id, expectedVersion) {
   }
   if (!inv) return { stop: { ok: false, message: "That invitation no longer exists." } };
   if (inv.version !== expectedVersion) return { stop: { ok: false, conflict: true } };
-  const missing = publishChecklist(cleanDraft(inv.content).draft ?? {}).map(({ message, step }) => ({ message, step }));
+  const draft = cleanDraft(inv.content).draft ?? {};
+  const missing = publishChecklist(draft).map(({ message, step }) => ({ message, step }));
   if (missing.length) return { stop: { ok: false, message: "Some details are still missing.", missing } };
-  return { inv };
+  return { inv, draft };
+}
+
+/** The default Take offline on date, but never before tomorrow: publishing after the wedding mustn't go offline that night. */
+function firstOfflineOn(draft) {
+  const date = defaultOfflineOn(draft);
+  if (!date) return null;
+  const tomorrow = addDays(todayIST(), 1);
+  return date < tomorrow ? tomorrow : date;
 }
 
 export async function publishAction({ id, expectedVersion, slug }) {
@@ -81,7 +91,7 @@ export async function publishAction({ id, expectedVersion, slug }) {
   // publish reports the new name and the editor's preview link keeps working.
   let savedSlug = null;
   const result = await attempt(async () => {
-    const { stop, inv } = await approved(id, expectedVersion);
+    const { stop, inv, draft } = await approved(id, expectedVersion);
     if (stop) return stop;
     let finalSlug = inv.slug;
     if (slug && slug !== inv.slug) {
@@ -91,7 +101,7 @@ export async function publishAction({ id, expectedVersion, slug }) {
       if (set.errors?.length || !set.data) return publishFailure(set.errors);
       finalSlug = savedSlug = set.data.slug;
     }
-    const { data, errors } = await publishRecord({ id, expectedVersion });
+    const { data, errors } = await publishRecord({ id, expectedVersion, offlineOn: firstOfflineOn(draft) });
     if (errors?.length || !data) return publishFailure(errors);
     refresh(id);
     return { ok: true, status: data.status, slug: finalSlug, liveVersion: data.liveVersion, publishedAt: data.publishedAt, liveUpdatedAt: data.liveUpdatedAt };

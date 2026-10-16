@@ -7,7 +7,7 @@ export function filterInvitations(rows, { q = "", status = "all" } = {}) {
   const phoneSearch = queryDigits.length >= 5 && queryDigits.length >= query.replace(/\s/g, "").length - 3;
   const terms = query.split(/\s+/).filter(Boolean);
   return rows.filter((row) => {
-    if (status !== "all" && row.status !== status) return false;
+    if (status === "all" ? row.status === "deleted" : row.status !== status) return false;
     const text = (row.searchText ?? "").toLowerCase();
     if (phoneSearch) return digits(text).includes(queryDigits);
     return terms.every((term) => text.includes(term));

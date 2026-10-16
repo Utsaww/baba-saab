@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireStaff } from "@/AdminModule/auth/server";
 import { listInvitations } from "@/AdminModule/invitations/data";
 import InvitationList from "@/AdminModule/invitations/InvitationList";
+import { deleteInvitationAction, restoreInvitationAction, takeOfflineAction } from "@/AdminModule/invitations/lifecycleActions";
 import { TEMPLATES } from "@/InvitationModule/templates/registry";
 
 export const metadata = { title: "Invitations · Baba Saab Admin" };
@@ -25,7 +26,12 @@ export default async function InvitationsPage() {
         </Link>
       </div>
       {rows ? (
-        <InvitationList rows={rows} templateNames={templateNames} now={Date.now()} />
+        <InvitationList
+          rows={rows}
+          templateNames={templateNames}
+          now={Date.now()}
+          actions={{ takeOfflineAction, deleteInvitationAction, restoreInvitationAction }}
+        />
       ) : (
         <p role="alert" className="mt-6 text-sm text-red-700">
           Couldn&apos;t load invitations. Refresh the page to try again.

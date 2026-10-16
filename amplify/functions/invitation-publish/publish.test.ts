@@ -82,6 +82,22 @@ describe("publish", () => {
     expect(gets).toHaveLength(2);
     for (const get of gets) expect(get.input.ConsistentRead).toBe(true);
   });
+  it("stores the offline date on first publish when given", async () => {
+    const db = fakeDb(draft);
+    await publish(db as any, tables, { id: "inv-1", expectedVersion: 4, offlineOn: "2027-02-22" }, NOW);
+    const upd = db.calls.find((c) => c.constructor.name === "UpdateCommand").input;
+    expect(upd.UpdateExpression).toBe(
+      "SET publishedContent = :content, liveVersion = :v, #status = :published, publishedAt = :now, liveUpdatedAt = :now, offlineOn = :off",
+    );
+    expect(upd.ExpressionAttributeValues[":off"]).toBe("2027-02-22");
+  });
+  it.each([undefined, null, "", "22/02/2027", "2027-02-30", "2027-02-31", "2027-02-29", "2027-13-01", "2027-02-22T00:00:00Z", 20270222])("leaves the offline date out when it is %j", async (offlineOn) => {
+    const db = fakeDb(draft);
+    await publish(db as any, tables, { id: "inv-1", expectedVersion: 4, offlineOn: offlineOn as any }, NOW);
+    const upd = db.calls.find((c) => c.constructor.name === "UpdateCommand").input;
+    expect(upd.UpdateExpression).not.toContain("offlineOn");
+    expect(upd.ExpressionAttributeValues).not.toHaveProperty(":off");
+  });
   it("needs a slug", async () => {
     const db = fakeDb({ ...draft, slug: null });
     await expect(publish(db as any, tables, { id: "inv-1", expectedVersion: 4 }, NOW)).rejects.toMatchObject({ name: "NoSlug" });

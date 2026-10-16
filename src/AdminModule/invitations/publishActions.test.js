@@ -8,9 +8,14 @@ const data = vi.hoisted(() => ({
   publishRecord: vi.fn(), updateLiveRecord: vi.fn(),
 }));
 vi.mock("./data", () => data);
+vi.mock("@/InvitationModule/lib/lifecycle", async (orig) => {
+  const actual = await orig();
+  return { ...actual, defaultOfflineOn: vi.fn(actual.defaultOfflineOn) };
+});
 const delay = vi.hoisted(() => ({ wait: vi.fn(async () => {}) }));
 vi.mock("./wait", () => delay);
 
+import { addDays, defaultOfflineOn, todayIST } from "@/InvitationModule/lib/lifecycle";
 import { checkSlugAction, newPreviewLinkAction, publishAction, setSlugAction, updateLiveAction } from "./publishActions";
 
 const ready = {
@@ -64,6 +69,13 @@ describe("publishAction", () => {
     expect(r.missing).toContainEqual({ message: "Add the wedding date", step: 3 });
     expect(data.publishRecord).not.toHaveBeenCalled();
   });
+  it("publishes an old draft that has RSVP on with no deadline (RSVPs are parked)", async () => {
+    data.getInvitation.mockResolvedValue(inv({ content: { ...ready, rsvp: { enabled: true } } }));
+    data.publishRecord.mockResolvedValue({ data: { status: "published" } });
+    const r = await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
+    expect(r.ok).toBe(true);
+    expect(data.publishRecord).toHaveBeenCalled();
+  });
   it("is a conflict at once when the stored version is newer", async () => {
     data.getInvitation.mockResolvedValue(inv({ version: 5 }));
     expect(await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" })).toEqual({ ok: false, conflict: true });
@@ -77,7 +89,26 @@ describe("publishAction", () => {
     expect(r.ok).toBe(true);
     expect(data.getInvitation).toHaveBeenCalledTimes(2);
     expect(delay.wait).toHaveBeenCalledWith(200);
-    expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4 });
+    expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4, offlineOn: "2027-02-21" });
+  });
+  it("sends offlineOn null when the draft has no dates", async () => {
+    defaultOfflineOn.mockReturnValueOnce(null);
+    data.getInvitation.mockResolvedValue(inv());
+    data.publishRecord.mockResolvedValue({ data: { status: "published" } });
+    await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
+    expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4, offlineOn: null });
+  });
+  it("passes the latest event date plus 7 as offlineOn", async () => {
+    data.getInvitation.mockResolvedValue(inv({ content: { ...ready, events: [{ id: "e1", name: { en: "Reception" }, date: "2027-02-16", time: "19:00", venueName: { en: "Rambagh" }, address: { en: "Jaipur" } }] } }));
+    data.publishRecord.mockResolvedValue({ data: { status: "published" } });
+    await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
+    expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4, offlineOn: "2027-02-23" });
+  });
+  it("takes the invitation offline no sooner than tomorrow when publishing after the wedding", async () => {
+    data.getInvitation.mockResolvedValue(inv({ content: { ...ready, mainDate: "2020-01-10" } }));
+    data.publishRecord.mockResolvedValue({ data: { status: "published" } });
+    await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
+    expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4, offlineOn: addDays(todayIST(), 1) });
   });
   it("runs the checklist on the version being published, not the stale copy", async () => {
     data.getInvitation.mockResolvedValueOnce(inv({ version: 3 })).mockResolvedValueOnce(inv({ content: { ...ready, mainDate: undefined } }));

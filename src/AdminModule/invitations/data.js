@@ -3,7 +3,7 @@ import { cookieDataClient } from "@/AdminModule/dataClient";
 import { indexFields } from "@/InvitationModule/lib/indexFields";
 import { parseAwsJson, parseContent } from "./content";
 
-const LIST_FIELDS = ["id", "status", "templateId", "mainDate", "coupleNames", "searchText", "updatedAt", "updatedBy", "musicTrackId", "slug", "version", "liveVersion"];
+const LIST_FIELDS = ["id", "status", "templateId", "mainDate", "coupleNames", "searchText", "updatedAt", "updatedBy", "musicTrackId", "slug", "version", "liveVersion", "offlineOn", "purgeAt", "offlineAt", "deletedAt", "statusBeforeDelete"];
 
 function failIfErrors(errors) {
   if (errors?.length) throw new Error(errors.map((e) => e.message).join("; "));
@@ -37,6 +37,11 @@ export async function getInvitation(id) {
     liveVersion: data.liveVersion ?? null,
     publishedAt: data.publishedAt ?? null,
     liveUpdatedAt: data.liveUpdatedAt ?? null,
+    offlineOn: data.offlineOn ?? null,
+    offlineAt: data.offlineAt ?? null,
+    deletedAt: data.deletedAt ?? null,
+    statusBeforeDelete: data.statusBeforeDelete ?? null,
+    purgeAt: data.purgeAt ?? null,
     content: parseContent(data.content),
     publishedContent: data.publishedContent ? parseContent(data.publishedContent) : null,
   };
@@ -75,5 +80,11 @@ async function mutate(name, args) {
 
 export const setSlugRecord = ({ id, slug }) => mutate("setInvitationSlug", { id, slug });
 export const regenerateTokenRecord = (id) => mutate("regeneratePreviewToken", { id });
-export const publishRecord = ({ id, expectedVersion }) => mutate("publishInvitation", { id, expectedVersion });
+export const publishRecord = ({ id, expectedVersion, offlineOn }) => mutate("publishInvitation", { id, expectedVersion, offlineOn });
 export const updateLiveRecord = ({ id, expectedVersion }) => mutate("updateLiveInvitation", { id, expectedVersion });
+export const takeOfflineRecord = ({ id, expectedVersion }) => mutate("takeInvitationOffline", { id, expectedVersion });
+export const putOnlineRecord = ({ id, expectedVersion, offlineOn }) => mutate("putInvitationOnline", { id, expectedVersion, offlineOn });
+export const setOfflineOnRecord = ({ id, expectedVersion, offlineOn }) => mutate("setInvitationOfflineOn", { id, expectedVersion, offlineOn });
+export const deleteRecord = ({ id, expectedVersion }) => mutate("softDeleteInvitation", { id, expectedVersion });
+export const restoreRecord = ({ id, expectedVersion, offlineOn }) => mutate("restoreInvitation", { id, expectedVersion, offlineOn });
+export const eraseNowRecord = ({ id, confirm }) => mutate("eraseInvitationNow", { id, confirm });

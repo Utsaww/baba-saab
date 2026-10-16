@@ -15,7 +15,7 @@ vi.mock("@/InvitationModule/lib/lifecycle", async (orig) => {
 const delay = vi.hoisted(() => ({ wait: vi.fn(async () => {}) }));
 vi.mock("./wait", () => delay);
 
-import { defaultOfflineOn } from "@/InvitationModule/lib/lifecycle";
+import { addDays, defaultOfflineOn, todayIST } from "@/InvitationModule/lib/lifecycle";
 import { checkSlugAction, newPreviewLinkAction, publishAction, setSlugAction, updateLiveAction } from "./publishActions";
 
 const ready = {
@@ -69,6 +69,13 @@ describe("publishAction", () => {
     expect(r.missing).toContainEqual({ message: "Add the wedding date", step: 3 });
     expect(data.publishRecord).not.toHaveBeenCalled();
   });
+  it("publishes an old draft that has RSVP on with no deadline (RSVPs are parked)", async () => {
+    data.getInvitation.mockResolvedValue(inv({ content: { ...ready, rsvp: { enabled: true } } }));
+    data.publishRecord.mockResolvedValue({ data: { status: "published" } });
+    const r = await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
+    expect(r.ok).toBe(true);
+    expect(data.publishRecord).toHaveBeenCalled();
+  });
   it("is a conflict at once when the stored version is newer", async () => {
     data.getInvitation.mockResolvedValue(inv({ version: 5 }));
     expect(await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" })).toEqual({ ok: false, conflict: true });
@@ -96,6 +103,12 @@ describe("publishAction", () => {
     data.publishRecord.mockResolvedValue({ data: { status: "published" } });
     await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
     expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4, offlineOn: "2027-02-23" });
+  });
+  it("takes the invitation offline no sooner than tomorrow when publishing after the wedding", async () => {
+    data.getInvitation.mockResolvedValue(inv({ content: { ...ready, mainDate: "2020-01-10" } }));
+    data.publishRecord.mockResolvedValue({ data: { status: "published" } });
+    await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
+    expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4, offlineOn: addDays(todayIST(), 1) });
   });
   it("runs the checklist on the version being published, not the stale copy", async () => {
     data.getInvitation.mockResolvedValueOnce(inv({ version: 3 })).mockResolvedValueOnce(inv({ content: { ...ready, mainDate: undefined } }));

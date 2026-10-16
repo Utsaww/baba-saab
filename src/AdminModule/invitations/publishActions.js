@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireStaff } from "@/AdminModule/auth/server";
 import { cleanDraft } from "@/InvitationModule/schema/draft";
-import { defaultOfflineOn } from "@/InvitationModule/lib/lifecycle";
+import { addDays, defaultOfflineOn, todayIST } from "@/InvitationModule/lib/lifecycle";
 import { publishChecklist } from "@/InvitationModule/lib/checklist";
 import { validateSlug } from "@/InvitationModule/lib/slug";
 import { getInvitation, publishRecord, regenerateTokenRecord, setSlugRecord, slugOwner, updateLiveRecord } from "./data";
@@ -77,6 +77,14 @@ async function approved(id, expectedVersion) {
   return { inv, draft };
 }
 
+/** The default Take offline on date, but never before tomorrow: publishing after the wedding mustn't go offline that night. */
+function firstOfflineOn(draft) {
+  const date = defaultOfflineOn(draft);
+  if (!date) return null;
+  const tomorrow = addDays(todayIST(), 1);
+  return date < tomorrow ? tomorrow : date;
+}
+
 export async function publishAction({ id, expectedVersion, slug }) {
   await requireStaff();
   // Set once a changed link name has been saved: the old one is released by then, so even a failed
@@ -93,7 +101,7 @@ export async function publishAction({ id, expectedVersion, slug }) {
       if (set.errors?.length || !set.data) return publishFailure(set.errors);
       finalSlug = savedSlug = set.data.slug;
     }
-    const { data, errors } = await publishRecord({ id, expectedVersion, offlineOn: defaultOfflineOn(draft) });
+    const { data, errors } = await publishRecord({ id, expectedVersion, offlineOn: firstOfflineOn(draft) });
     if (errors?.length || !data) return publishFailure(errors);
     refresh(id);
     return { ok: true, status: data.status, slug: finalSlug, liveVersion: data.liveVersion, publishedAt: data.publishedAt, liveUpdatedAt: data.liveUpdatedAt };

@@ -167,6 +167,12 @@ describe("EraseDialog", () => {
     expect(screen.getByRole("button", { name: "Erase now" })).toBeEnabled();
   });
 
+  it("asks for the word delete when the link name is empty, as the server does", () => {
+    render(<EraseDialog slug="" onConfirm={vi.fn()} onCancel={vi.fn()} />);
+    expect(screen.getByRole("dialog")).toHaveTextContent("Type delete to confirm.");
+    expect(screen.getByRole("button", { name: "Erase now" })).toBeDisabled();
+  });
+
   it("can be cancelled", async () => {
     const onCancel = vi.fn();
     render(<EraseDialog slug="a" onConfirm={vi.fn()} onCancel={onCancel} />);

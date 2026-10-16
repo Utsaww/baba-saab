@@ -40,7 +40,8 @@ export function stepHasContent(number, content) {
     case 6:
       return (content.theme?.hidden ?? []).length > 0 || (content.theme?.sectionOrder ?? []).length > 0;
     case 7:
-      return Boolean(content.rsvp?.enabled);
+      // Step 7 shows only the credit switch (and the offline date, which isn't content); RSVPs are parked.
+      return content.showCredit === false;
     case 8:
       return publishChecklist(cleanDraft(content).draft ?? {}).length === 0;
     default:

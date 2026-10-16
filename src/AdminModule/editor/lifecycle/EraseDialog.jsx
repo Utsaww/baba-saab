@@ -5,7 +5,7 @@ import { useId, useState } from "react";
 /** Typed confirmation for erasing at once: the link name, or "delete" when there is none. */
 export default function EraseDialog({ slug, pending = false, onConfirm, onCancel }) {
   const id = useId();
-  const word = slug ?? "delete";
+  const word = slug || "delete";
   const [typed, setTyped] = useState("");
 
   const submit = (event) => {

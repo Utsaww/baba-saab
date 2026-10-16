@@ -1,0 +1,515 @@
+// Velvet Envelope: a phone-width invitation card on a dark stage, gold detailing, and an
+// envelope sealed in gold wax as the opening. Colours come only from the palette variables.
+
+// Two fading hairlines, two dots and a diamond. Used as a mask so it takes the palette's gold.
+$ornament: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 16'%3E%3Cdefs%3E%3ClinearGradient id='a'%3E%3Cstop offset='0' stop-opacity='0'/%3E%3Cstop offset='1'/%3E%3C/linearGradient%3E%3ClinearGradient id='b'%3E%3Cstop offset='0'/%3E%3Cstop offset='1' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='0' y='7.5' width='84' height='1' fill='url(%23a)'/%3E%3Crect x='116' y='7.5' width='84' height='1' fill='url(%23b)'/%3E%3Ccircle cx='89' cy='8' r='1.6'/%3E%3Ccircle cx='111' cy='8' r='1.6'/%3E%3Cpath d='M100 1.5l6.5 6.5-6.5 6.5-6.5-6.5z'/%3E%3C/svg%3E");
+// Paper grain: fractal noise, blended over the card at low opacity.
+$grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+$card-width: 468px;
+$ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+@mixin ornament($width: 168px) {
+  content: "";
+  display: block;
+  width: $width;
+  max-width: 70%;
+  height: 14px;
+  margin-inline: auto;
+  background: var(--primary);
+  -webkit-mask: $ornament center / contain no-repeat;
+  mask: $ornament center / contain no-repeat;
+}
+
+@mixin grain($opacity) {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: $grain;
+  opacity: $opacity;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+// Small letter-spaced capitals. Devanagari has no capitals and spacing breaks its joins.
+@mixin smallCaps($size, $spacing) {
+  font-family: var(--font-body), Georgia, serif;
+  font-size: $size;
+  font-weight: 600;
+  letter-spacing: $spacing;
+  text-transform: uppercase;
+  &[lang="hi"],
+  [lang="hi"] {
+    font-size: calc(#{$size} + 3px);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+}
+
+@mixin goldButton {
+  @include smallCaps(13px, 0.22em);
+  min-height: 46px;
+  padding: 12px 28px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--primary));
+  color: var(--on-primary);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+// ---------- Page: stage and card ----------
+.scope { display: contents; }
+
+.root {
+  background:
+    radial-gradient(ellipse 90% 55% at 50% 0%, color-mix(in srgb, var(--envelope) 40%, var(--stage)) 0%, transparent 72%),
+    var(--stage);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.main {
+  position: relative;
+  max-width: $card-width;
+  padding: 0 24px 56px;
+  background: var(--bg);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 16%, transparent), 0 30px 80px rgba(0, 0, 0, 0.45);
+  &::after { @include grain(0.22); }
+}
+
+.credit {
+  max-width: $card-width;
+  margin: 0 auto;
+  padding: 8px 24px 32px;
+  background: var(--bg);
+  @include smallCaps(11px, 0.18em);
+  color: var(--muted);
+}
+
+@media (min-width: 520px) {
+  .main { margin-top: 40px; border-radius: 6px 6px 0 0; }
+  .credit { margin-bottom: 40px; border-radius: 0 0 6px 6px; }
+}
+
+// ---------- Cover ----------
+.coverFrame {
+  position: relative;
+  margin-top: 20px;
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  }
+  &::before { inset: 0; }
+  &::after { inset: 6px; border-color: color-mix(in srgb, var(--primary) 20%, transparent); }
+}
+
+.cover { min-height: 86vh; min-height: 86svh; padding: 64px 20px 56px; }
+.coverImage {
+  opacity: 0.16;
+  -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent 95%);
+  mask-image: linear-gradient(to bottom, #000 35%, transparent 95%);
+}
+.coverContent {
+  gap: 14px;
+  &::after { @include ornament(150px); margin-top: 10px; }
+}
+
+.eyebrow {
+  @include smallCaps(12.5px, 0.32em);
+  color: var(--muted);
+}
+
+.coverNames {
+  color: var(--ivory);
+  font-size: clamp(54px, 17vw, 78px);
+  line-height: 1.08;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.28);
+  [lang="hi"] { font-size: 0.6em; line-height: 1.45; }
+}
+.amp {
+  font-family: var(--font-display), cursive;
+  font-size: 0.5em;
+  color: var(--rose);
+  margin: 0 0 4px;
+}
+.coverDate {
+  font-family: var(--font-body), Georgia, serif;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.38em;
+  padding-left: 0.38em; // balance the trailing letter-space so the date stays centred
+  color: var(--primary);
+}
+
+// ---------- Sections ----------
+.section {
+  border-top: 0;
+  padding: 40px 0 48px;
+  &::before { @include ornament; margin-bottom: 40px; }
+}
+
+.sectionTitle {
+  @include smallCaps(13.5px, 0.34em);
+  color: var(--primary);
+  margin-bottom: 28px;
+}
+
+.emblem {
+  width: 112px;
+  height: 112px;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--primary) 28%, transparent));
+}
+.invocationText { font-size: 17px; color: var(--text); line-height: 1.75; }
+
+.couple { gap: 40px; margin-top: 20px; }
+.personPhoto {
+  width: 132px;
+  height: 132px;
+  border: 1px solid var(--primary);
+  box-shadow: 0 0 0 5px var(--bg), 0 0 0 6px color-mix(in srgb, var(--primary) 40%, transparent);
+  margin-bottom: 10px;
+}
+.personName {
+  color: var(--ivory);
+  font-size: 46px;
+  line-height: 1.15;
+  &[lang="hi"],
+  [lang="hi"] { font-size: 28px; line-height: 1.5; }
+}
+.parents { font-size: 16px; font-style: italic; }
+
+.bigDate {
+  font-family: var(--font-body), Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(32px, 10.5vw, 44px);
+  letter-spacing: 0.14em;
+  padding-left: 0.14em;
+  color: var(--accent);
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.longDate { font-style: italic; }
+
+.countdown { gap: 8px; }
+.countItem {
+  background: var(--recessed);
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  border-radius: 2px;
+  padding: 16px 2px 12px;
+  gap: 2px;
+}
+.countNum {
+  font-family: var(--font-body), Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(26px, 8.5vw, 34px);
+  line-height: 1.1;
+  color: var(--accent);
+}
+.countLabel { @include smallCaps(10px, 0.16em); color: var(--muted); }
+.countDone { font-family: var(--font-display), cursive; font-size: 34px; color: var(--accent); }
+
+.venueName {
+  color: var(--ivory);
+  font-size: 38px;
+  line-height: 1.2;
+  margin-bottom: 6px;
+  &[lang="hi"],
+  [lang="hi"] { font-size: 24px; line-height: 1.5; }
+}
+.address { font-style: italic; margin-bottom: 24px; }
+.travelNotes { text-align: center; font-size: 16px; line-height: 1.85; }
+
+.button { @include goldButton; }
+.shareBtn { @include goldButton; margin-top: 12px; }
+
+.events { gap: 18px; text-align: center; }
+.event {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  border-radius: 2px;
+  padding: 26px 20px 22px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+    pointer-events: none;
+  }
+}
+.eventName {
+  color: var(--primary);
+  font-size: 36px;
+  line-height: 1.2;
+  &[lang="hi"],
+  [lang="hi"] { font-size: 24px; line-height: 1.5; }
+}
+.eventMeta {
+  @include smallCaps(12px, 0.1em);
+  color: var(--accent);
+  margin: 6px 0 10px;
+  text-wrap: balance;
+}
+.eventVenue, .eventDesc, .eventDress { color: var(--text); font-size: 15.5px; }
+.eventVenue { font-style: italic; }
+.calLinks { justify-content: center; gap: 8px; margin-top: 8px; }
+.event > .calLink { margin-top: 16px; }
+.calLink {
+  @include smallCaps(11.5px, 0.14em);
+  border-radius: 2px;
+  border-color: color-mix(in srgb, var(--primary) 70%, transparent);
+  margin-top: 0;
+  padding: 6px 14px;
+}
+
+.galleryGrid { gap: 6px; }
+.galleryItem {
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+.filmFacade, .filmFrame { border-radius: 2px; }
+
+.field {
+  input, select, textarea {
+    background: var(--recessed);
+    border-radius: 2px;
+    border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  }
+}
+.rsvpThanks { font-family: var(--font-display), cursive; font-size: 32px; }
+
+.closingLine {
+  font-family: var(--font-display), cursive;
+  color: var(--ivory);
+  font-size: 30px;
+  line-height: 1.35;
+  margin: 10px 0 20px;
+  &[lang="hi"],
+  [lang="hi"] { font-family: var(--font-hindi), serif; font-size: 20px; line-height: 1.7; }
+}
+.contact { letter-spacing: 0.08em; }
+
+// Hindi-only invitations: dates and times arrive in Devanagari without a lang attribute.
+.scope[data-lang="hi"] {
+  .eventMeta, .bigDate, .coverDate {
+    font-family: var(--font-hindi), serif;
+    font-weight: 400; // Tiro Devanagari ships one weight; avoid faux bold
+    letter-spacing: 0;
+    text-transform: none;
+    padding-left: 0;
+  }
+}
+
+// ---------- Fade-up as sections scroll in (classes added by useFadeUp) ----------
+.fadePending {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.9s ease, transform 0.9s $ease-out;
+}
+.fadePending.fadeIn { opacity: 1; transform: none; }
+
+// ---------- Opening: the sealed envelope ----------
+.opening {
+  background: radial-gradient(ellipse 80% 55% at 50% 48%, color-mix(in srgb, var(--envelope) 45%, var(--stage)) 0%, var(--stage) 78%);
+  padding: 24px 16px;
+  overflow: hidden;
+  &::after { @include grain(0.12); }
+}
+.openingInner { gap: 22px; max-width: 400px; }
+.openingEyebrow {
+  @include smallCaps(12px, 0.34em);
+  color: var(--muted);
+}
+
+.envelope {
+  position: relative;
+  width: min(340px, 86vw);
+  aspect-ratio: 1.34;
+  // The card rises about 37% of the width above the envelope, over the eyebrow (which fades out).
+  margin-top: 12px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  perspective: 1100px;
+  -webkit-tap-highlight-color: transparent;
+  &:focus-visible { outline: 2px solid var(--primary); outline-offset: 10px; border-radius: 6px; }
+}
+
+.envBack {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--fold) 85%, black), var(--fold));
+  box-shadow: 0 26px 50px rgba(0, 0, 0, 0.45), 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+.letter {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 6%;
+  height: 86%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 9% 8% 0;
+  border-radius: 3px;
+  background: var(--bg);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent),
+    inset 0 0 0 5px var(--bg),
+    inset 0 0 0 6px color-mix(in srgb, var(--primary) 22%, transparent),
+    0 -6px 18px rgba(0, 0, 0, 0.22);
+  transition: transform 0.55s $ease-out 0.33s;
+}
+.letterOrnament { @include ornament(110px); height: 10px; max-width: 60%; }
+.letterNames {
+  max-width: 100%;
+  font-family: var(--font-display), cursive;
+  font-size: clamp(24px, 8vw, 31px);
+  line-height: 1.25;
+  color: var(--ivory);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  &[lang="hi"] { font-size: clamp(17px, 5.4vw, 21px); line-height: 1.6; }
+}
+.letterDate {
+  font-family: var(--font-body), Georgia, serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
+  color: var(--primary);
+}
+
+.pocket {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 6px;
+  overflow: hidden;
+  background: linear-gradient(165deg, var(--envelope-shade), color-mix(in srgb, var(--envelope-shade) 82%, black));
+  clip-path: polygon(0 0, 50% 54%, 100% 0, 100% 100%, 0 100%);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, color-mix(in srgb, var(--envelope) 90%, black), var(--envelope));
+    clip-path: polygon(0 100%, 50% 44%, 100% 100%);
+  }
+}
+
+// The flap has a front (envelope colour) and an inside (fold colour) so it reads as paper when it opens.
+.flap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 58%;
+  z-index: 3;
+  transform-origin: 50% 0;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.45, 0, 0.25, 1), z-index 0s linear 0.25s;
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+  &::before {
+    border-radius: 6px 6px 0 0;
+    background: linear-gradient(180deg, var(--envelope), color-mix(in srgb, var(--envelope) 86%, black));
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+  &::after {
+    background: linear-gradient(0deg, var(--fold), color-mix(in srgb, var(--fold) 80%, black));
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+    transform: rotateX(180deg);
+  }
+}
+
+.seal {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  z-index: 4;
+  width: 68px;
+  height: 68px;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, var(--accent) 0%, var(--primary) 46%, color-mix(in srgb, var(--primary) 68%, black) 100%);
+  color: color-mix(in srgb, var(--primary) 30%, black);
+  font-family: var(--font-display), cursive;
+  font-size: 23px;
+  line-height: 1;
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 60%, white);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--primary) 78%, black),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.25),
+    0 6px 14px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  animation: sealGlow 2.6s ease-in-out infinite;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--primary) 55%, black);
+    opacity: 0.55;
+  }
+}
+@media (hover: hover) {
+  .envelope:hover .seal { transform: translate(-50%, -50%) scale(1.05); }
+}
+
+.tapHint {
+  @include smallCaps(11.5px, 0.34em);
+  color: var(--muted);
+  animation: hintPulse 2.6s ease-in-out infinite;
+}
+
+.envelope[data-open="true"] {
+  cursor: default;
+  .flap { transform: rotateX(180deg); z-index: 0; }
+  .letter { transform: translateY(-58%); }
+  .seal { opacity: 0; transform: translate(-50%, -50%) scale(0.85); animation: none; }
+}
+.envelope[data-open="true"] ~ .tapHint { opacity: 0; animation: none; transition: opacity 0.3s; }
+.openingEyebrow { transition: opacity 0.3s; }
+.openingInner:has(.envelope[data-open="true"]) .openingEyebrow { opacity: 0; }
+
+@keyframes sealGlow {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  50% { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 55%, transparent)); }
+}
+@keyframes hintPulse {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 1; }
+}
+
+// Reduced motion: no 3D flap, sliding card or scroll fades — the overlay simply fades out.
+@media (prefers-reduced-motion: reduce) {
+  .opening { transition: opacity 0.5s ease; }
+  .openingClosing { transform: none; }
+  .flap, .letter { transition: none; }
+  .seal, .tapHint { animation: none; }
+  .envelope[data-open="true"] {
+    .flap { transform: none; z-index: 3; }
+    .letter { transform: none; }
+  }
+  .fadePending, .fadePending.fadeIn { opacity: 1; transform: none; transition: none; }
+}

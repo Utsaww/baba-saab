@@ -18,7 +18,7 @@ export const STEPS = [
   { number: 4, title: "Events", Component: EventsStep },
   { number: 5, title: "Photos, film & music", Component: MediaStep },
   { number: 6, title: "Sections", Component: SectionsStep },
-  { number: 7, title: "RSVP & settings", Component: RsvpStep },
+  { number: 7, title: "Settings", Component: RsvpStep },
   { number: 8, title: "Review", Component: ReviewStep },
 ];
 

@@ -54,6 +54,101 @@ describe("InvitationList", () => {
     }
   });
 
+  describe("lifecycle", () => {
+    const row = (id, extra) => ({ ...rows[0], id, coupleNames: `Couple ${id}`, ...extra });
+    const item = (name) => screen.getByText(name).closest("li");
+    const filter = () => screen.getByRole("combobox", { name: "Status" });
+    const names = () => screen.queryAllByRole("link", { name: /Couple/ }).map((l) => within(l).getByText(/^Couple/).textContent);
+
+    it("badges offline and deleted invitations, with the erase date for deleted ones", async () => {
+      const list = [
+        row("o", { status: "offline", slug: "o-o", offlineAt: "2026-10-01T10:00:00.000Z", purgeAt: "2026-10-31T10:00:00.000Z" }),
+        row("x", { status: "deleted", deletedAt: "2026-10-02T10:00:00.000Z", purgeAt: "2026-11-01T10:00:00.000Z" }),
+      ];
+      render(<InvitationList rows={list} templateNames={templateNames} now={now} />);
+      const offline = within(item("Couple o")).getByText("Offline");
+      expect(offline).toHaveClass("bg-stone-200", "text-stone-800");
+      expect(within(item("Couple o")).queryByRole("link", { name: "Open" })).not.toBeInTheDocument();
+      await userEvent.selectOptions(filter(), "deleted");
+      const deleted = within(item("Couple x")).getByText("Deleted · erased on Sunday, 1 November 2026");
+      expect(deleted).toHaveClass("bg-red-100", "text-red-900");
+    });
+
+    it("says a deleted invitation is being erased once its erase date has passed", async () => {
+      render(<InvitationList rows={[row("x", { status: "deleted", purgeAt: "2026-10-07T10:00:00.000Z" })]} templateNames={templateNames} now={now} />);
+      await userEvent.selectOptions(filter(), "deleted");
+      expect(within(item("Couple x")).getByText("Deleted · erasing…")).toBeInTheDocument();
+    });
+
+    it("offers All, Draft, Live, Offline and Deleted; All hides deleted invitations", async () => {
+      const list = [
+        row("d", { status: "draft" }),
+        row("l", { status: "published", version: 1, liveVersion: 1 }),
+        row("o", { status: "offline", purgeAt: "2026-11-01T10:00:00.000Z" }),
+        row("x", { status: "deleted", purgeAt: "2026-11-01T10:00:00.000Z" }),
+      ];
+      render(<InvitationList rows={list} templateNames={templateNames} now={now} />);
+      expect(within(filter()).getAllByRole("option").map((o) => [o.value, o.textContent])).toEqual([
+        ["all", "All"],
+        ["draft", "Draft"],
+        ["published", "Live"],
+        ["offline", "Offline"],
+        ["deleted", "Deleted"],
+      ]);
+      expect(names().sort()).toEqual(["Couple d", "Couple l", "Couple o"]);
+      await userEvent.selectOptions(filter(), "deleted");
+      expect(names()).toEqual(["Couple x"]);
+      await userEvent.selectOptions(filter(), "offline");
+      expect(names()).toEqual(["Couple o"]);
+      await userEvent.selectOptions(filter(), "published");
+      expect(names()).toEqual(["Couple l"]);
+    });
+
+    it("notices invitations going offline this week, linking to the Live filter", async () => {
+      const list = [
+        row("a", { status: "published", offlineOn: "2026-10-10" }),
+        row("b", { status: "published", offlineOn: "2026-10-15" }),
+        row("c", { status: "published", offlineOn: "2026-12-01" }),
+        row("d", { status: "draft" }),
+      ];
+      render(<InvitationList rows={list} templateNames={templateNames} now={now} />);
+      expect(screen.queryByRole("button", { name: /will be erased/ })).not.toBeInTheDocument();
+      await userEvent.selectOptions(filter(), "draft");
+      await userEvent.click(screen.getByRole("button", { name: "2 invitations go offline in the next 7 days" }));
+      expect(filter()).toHaveValue("published");
+    });
+
+    it("notices invitations erased within a day, linking to Deleted when any of them is deleted", async () => {
+      const soon = "2026-10-09T06:00:00.000Z";
+      const list = [
+        row("o", { status: "offline", purgeAt: soon }),
+        row("x", { status: "deleted", purgeAt: soon }),
+        row("y", { status: "deleted", purgeAt: "2026-10-20T06:00:00.000Z" }),
+      ];
+      render(<InvitationList rows={list} templateNames={templateNames} now={now} />);
+      expect(screen.queryByRole("button", { name: /go offline/ })).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "2 will be erased in the next 24 hours" }));
+      expect(filter()).toHaveValue("deleted");
+    });
+
+    it("links the erase notice to Offline when only offline invitations are due", async () => {
+      const list = [row("o", { status: "offline", purgeAt: "2026-10-09T06:00:00.000Z" })];
+      render(<InvitationList rows={list} templateNames={templateNames} now={now} />);
+      await userEvent.click(screen.getByRole("button", { name: "1 will be erased in the next 24 hours" }));
+      expect(filter()).toHaveValue("offline");
+    });
+
+    it("says one invitation in the singular", () => {
+      render(<InvitationList rows={[row("a", { status: "published", offlineOn: "2026-10-09" })]} templateNames={templateNames} now={now} />);
+      expect(screen.getByRole("button", { name: "1 invitation goes offline in the next 7 days" })).toBeInTheDocument();
+    });
+
+    it("shows no notices when nothing is due", () => {
+      render(<InvitationList rows={rows} templateNames={templateNames} now={now} />);
+      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    });
+  });
+
   it("invites staff to create the first invitation", () => {
     render(<InvitationList rows={[]} templateNames={templateNames} now={now} />);
     expect(screen.getByText("No invitations yet.")).toBeInTheDocument();

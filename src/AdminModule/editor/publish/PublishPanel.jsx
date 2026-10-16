@@ -16,9 +16,14 @@ export default function PublishPanel({ publishing, ready }) {
   // A request started here, or one the editor is already running (e.g. from the header).
   const pending = running || Boolean(publishing.pending);
   const published = live.status === "published";
+  const offline = live.status === "offline";
 
   // A link name saved elsewhere (claimed automatically, or saved from this field) becomes the field's value.
   useEffect(() => setSlug(live.slug ?? ""), [live.slug]);
+
+  if (publishing.readOnly) {
+    return <p className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-700">Restore this invitation to publish or share it.</p>;
+  }
 
   const run = async (fn) => {
     setRunning(true);
@@ -42,7 +47,7 @@ export default function PublishPanel({ publishing, ready }) {
     <div className="space-y-6">
       <PublishErrorNote error={error} onGoToStep={publishing.onGoToStep} />
 
-      <SlugField value={slug} onChange={setSlug} locked={published} saved={live.slug} onCheck={publishing.onCheckSlug} onSave={publishing.onSetSlug} />
+      <SlugField value={slug} onChange={setSlug} locked={published || offline} saved={live.slug} onCheck={publishing.onCheckSlug} onSave={publishing.onSetSlug} />
 
       {live.slug && live.previewToken ? (
         <div className="space-y-2">
@@ -68,6 +73,8 @@ export default function PublishPanel({ publishing, ready }) {
             </a>
           </div>
         </div>
+      ) : offline ? (
+        <p className="text-sm text-stone-600">This invitation is offline. Use Put back online at the top of the page to show it to guests again.</p>
       ) : (
         <div>
           <button type="button" onClick={publish} disabled={!ready || busy || pending || !slug} className={`${button} bg-stone-900 text-white disabled:opacity-40`}>

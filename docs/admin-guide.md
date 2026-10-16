@@ -129,7 +129,7 @@ Removing a cover or couple photo asks you to confirm first, because it can't be 
 
 Choose which parts of the invitation guests see, and in what order. Untick **Show** to hide a section, and use the arrows to move it. The cover always comes first. A section with nothing filled in is hidden automatically, so you only need to hide sections you've filled in but don't want shown.
 
-## Editor step 7: RSVP & settings
+## Editor step 7: Settings
 
 - Tick **Ask guests to RSVP** to add the RSVP form, then set the **Last day to RSVP**. After that day the form closes and shows the family's phone number.
 - Choose whether to ask **how many people are coming** and about **meal preference**.

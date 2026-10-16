@@ -82,9 +82,14 @@ export async function setSlug(db: Db, tables: Tables, { id, slug }: { id: string
   return { slug };
 }
 
-// A real calendar date (the regex alone would accept 2027-02-30).
-const isIsoDate = (d: unknown): d is string =>
-  typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d)) && new Date(d).toISOString().startsWith(d);
+// Identical copy of isIsoDate in amplify/functions/invitation-lifecycle/rules.ts (Lambdas don't share code):
+// a real calendar date in strict YYYY-MM-DD form, so 2027-02-31 and 2027-13-01 are rejected.
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+function isIsoDate(d: unknown): d is string {
+  if (typeof d !== "string" || !ISO_DATE.test(d)) return false;
+  const t = Date.parse(`${d}T00:00:00Z`);
+  return Number.isFinite(t) && new Date(t).toISOString().slice(0, 10) === d;
+}
 
 async function goLive(
   db: Db,

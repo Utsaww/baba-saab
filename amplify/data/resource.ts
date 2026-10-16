@@ -147,9 +147,10 @@ const schema = a.schema({
     .authorization((allow) => [allow.group("admin")])
     .handler(a.handler.function(invitationLifecycle)),
 
+  // offlineOn: a new offline date when restoring to published (required then if the stored one is today or past).
   restoreInvitation: a
     .mutation()
-    .arguments({ id: a.id().required(), expectedVersion: a.integer().required() })
+    .arguments({ id: a.id().required(), expectedVersion: a.integer().required(), offlineOn: a.date() })
     .returns(a.json())
     .authorization((allow) => [allow.group("admin")])
     .handler(a.handler.function(invitationLifecycle)),

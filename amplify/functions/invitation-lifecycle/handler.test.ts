@@ -7,6 +7,7 @@ vi.mock("./transitions", async (importOriginal) => {
   return {
     ...actual,
     load: vi.fn(),
+    claimForErase: vi.fn(async () => undefined),
     takeOffline: vi.fn(async () => ({ status: "offline" })),
     putOnline: vi.fn(async () => ({ status: "published" })),
     setOfflineOn: vi.fn(async () => ({ offlineOn: "2027-03-01" })),
@@ -18,7 +19,7 @@ vi.mock("./transitions", async (importOriginal) => {
 import { eraseInvitation } from "./erase";
 import { handler } from "./handler";
 import { runLifecycle } from "./run";
-import { load, LifecycleError, putOnline, remove, restore, setOfflineOn, takeOffline } from "./transitions";
+import { claimForErase, load, LifecycleError, putOnline, remove, restore, setOfflineOn, takeOffline } from "./transitions";
 
 const ID = "0f8e2c6a-1b2c-4d5e-8f90-123456789abc";
 function event(fieldName: string, args: Record<string, unknown> = {}, groups: string[] | null = ["admin"]) {
@@ -61,7 +62,9 @@ describe("invitation-lifecycle handler", () => {
     await handler(event("softDeleteInvitation", { id: ID, expectedVersion: 3 }) as any);
     expect(remove).toHaveBeenCalledWith(expect.anything(), expect.anything(), { id: ID, expectedVersion: 3 }, expect.any(String));
     await expect(handler(event("restoreInvitation", { id: ID, expectedVersion: 3 }) as any)).resolves.toEqual({ status: "draft", purgeAt: null });
-    expect(restore).toHaveBeenCalledWith(expect.anything(), expect.anything(), { id: ID, expectedVersion: 3 }, expect.any(String));
+    expect(restore).toHaveBeenLastCalledWith(expect.anything(), expect.anything(), { id: ID, expectedVersion: 3, offlineOn: undefined }, expect.any(String));
+    await handler(event("restoreInvitation", { id: ID, expectedVersion: 3, offlineOn: "2027-03-01" }) as any);
+    expect(restore).toHaveBeenLastCalledWith(expect.anything(), expect.anything(), { id: ID, expectedVersion: 3, offlineOn: "2027-03-01" }, expect.any(String));
     expect(runLifecycle).not.toHaveBeenCalled();
   });
 
@@ -73,6 +76,7 @@ describe("invitation-lifecycle handler", () => {
         message: "Take it offline or delete it first",
       });
       expect(eraseInvitation).not.toHaveBeenCalled();
+      expect(claimForErase).not.toHaveBeenCalled();
     });
     it("refuses a wrong confirmation", async () => {
       vi.mocked(load).mockResolvedValueOnce({ id: ID, status: "offline", version: 1, slug: "a-b" });
@@ -80,18 +84,33 @@ describe("invitation-lifecycle handler", () => {
       vi.mocked(load).mockResolvedValueOnce({ id: ID, status: "deleted", version: 1, slug: null });
       await expect(handler(event("eraseInvitationNow", { id: ID, confirm: "a-b" }) as any)).rejects.toMatchObject({ name: "BadConfirm" });
       expect(eraseInvitation).not.toHaveBeenCalled();
+      expect(claimForErase).not.toHaveBeenCalled();
     });
     it("erases when confirmed with the link name, or 'delete' when there is none", async () => {
-      vi.mocked(load).mockResolvedValueOnce({ id: ID, status: "offline", version: 1, slug: "a-b" });
+      const inv = { id: ID, status: "offline", version: 1, slug: "a-b" };
+      vi.mocked(load).mockResolvedValueOnce(inv);
       await expect(handler(event("eraseInvitationNow", { id: ID, confirm: "a-b" }) as any)).resolves.toEqual({ erased: true });
+      expect(claimForErase).toHaveBeenCalledWith(expect.anything(), expect.anything(), inv, expect.any(String));
+      const claimedAt = vi.mocked(claimForErase).mock.calls[0][3];
       expect(eraseInvitation).toHaveBeenLastCalledWith(
         { db: expect.anything(), s3: expect.anything() },
         expect.objectContaining({ tables: expect.any(Object), bucket: expect.any(String) }),
         { id: ID, slug: "a-b" },
+        claimedAt,
       );
+      // The row is claimed (purgeAt = now) before any file is touched.
+      expect(vi.mocked(claimForErase).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(eraseInvitation).mock.invocationCallOrder[0]);
       vi.mocked(load).mockResolvedValueOnce({ id: ID, status: "deleted", version: 1, slug: null });
       await expect(handler(event("eraseInvitationNow", { id: ID, confirm: "delete" }) as any)).resolves.toEqual({ erased: true });
       expect(load).toHaveBeenCalledWith(expect.anything(), expect.anything(), ID);
+      vi.mocked(load).mockResolvedValueOnce({ id: ID, status: "deleted", version: 1, slug: "" });
+      await expect(handler(event("eraseInvitationNow", { id: ID, confirm: "delete" }) as any)).resolves.toEqual({ erased: true });
+    });
+    it("does not erase when the claim finds the row changed", async () => {
+      vi.mocked(load).mockResolvedValueOnce({ id: ID, status: "offline", version: 1, slug: "a-b" });
+      vi.mocked(claimForErase).mockRejectedValueOnce(new LifecycleError("VersionConflict", "Updated by someone else — reload"));
+      await expect(handler(event("eraseInvitationNow", { id: ID, confirm: "a-b" }) as any)).rejects.toMatchObject({ name: "VersionConflict" });
+      expect(eraseInvitation).not.toHaveBeenCalled();
     });
   });
 

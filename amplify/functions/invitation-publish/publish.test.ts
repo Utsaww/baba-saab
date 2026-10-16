@@ -91,7 +91,7 @@ describe("publish", () => {
     );
     expect(upd.ExpressionAttributeValues[":off"]).toBe("2027-02-22");
   });
-  it.each([undefined, null, "", "22/02/2027", "2027-02-30"])("leaves the offline date out when it is %j", async (offlineOn) => {
+  it.each([undefined, null, "", "22/02/2027", "2027-02-30", "2027-02-31", "2027-02-29", "2027-13-01", "2027-02-22T00:00:00Z", 20270222])("leaves the offline date out when it is %j", async (offlineOn) => {
     const db = fakeDb(draft);
     await publish(db as any, tables, { id: "inv-1", expectedVersion: 4, offlineOn: offlineOn as any }, NOW);
     const upd = db.calls.find((c) => c.constructor.name === "UpdateCommand").input;

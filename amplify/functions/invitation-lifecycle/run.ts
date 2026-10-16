@@ -15,7 +15,7 @@ export async function runLifecycle(clients: Clients, cfg: Config, now: Date) {
   const { db } = clients;
   const nowMs = now.getTime();
   const nowIso = now.toISOString();
-  const counts = { offline: 0, erased: 0, failed: 0 };
+  const counts = { offline: 0, erased: 0, skipped: 0, failed: 0 };
   let ExclusiveStartKey: Record<string, unknown> | undefined;
   do {
     const page = await db.send(
@@ -62,8 +62,9 @@ export async function runLifecycle(clients: Clients, cfg: Config, now: Date) {
           );
           const fresh = Item as Row | undefined;
           if (!fresh || !isEraseDue(fresh, nowMs) || fresh.purgeAt !== row.purgeAt) continue;
-          await eraseInvitation(clients, cfg, { id: fresh.id, slug: fresh.slug ?? null });
-          counts.erased += 1;
+          // Counts as erased only if the record itself went; a failed condition means it changed meanwhile.
+          if (await eraseInvitation(clients, cfg, { id: fresh.id, slug: fresh.slug ?? null }, nowIso)) counts.erased += 1;
+          else counts.skipped += 1;
         } catch (err) {
           counts.failed += 1;
           console.error("lifecycle: erase failed", row.id, err);
@@ -72,6 +73,6 @@ export async function runLifecycle(clients: Clients, cfg: Config, now: Date) {
     }
     ExclusiveStartKey = page.LastEvaluatedKey;
   } while (ExclusiveStartKey);
-  console.log(`lifecycle: offline=${counts.offline} erased=${counts.erased} failed=${counts.failed}`);
+  console.log(`lifecycle: offline=${counts.offline} erased=${counts.erased} skipped=${counts.skipped} failed=${counts.failed}`);
   return counts;
 }

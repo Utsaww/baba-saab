@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("./erase", () => ({ eraseInvitation: vi.fn(async () => undefined) }));
+vi.mock("./erase", () => ({ eraseInvitation: vi.fn(async () => true) }));
 
 import { eraseInvitation } from "./erase";
 import { runLifecycle } from "./run";
@@ -44,7 +44,7 @@ describe("runLifecycle", () => {
   let log: ReturnType<typeof vi.spyOn>;
   let err: ReturnType<typeof vi.spyOn>;
   beforeEach(() => {
-    vi.mocked(eraseInvitation).mockReset().mockResolvedValue(undefined);
+    vi.mocked(eraseInvitation).mockReset().mockResolvedValue(true);
     log = vi.spyOn(console, "log").mockImplementation(() => {});
     err = vi.spyOn(console, "error").mockImplementation(() => {});
   });
@@ -64,7 +64,7 @@ describe("runLifecycle", () => {
 
   it("takes a due published row offline, conditioned on what it read", async () => {
     const db = fakeDb([[due]]);
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 1, erased: 0, failed: 0 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 1, erased: 0, skipped: 0, failed: 0 });
     expect(updates(db)).toEqual([
       {
         TableName: "Inv",
@@ -85,41 +85,48 @@ describe("runLifecycle", () => {
 
   it("leaves a row that isn't due yet, and live or draft rows alone", async () => {
     const db = fakeDb([[notYet, { id: "inv-draft-01", status: "draft", version: 1 }]]);
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, failed: 0 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, skipped: 0, failed: 0 });
     expect(updates(db)).toEqual([]);
     expect(eraseInvitation).not.toHaveBeenCalled();
   });
 
   it("skips a row changed between scan and write without counting a failure", async () => {
     const db = fakeDb([[due]], { failUpdate: () => true });
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, failed: 0 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, skipped: 0, failed: 0 });
     expect(err).not.toHaveBeenCalled();
   });
 
   it("erases offline and deleted rows past purgeAt", async () => {
     const db = fakeDb([[old, gone]]);
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 2, failed: 0 });
-    expect(eraseInvitation).toHaveBeenCalledWith({ db, s3 }, cfg, { id: "inv-old-0001", slug: "old" });
-    expect(eraseInvitation).toHaveBeenCalledWith({ db, s3 }, cfg, { id: "inv-gone-001", slug: null });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 2, skipped: 0, failed: 0 });
+    expect(eraseInvitation).toHaveBeenCalledWith({ db, s3 }, cfg, { id: "inv-old-0001", slug: "old" }, "2027-02-21T21:30:00.000Z");
+    expect(eraseInvitation).toHaveBeenCalledWith({ db, s3 }, cfg, { id: "inv-gone-001", slug: null }, "2027-02-21T21:30:00.000Z");
   });
 
   it("re-reads a row before erasing and skips it if it was restored or its clock restarted", async () => {
     const restored = fakeDb([[old]], { fresh: () => ({ ...old, status: "published", purgeAt: undefined }) });
-    await expect(runLifecycle({ db: restored, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, failed: 0 });
+    await expect(runLifecycle({ db: restored, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, skipped: 0, failed: 0 });
     const restarted = fakeDb([[old]], { fresh: () => ({ ...old, purgeAt: "2027-03-23T00:00:00.000Z" }) });
-    await expect(runLifecycle({ db: restarted, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, failed: 0 });
+    await expect(runLifecycle({ db: restarted, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, skipped: 0, failed: 0 });
     const vanished = fakeDb([[old]], { fresh: () => undefined });
-    await expect(runLifecycle({ db: vanished, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, failed: 0 });
+    await expect(runLifecycle({ db: vanished, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 0, skipped: 0, failed: 0 });
     expect(eraseInvitation).not.toHaveBeenCalled();
     const get = restored.calls.find((c) => c.constructor.name === "GetCommand").input;
     expect(get).toEqual({ TableName: "Inv", Key: { id: "inv-old-0001" }, ConsistentRead: true });
+  });
+
+  it("counts a row as skipped, not erased, when its record delete fails its condition", async () => {
+    vi.mocked(eraseInvitation).mockResolvedValueOnce(false);
+    const db = fakeDb([[old, gone]]);
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 1, skipped: 1, failed: 0 });
+    expect(err).not.toHaveBeenCalled();
   });
 
   it("counts an erase failure, logs it and carries on with the next row", async () => {
     const boom = new Error("AccessDenied");
     vi.mocked(eraseInvitation).mockRejectedValueOnce(boom);
     const db = fakeDb([[old, gone, due]]);
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 1, erased: 1, failed: 1 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 1, erased: 1, skipped: 0, failed: 1 });
     expect(err).toHaveBeenCalledWith("lifecycle: erase failed", "inv-old-0001", boom);
   });
 
@@ -130,13 +137,13 @@ describe("runLifecycle", () => {
       if (cmd.constructor.name === "UpdateCommand") throw new Error("Throttled");
       return send(cmd);
     });
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 1, failed: 1 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 0, erased: 1, skipped: 0, failed: 1 });
     expect(err).toHaveBeenCalledWith("lifecycle: offline failed", "inv-due-0001", expect.any(Error));
   });
 
   it("pages through the whole table", async () => {
     const db = fakeDb([[due], [old], [gone]]);
-    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 1, erased: 2, failed: 0 });
+    await expect(runLifecycle({ db, s3 } as any, cfg, NOW)).resolves.toEqual({ offline: 1, erased: 2, skipped: 0, failed: 0 });
     const scans = db.calls.filter((c) => c.constructor.name === "ScanCommand").map((c) => c.input.ExclusiveStartKey);
     expect(scans).toEqual([undefined, { page: "1" }, { page: "2" }]);
   });
@@ -144,6 +151,6 @@ describe("runLifecycle", () => {
   it("logs a one-line summary", async () => {
     vi.mocked(eraseInvitation).mockRejectedValueOnce(new Error("x"));
     await runLifecycle({ db: fakeDb([[due, old, gone]]), s3 } as any, cfg, NOW);
-    expect(log).toHaveBeenCalledWith("lifecycle: offline=1 erased=1 failed=1");
+    expect(log).toHaveBeenCalledWith("lifecycle: offline=1 erased=1 skipped=0 failed=1");
   });
 });

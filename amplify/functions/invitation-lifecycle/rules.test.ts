@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, isEraseDue, isOfflineDue, PURGE_DAYS, todayIST } from "./rules";
+import { addDays, isEraseDue, isIsoDate, isOfflineDue, PURGE_DAYS, todayIST } from "./rules";
 
 // Same cases as src/InvitationModule/lib/lifecycle.test.js: the two copies must agree.
 const at = (iso: string) => Date.parse(iso);
@@ -43,4 +43,17 @@ describe("isEraseDue", () => {
     expect(isEraseDue({ status: "offline", purgeAt: null }, now)).toBe(false);
   });
   it("uses a 30-day window", () => expect(PURGE_DAYS).toBe(30));
+});
+
+describe("isIsoDate", () => {
+  it("accepts real calendar dates only", () => {
+    expect(isIsoDate("2027-02-28")).toBe(true);
+    expect(isIsoDate("2028-02-29")).toBe(true);
+    for (const d of ["2027-02-29", "2027-02-31", "2027-02-30", "2027-13-01", "2027-00-10", "2027-2-3", "27-02-03", "2027-02-03Z", "", null, undefined, 20270203]) {
+      expect(isIsoDate(d)).toBe(false);
+    }
+  });
+  it("makes an impossible date never due", () => {
+    expect(isOfflineDue({ status: "published", offlineOn: "2027-02-31" }, at("2027-04-01T00:00:00Z"))).toBe(false);
+  });
 });

@@ -38,6 +38,7 @@ export default async function EditInvitationPage({ params, searchParams }) {
       templates={templateChoices()}
       saveAction={saveInvitationAction}
       publishActions={{ checkSlugAction, setSlugAction, newPreviewLinkAction, publishAction, updateLiveAction }}
+      lifecycleActions={{ takeOfflineAction, putOnlineAction, setOfflineOnAction, deleteInvitationAction, restoreInvitationAction, eraseNowAction }}
       musicTracks={musicTracks}
       musicTracksError={musicTracksError}
     />

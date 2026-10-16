@@ -14,7 +14,7 @@ import {
   deleteInvitationAction, eraseNowAction, putOnlineAction, restoreInvitationAction, setOfflineOnAction, takeOfflineAction,
 } from "./lifecycleActions";
 
-const GENERIC = "Couldn't publish. Check your connection and try again.";
+const GENERIC = "Couldn't save that change. Check your connection and try again.";
 const row = { status: "offline", offlineAt: "t", purgeAt: "p", offlineOn: "2027-03-01", deletedAt: null, version: 5 };
 
 const cases = [
@@ -98,6 +98,11 @@ describe("date validation", () => {
     data.restoreRecord.mockResolvedValue({ data: row });
     await restoreInvitationAction({ id: "inv-1", expectedVersion: 4, offlineOn: "2027-03-01" });
     expect(data.restoreRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4, offlineOn: "2027-03-01" });
+  });
+  it("restore with offlineOn omitted passes no offlineOn", async () => {
+    data.restoreRecord.mockResolvedValue({ data: row });
+    await restoreInvitationAction({ id: "inv-1", expectedVersion: 4 });
+    expect(data.restoreRecord.mock.calls[0][0].offlineOn).toBeUndefined();
   });
   it("restore rejects a malformed offlineOn before calling data", async () => {
     expect(await restoreInvitationAction({ id: "inv-1", expectedVersion: 4, offlineOn: "14-02-2027" })).toEqual({ ok: false, message: "Pick a date after today" });

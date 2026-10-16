@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { requireStaff } from "@/AdminModule/auth/server";
 import { isIsoDate } from "@/InvitationModule/lib/lifecycle";
 import { deleteRecord, eraseNowRecord, putOnlineRecord, restoreRecord, setOfflineOnRecord, takeOfflineRecord } from "./data";
-import { PUBLISH_FAILED, publishFailure } from "./publishing";
+import { publishFailure } from "./publishing";
 
+const LIFECYCLE_FAILED = "Couldn't save that change. Check your connection and try again.";
 const BAD_DATE = { ok: false, message: "Pick a date after today" };
 
 function refresh(id) {
@@ -18,7 +19,7 @@ async function attempt(fn) {
     return await fn();
   } catch (err) {
     console.error("lifecycle action failed", err);
-    return { ok: false, message: PUBLISH_FAILED };
+    return { ok: false, message: LIFECYCLE_FAILED };
   }
 }
 

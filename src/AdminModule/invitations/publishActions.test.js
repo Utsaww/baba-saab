@@ -8,9 +8,14 @@ const data = vi.hoisted(() => ({
   publishRecord: vi.fn(), updateLiveRecord: vi.fn(),
 }));
 vi.mock("./data", () => data);
+vi.mock("@/InvitationModule/lib/lifecycle", async (orig) => {
+  const actual = await orig();
+  return { ...actual, defaultOfflineOn: vi.fn(actual.defaultOfflineOn) };
+});
 const delay = vi.hoisted(() => ({ wait: vi.fn(async () => {}) }));
 vi.mock("./wait", () => delay);
 
+import { defaultOfflineOn } from "@/InvitationModule/lib/lifecycle";
 import { checkSlugAction, newPreviewLinkAction, publishAction, setSlugAction, updateLiveAction } from "./publishActions";
 
 const ready = {
@@ -78,6 +83,13 @@ describe("publishAction", () => {
     expect(data.getInvitation).toHaveBeenCalledTimes(2);
     expect(delay.wait).toHaveBeenCalledWith(200);
     expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4, offlineOn: "2027-02-21" });
+  });
+  it("sends offlineOn null when the draft has no dates", async () => {
+    defaultOfflineOn.mockReturnValueOnce(null);
+    data.getInvitation.mockResolvedValue(inv());
+    data.publishRecord.mockResolvedValue({ data: { status: "published" } });
+    await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
+    expect(data.publishRecord).toHaveBeenCalledWith({ id: "inv-1", expectedVersion: 4, offlineOn: null });
   });
   it("passes the latest event date plus 7 as offlineOn", async () => {
     data.getInvitation.mockResolvedValue(inv({ content: { ...ready, events: [{ id: "e1", name: { en: "Reception" }, date: "2027-02-16", time: "19:00", venueName: { en: "Rambagh" }, address: { en: "Jaipur" } }] } }));

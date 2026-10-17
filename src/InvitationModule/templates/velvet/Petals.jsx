@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { seeded } from "./seeded";
 
 const TAU = Math.PI * 2;
+const DEFAULT_COLOUR = "#E7C68C";
 const MAX_STEP = 0.05; // seconds; a long pause never makes petals jump
 
 // Slow-falling gold petals over the card column, started once the envelope has opened.
@@ -12,8 +13,18 @@ export default function Petals({ active, count = 16, className }) {
   const [allowed, setAllowed] = useState(false);
   const ref = useRef(null);
 
+  // Follow the reduced-motion preference, including changes made mid-visit.
   useEffect(() => {
-    setAllowed(!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+    const query = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    setAllowed(!query?.matches);
+    if (!query) return undefined;
+    const onChange = (event) => setAllowed(!event.matches);
+    if (query.addEventListener) query.addEventListener("change", onChange);
+    else query.addListener?.(onChange);
+    return () => {
+      if (query.removeEventListener) query.removeEventListener("change", onChange);
+      else query.removeListener?.(onChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -38,12 +49,23 @@ export default function Petals({ active, count = 16, className }) {
       spin: (rand() - 0.5) * 1.6, // radians per second
       alpha: 0.25 + rand() * 0.3,
     }));
-    const colour = getComputedStyle(canvas).getPropertyValue("--petal").trim() || "#E7C68C";
+    // Re-read on start and resize so a palette switch in the live editor preview shows.
+    let colour = DEFAULT_COLOUR;
+    function readColour() {
+      colour = getComputedStyle(canvas).getPropertyValue("--petal").trim() || DEFAULT_COLOUR;
+    }
 
+    let ratio = 0;
     function resize() {
+      readColour();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      width = canvas.clientWidth || window.innerWidth;
-      height = canvas.clientHeight || window.innerHeight;
+      const w = canvas.clientWidth || window.innerWidth;
+      const h = canvas.clientHeight || window.innerHeight;
+      // Mobile URL bars fire resize constantly; only reallocate the backing store on a real change.
+      if (w === width && h === height && dpr === ratio) return;
+      width = w;
+      height = h;
+      ratio = dpr;
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -78,6 +100,7 @@ export default function Petals({ active, count = 16, className }) {
 
     function start() {
       if (frameId) return;
+      readColour();
       last = 0;
       frameId = requestAnimationFrame(frame);
     }
@@ -93,7 +116,7 @@ export default function Petals({ active, count = 16, className }) {
     resize();
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", onVisibility);
-    start();
+    if (!document.hidden) start();
     return () => {
       stop();
       window.removeEventListener("resize", resize);

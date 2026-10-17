@@ -24,6 +24,11 @@ describe("FloralArch", () => {
     }
   });
 
+  it("takes a translated label", () => {
+    const { container } = render(<FloralArch label="फूलों का तोरण" />);
+    expect(container.querySelector("svg")).toHaveAttribute("aria-label", "फूलों का तोरण");
+  });
+
   it("is symmetrical in count: the same number of blossoms climb each side", () => {
     const { container } = render(<FloralArch />);
     const sides = [...container.querySelectorAll('[data-part="blossom"]')].map((b) => b.dataset.side);

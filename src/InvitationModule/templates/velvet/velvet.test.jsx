@@ -235,7 +235,28 @@ describe("velvet Part A decoration", () => {
     const { container } = render(<InvitationRenderer invitation={build({ language: "en" })} />);
     expect(container.querySelector("canvas")).toBeNull();
     act(() => screen.getByRole("button", { name: "Tap to open" }).click());
-    act(() => vi.advanceTimersByTime(1000));
+    // Still opening: the flap and card are animating, no petals yet.
+    act(() => vi.advanceTimersByTime(500));
+    expect(container.querySelector("canvas")).toBeNull();
+    act(() => vi.advanceTimersByTime(500));
     expect(container.querySelector('canvas[aria-hidden="true"]')).not.toBeNull();
   });
+
+  it("labels the floral arch in the invitation's language and hides the monogram from screen readers", () => {
+    const { container } = page({ language: "hi" });
+    const cover = container.querySelector("header").parentElement;
+    expect(within(cover).getByRole("img", { name: "फूलों का तोरण" })).toBeInTheDocument();
+    expect(within(cover).getByText("M&A")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("keeps a visible keyboard focus ring on the film's play button", () => {
+    // jsdom cannot compute :focus-visible styles, so check the stylesheet source:
+    // the frame must not set `outline` (that would replace the focus ring) …
+    const frameRule = scss.match(/\.filmFacade, \.filmFrame \{[\s\S]*?\n\}/)[0];
+    expect(frameRule).not.toMatch(/^\s*outline(-offset)?:/m);
+    // … and the play button must have its own visible focus style.
+    expect(scss).toMatch(/\.filmFacade:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--primary\)/);
+  });
 });
+
+afterEach(() => vi.useRealTimers());

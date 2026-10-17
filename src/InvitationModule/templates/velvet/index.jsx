@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useRef, useState } from "react";
 import base from "../base/base.module.scss";
 import own from "./velvet.module.scss";
 import TemplateFrame from "../base/TemplateFrame";
@@ -74,8 +74,11 @@ function Cover(props) {
   return (
     <div className={s.coverFrame}>
       <div className={s.archBlock}>
-        <FloralArch />
-        <span className={s.archMonogram}>{monogram(props.inv)}</span>
+        <FloralArch label={plainText(UI.floralArch, props.lang)} />
+        {/* Decorative: the full names follow straight after, so screen readers skip the initials. */}
+        <span className={s.archMonogram} aria-hidden="true">
+          {monogram(props.inv)}
+        </span>
       </div>
       <CoverBase {...props} />
     </div>
@@ -117,9 +120,10 @@ const SECTIONS = { venue: Venue, rsvp: Rsvp };
 export default function VelvetTemplate({ invitation, ctx }) {
   const ref = useRef(null);
   const [opened, setOpened] = useState(Boolean(ctx?.skipOpening));
+  const markOpened = useCallback(() => setOpened(true), []);
   useFadeUp(ref, FADE);
   return (
-    <OpenedContext.Provider value={() => setOpened(true)}>
+    <OpenedContext.Provider value={markOpened}>
       <div ref={ref} className={s.scope} data-lang={invitation.language}>
         <TemplateFrame inv={invitation} ctx={ctx} s={s} Cover={Cover} Opening={Opening} sections={SECTIONS} />
         <Petals active={opened} className={own.petals} />

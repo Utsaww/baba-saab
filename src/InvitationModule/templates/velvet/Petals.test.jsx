@@ -14,7 +14,10 @@ function fakeContext() {
     beginPath: vi.fn(),
     ellipse: vi.fn(),
     fill: vi.fn(),
-    set fillStyle(_v) {},
+    fills: [],
+    set fillStyle(v) {
+      this.fills.push(v);
+    },
     set globalAlpha(_v) {},
   };
 }
@@ -22,11 +25,19 @@ function fakeContext() {
 let frames;
 let nextId;
 let ctx;
+let motion;
 function setup({ reduced = false } = {}) {
   frames = new Map();
   nextId = 1;
   ctx = fakeContext();
-  vi.stubGlobal("matchMedia", (query) => ({ matches: reduced && query.includes("reduce"), media: query }));
+  // A reduced-motion MediaQueryList whose preference the test can flip.
+  motion = {
+    matches: reduced,
+    listeners: new Set(),
+    addEventListener: vi.fn((type, fn) => motion.listeners.add(fn)),
+    removeEventListener: vi.fn((type, fn) => motion.listeners.delete(fn)),
+  };
+  vi.stubGlobal("matchMedia", (query) => (query.includes("reduce") ? motion : { matches: false, media: query }));
   vi.stubGlobal(
     "requestAnimationFrame",
     vi.fn((cb) => {
@@ -45,6 +56,10 @@ function runFrame(time) {
   const pending = [...frames.entries()];
   frames.clear();
   for (const [, cb] of pending) cb(time);
+}
+function setReduced(matches) {
+  motion.matches = matches;
+  for (const fn of [...motion.listeners]) fn({ matches });
 }
 function setHidden(hidden) {
   Object.defineProperty(document, "hidden", { configurable: true, get: () => hidden });
@@ -107,6 +122,54 @@ describe("Petals", () => {
     expect(frames.size).toBe(0);
     expect(removeWindow).toHaveBeenCalledWith("resize", expect.any(Function));
     expect(removeDocument).toHaveBeenCalledWith("visibilitychange", expect.any(Function));
+  });
+
+  it("does not start while the page is hidden at mount, and starts once it is shown", () => {
+    setHidden(true);
+    render(<Petals active />);
+    expect(frames.size).toBe(0);
+    act(() => setHidden(false));
+    expect(frames.size).toBe(1);
+  });
+
+  it("stops when reduced motion is turned on mid-visit and resumes when it is turned off", () => {
+    const { container } = render(<Petals active />);
+    expect(frames.size).toBe(1);
+    act(() => setReduced(true));
+    expect(container.querySelector("canvas")).toBeNull();
+    expect(frames.size).toBe(0);
+    act(() => setReduced(false));
+    expect(container.querySelector("canvas")).not.toBeNull();
+    expect(frames.size).toBe(1);
+  });
+
+  it("stops listening for the motion preference on unmount", () => {
+    const { unmount } = render(<Petals active />);
+    expect(motion.listeners.size).toBe(1);
+    unmount();
+    expect(motion.listeners.size).toBe(0);
+  });
+
+  it("re-reads the petal colour when it restarts, so a palette change shows", () => {
+    const { container } = render(<Petals active />);
+    act(() => runFrame(16));
+    container.querySelector("canvas").style.setProperty("--petal", "#123456");
+    act(() => setHidden(true));
+    act(() => setHidden(false));
+    act(() => runFrame(32));
+    expect(ctx.fills.at(-1)).toBe("#123456");
+  });
+
+  it("resizes the canvas only when its size or pixel ratio changes", () => {
+    render(<Petals active />);
+    expect(ctx.setTransform).toHaveBeenCalledTimes(1);
+    act(() => window.dispatchEvent(new Event("resize")));
+    expect(ctx.setTransform).toHaveBeenCalledTimes(1);
+    const width = window.innerWidth;
+    window.innerWidth = width + 40;
+    act(() => window.dispatchEvent(new Event("resize")));
+    window.innerWidth = width;
+    expect(ctx.setTransform).toHaveBeenCalledTimes(2);
   });
 
   it("copes with a browser that has no 2D canvas", () => {

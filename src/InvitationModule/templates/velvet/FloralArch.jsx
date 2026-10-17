@@ -77,9 +77,9 @@ const ARCH = build();
 const LEAF_D = "M0 0C3.4-3.6 3.4-8.4 0-12C-3.4-8.4-3.4-3.6 0 0Z";
 const PETALS = [0, 72, 144, 216, 288];
 
-export default function FloralArch({ className }) {
+export default function FloralArch({ className, label = "Floral arch" }) {
   return (
-    <svg className={[st.arch, className].filter(Boolean).join(" ")} viewBox="0 0 360 150" role="img" aria-label="Floral arch">
+    <svg className={[st.arch, className].filter(Boolean).join(" ")} viewBox="0 0 360 150" role="img" aria-label={label}>
       {ARCH.vines.map((v, i) => (
         <path key={i} data-part="vine" d={v.d} className={v.tone === "gold" ? st.archVineGold : st.archVineSage} />
       ))}

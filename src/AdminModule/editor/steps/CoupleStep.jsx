@@ -3,9 +3,13 @@
 import { useId, useState } from "react";
 import { INVOCATIONS } from "@/InvitationModule/lib/invocations";
 import { hasText } from "@/InvitationModule/lib/i18n";
-import { Group, LocalisedInput, TextInput } from "../fields";
+import { ChipGroup, Group, LocalisedInput, TextInput } from "../fields";
 
 const MAX_FAMILIES = 6;
+const ORDERS = [
+  { id: "bride-first", label: "Bride first" },
+  { id: "groom-first", label: "Groom first" },
+];
 const EMBLEMS = [
   { id: "ganesh", label: "Shri Ganesh" },
   { id: "om", label: "Om" },
@@ -53,6 +57,16 @@ export default function CoupleStep({ content, update, language }) {
     <div className="space-y-6">
       {person("bride", "Bride", 'For example "D/o Smt. Sunita & Shri Rajesh Sharma"')}
       {person("groom", "Groom", 'For example "S/o Smt. Kavita & Shri Anil Mehra"')}
+
+      <Group title="Order">
+        <ChipGroup
+          legend="Who is named first?"
+          options={ORDERS}
+          value={content.couple?.order ?? "bride-first"}
+          onChange={(v) => update(["couple", "order"], v)}
+          hint="Usually the bride's family lists the bride first, and the groom's family lists the groom first."
+        />
+      </Group>
 
       <Group title="Blessing at the top">
         <div>

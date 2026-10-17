@@ -18,6 +18,18 @@ describe("indexFields", () => {
     });
   });
 
+  it("lists the groom first when groom-first, and search still finds both", () => {
+    const fields = indexFields({
+      templateId: "floral",
+      couple: { order: "groom-first", bride: { name: { en: "Priya", hi: "प्रिया" } }, groom: { name: { en: "Rahul", hi: "राहुल" } } },
+    });
+    expect(fields.coupleNames).toBe("Rahul & Priya");
+    expect(fields.searchText).toContain("priya");
+    expect(fields.searchText).toContain("rahul");
+    expect(fields.searchText).toContain("प्रिया");
+    expect(fields.searchText).toContain("राहुल");
+  });
+
   it("uses Hindi names when there is no English", () => {
     const fields = indexFields({ templateId: "royal", couple: { bride: { name: { hi: "प्रिया" } } } });
     expect(fields.coupleNames).toBe("प्रिया");

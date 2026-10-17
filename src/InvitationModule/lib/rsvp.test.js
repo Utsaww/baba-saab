@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { coupleTitle } from "./names";
 import { isRsvpClosed, isWhatsappNumber, rsvpMessage, validateRsvpInput, whatsappDigits, whatsappRsvpOn, whatsappRsvpUrl } from "./rsvp";
 
 describe("isRsvpClosed", () => {
@@ -62,6 +63,16 @@ describe("whatsappDigits", () => {
   it("gives an empty string when there is no number", () => {
     expect(whatsappDigits(undefined)).toBe("");
     expect(whatsappDigits("  ")).toBe("");
+  });
+});
+
+describe("rsvpMessage groom-first", () => {
+  it("names the groom first in the title line", () => {
+    const g = { ...inv, couple: { ...inv.couple, order: "groom-first" } };
+    const names = (x) => rsvpMessage(x, reply, "en").split(String.fromCharCode(10))[0].split(" — ")[1];
+    expect(names(g)).toBe(coupleTitle(g));
+    expect(names(g)).toBe(`${inv.couple.groom.name.en} & ${inv.couple.bride.name.en}`);
+    expect(names(inv)).toBe(`${inv.couple.bride.name.en} & ${inv.couple.groom.name.en}`);
   });
 });
 

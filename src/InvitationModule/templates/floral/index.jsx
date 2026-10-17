@@ -7,6 +7,7 @@ import ScrollReveal from "../../sections/reveals/ScrollReveal";
 import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
 import { formatDots } from "../../lib/datetime";
+import { couplePair } from "../../lib/names";
 import { mergeStyles } from "../../lib/styles";
 
 const s = mergeStyles(base, own);
@@ -25,12 +26,13 @@ function FloralCorner({ className }) {
 }
 
 function Opening({ inv, lang, open }) {
+  const [first, second] = couplePair(inv);
   return (
     <div className={s.openingInner}>
       <ScrollReveal className={s.scrollOpen} onReveal={open}>
         <T as="span" v={UI.weddingOf} lang={lang} className={s.eyebrow} />
         <span className={s.openingNames}>
-          <T v={inv.couple.bride.name} lang={lang} /> &amp; <T v={inv.couple.groom.name} lang={lang} />
+          <T v={first.name} lang={lang} /> &amp; <T v={second.name} lang={lang} />
         </span>
         <span className={s.coverDate}>{formatDots(inv.mainDate)}</span>
         <T as="span" v={UI.scrollToOpen} lang={lang} className={s.scrollHint} />

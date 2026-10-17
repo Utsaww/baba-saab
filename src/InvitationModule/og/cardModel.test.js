@@ -14,6 +14,10 @@ describe("cardModel", () => {
     expect(cardModel({ ...inv, media: { ...inv.media, coverKey: "invitations/i/c.jpg" } }).coverUrl).toBe("https://media.example/invitations/i/c.jpg");
     expect(cardModel({ ...inv, media: { ...inv.media, coverKey: undefined } }).coverUrl).toBeNull();
   });
+  it("names the groom first when groom-first", () => {
+    const g = { ...inv, couple: { order: "groom-first", bride: { name: { en: "Priya" } }, groom: { name: { en: "Rahul" } } } };
+    expect(cardModel(g).names).toBe("Rahul & Priya");
+  });
   it("uses Hindi names and date for hi invitations", () => {
     const hi = { ...inv, language: "hi", couple: { bride: { name: { hi: "प्रिया" } }, groom: { name: { hi: "राहुल" } } } };
     const m = cardModel(hi);

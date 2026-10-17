@@ -9,6 +9,7 @@ import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
 import { formatDots } from "../../lib/datetime";
 import { plainText } from "../../lib/i18n";
+import { couplePair } from "../../lib/names";
 import { mergeStyles } from "../../lib/styles";
 
 const s = mergeStyles(base, own);
@@ -16,11 +17,12 @@ const s = mergeStyles(base, own);
 const REVEAL_PAUSE_MS = 1200;
 
 function Opening({ inv, lang, open }) {
+  const [first, second] = couplePair(inv);
   return (
     <div className={s.openingInner}>
       <Emblem deity={inv.invocation.deity} className={s.openingEmblem} />
       <p className={s.openingNames}>
-        <T v={inv.couple.bride.name} lang={lang} /> <span className={s.amp}>&amp;</span> <T v={inv.couple.groom.name} lang={lang} />
+        <T v={first.name} lang={lang} /> <span className={s.amp}>&amp;</span> <T v={second.name} lang={lang} />
       </p>
       <T as="p" v={UI.scratchHint} lang={lang} className={s.openingHint} />
       <ScratchReveal

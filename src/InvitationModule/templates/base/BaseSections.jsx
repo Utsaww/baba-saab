@@ -16,7 +16,7 @@ import { formatDate, formatDots, formatTime } from "../../lib/datetime";
 import { countdownTarget } from "../../lib/countdown";
 import { mediaUrl } from "../../lib/media";
 import { isRsvpClosed, isWhatsappNumber, rsvpMessage, whatsappRsvpUrl } from "../../lib/rsvp";
-import { coupleTitle } from "../../lib/names";
+import { couplePair, coupleTitle } from "../../lib/names";
 
 const dateLang = (lang) => (lang === "hi" ? "hi" : "en");
 
@@ -34,7 +34,7 @@ function Section({ id, s, title, lang, children }) {
 }
 
 export function CoverBase({ inv, lang, s }) {
-  const { bride, groom } = inv.couple;
+  const [first, second] = couplePair(inv);
   return (
     <header className={s.cover}>
       {inv.media.coverKey && (
@@ -45,9 +45,9 @@ export function CoverBase({ inv, lang, s }) {
       <div className={s.coverContent}>
         <T as="p" v={UI.weddingOf} lang={lang} className={s.eyebrow} />
         <h1 className={s.coverNames}>
-          <T v={bride.name} lang={lang} className={s.name} />
+          <T v={first.name} lang={lang} className={s.name} />
           <span className={s.amp}>&amp;</span>
-          <T v={groom.name} lang={lang} className={s.name} />
+          <T v={second.name} lang={lang} className={s.name} />
         </h1>
         <p className={s.coverDate}>{formatDots(inv.mainDate)}</p>
       </div>
@@ -69,7 +69,7 @@ function Couple({ inv, lang, s }) {
     <Section id="couple" s={s}>
       <T as="p" v={UI.together} lang={lang} className={s.eyebrow} />
       <div className={s.couple}>
-        {[inv.couple.bride, inv.couple.groom].map((person, i) => (
+        {couplePair(inv).map((person, i) => (
           <div key={i} className={s.person}>
             {person.photoKey && (
               <div className={s.personPhoto}>

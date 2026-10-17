@@ -27,6 +27,7 @@ export function previewInvitation(draft, template) {
       hidden: d.theme?.hidden,
     },
     couple: {
+      order: d.couple?.order,
       bride: { ...d.couple?.bride, name: pick(d.couple?.bride?.name, sample.couple.bride.name) },
       groom: { ...d.couple?.groom, name: pick(d.couple?.groom?.name, sample.couple.groom.name) },
     },

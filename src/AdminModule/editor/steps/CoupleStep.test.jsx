@@ -20,6 +20,17 @@ describe("CoupleStep", () => {
     expect(latest().couple).toEqual({ bride: { name: { en: "Priya" } }, groom: { name: { en: "Rahul" } } });
   });
 
+  it("chooses who is named first", async () => {
+    const { latest } = renderStep(CoupleStep, base("en"));
+    expect(screen.getByText("Usually the bride's family lists the bride first, and the groom's family lists the groom first.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bride first" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(screen.getByRole("button", { name: "Groom first" }));
+    expect(latest().couple.order).toBe("groom-first");
+    expect(screen.getByRole("button", { name: "Groom first" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(screen.getByRole("button", { name: "Bride first" }));
+    expect(latest().couple.order).toBe("bride-first");
+  });
+
   it("adds and removes families", async () => {
     const { latest } = renderStep(CoupleStep, base("en"));
     await userEvent.click(screen.getByRole("button", { name: "Add a family" }));

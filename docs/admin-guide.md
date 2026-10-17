@@ -13,7 +13,7 @@ This guide grows as new parts of the invitation system go live. Everything descr
 | **Staff** | *Owner only.* Invite people to the admin area and remove them. |
 | **Help** | This guide. |
 
-Guests' RSVP forms are coming later. This guide will gain a section for them then.
+Guests can RSVP on WhatsApp: their reply opens WhatsApp to the family's number. Turn it on in **Editor step 7: Settings**.
 
 ## Signing in
 
@@ -36,7 +36,7 @@ The temporary password works for 7 days. If it has expired, ask the owner to sen
 
 ## The dashboard
 
-After signing in you land on the **Dashboard**. It links to everything you can use. Your invitations, upcoming events and recent RSVPs will appear here as those features arrive.
+After signing in you land on the **Dashboard**. It links to everything you can use. Your invitations and upcoming events will appear here as those features arrive. RSVPs go to the family's WhatsApp, not to Baba Saab, so they don't appear here.
 
 The yellow **New here?** banner links to this guide. Click **Dismiss** to hide it on this computer.
 
@@ -110,7 +110,7 @@ Change the design, colour palette or language at any time. Nothing you've typed 
 - **Bride and groom:** names, and the parents line, for example "D/o Smt. Sunita & Shri Rajesh Sharma".
 - **Blessing at the top:** the symbol (Shri Ganesh, Om or none) and a shloka. Pick one of the ready-made shlokas, or choose **Our own text** and type the family's own.
 - **Families:** add each family's name for the closing message. **Closing line** is the sign-off, for example "With love and blessings from the Sharma and Mehra families".
-- **Family contact phone:** shown to guests in the closing message at the end of the invitation. Search on the Invitations page also finds invitations by this number.
+- **Family contact phone:** shown to guests in the closing message at the end of the invitation. Search on the Invitations page also finds invitations by this number. **If guests reply on WhatsApp (step 7), this must be the family's WhatsApp number**, because every RSVP is sent there. The invitation can't be published without it while RSVPs are on.
 
 For a **Both** invitation, each field has an English box and a Hindi box.
 
@@ -146,13 +146,17 @@ Choose which parts of the invitation guests see, and in what order. Untick **Sho
 ## Editor step 7: Settings
 
 - **Take offline on** appears here once the invitation is live. It is the date the invitation goes offline by itself. See **After the wedding** below.
+- **Guests reply on WhatsApp** adds an RSVP form to the invitation. When a guest sends it, WhatsApp opens with their reply already typed, addressed to the family contact number from step 2. Nothing is stored by Baba Saab. When it's on, you can also set:
+  - **Last day to reply** (optional). After this day the form closes and shows the family's phone number instead.
+  - **Ask how many people are coming** (on unless you untick it).
+  - **Ask about meal preference** (vegetarian, non-vegetarian or Jain).
 - **Show "Created by Baba Saab Events"** adds a small credit at the bottom. Untick it if the customer prefers.
 
-RSVP settings aren't shown here yet. Guests' RSVP forms are coming later.
+See **RSVPs on WhatsApp** below for what guests see.
 
 ## Editor step 8: Review
 
-This step lists everything still needed before the invitation can be published, such as a missing date or an event without a time. Click **Go to step N** to fix each one. When the list is clear it says **Everything needed is filled in.** The rest of the step is where you choose the link name, share the customer preview link and publish. Each part is explained below.
+This step lists everything still needed before the invitation can be published, such as a missing date or an event without a time. Click **Go to step N** to fix each one. If guests reply on WhatsApp, it also asks for the family's WhatsApp number (step 2). When the list is clear it says **Everything needed is filled in.** The rest of the step is where you choose the link name, share the customer preview link and publish. Each part is explained below.
 
 ### Choosing the link name
 
@@ -198,9 +202,15 @@ When the live link is pasted into WhatsApp, it shows a card with the cover photo
 
 After publishing, click **Download QR code**. It saves a file named like `riya-and-arjun-qr.png` that points to the live link. It prints sharply at normal invitation and standee sizes. Always scan it with a phone before sending it to print.
 
-### RSVP forms
+### RSVPs on WhatsApp
 
-Guests' RSVP forms don't appear on live invitations yet. They are coming later, and step 7 has no RSVP settings until then.
+When **Guests reply on WhatsApp** is on in step 7, the invitation has an RSVP form: name, phone, whether they're coming, how many (if asked), which functions, meal (if asked) and a message.
+
+- **Sending:** the guest taps **Send RSVP on WhatsApp**. WhatsApp opens with their reply typed out, addressed to the family's number. The guest just presses send in WhatsApp. Replies arrive in the family's WhatsApp, in the invitation's language (English for a **Both** invitation).
+- **If WhatsApp doesn't open** (for example on a computer without WhatsApp), the reply is shown with **Copy message** and **Open WhatsApp** buttons, and the family's number to send it to.
+- **Nothing is stored by Baba Saab.** The guest's phone remembers their last reply, so if they come back the form is already filled in and they can change it and send again.
+- **After the last day to reply**, the form is replaced by a note with the family's phone number for changes.
+- **Previews:** the form works the same in the customer preview and the editor, with a note that replies go to the family's WhatsApp. Test it with your own phone. If the family's number is missing, previews say so, and the live invitation hides the form.
 
 ## After the wedding
 
@@ -292,7 +302,7 @@ Gather these before invitations can be created, so the next step is quick:
 
 - Bride's and groom's names (in Hindi too, if they want both languages)
 - Parents' names for "D/o…" and "S/o…" lines
-- Family names for the closing message, and a contact phone number
+- Family names for the closing message, and a contact phone number on WhatsApp (guests' RSVPs are sent there)
 - Main wedding date, venue name, full address and a Google Maps link
 - Every function: name, date, time, venue (if different), dress code
 - Travel notes: nearest airport and railway station, weather tips

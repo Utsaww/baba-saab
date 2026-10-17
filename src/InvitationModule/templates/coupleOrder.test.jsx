@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { render } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import InvitationRenderer from "../InvitationRenderer";
 import { parseInvitation } from "../schema/invitation";
 import { getTemplate } from "./registry";
@@ -49,5 +49,29 @@ describe.each(["royal", "floral", "velvet"])("couple order in %s", (id) => {
     expect(before(section, "पुत्र वर माता-पिता", "पुत्री वधू माता-पिता")).toBe(true);
     const cover = c.textContent.slice(0, c.textContent.indexOf(section));
     expect(before(cover, "क्वेंटिन", "ज़िन्निया")).toBe(true);
+  });
+});
+
+describe.each(["royal", "floral", "temple", "velvet", "minimal"])("cover heading in %s", (id) => {
+  it.each([
+    ["en", "Zinnia", "Quentin"],
+    ["hi", "ज़िन्निया", "क्वेंटिन"],
+    ["both", "Zinnia", "Quentin"],
+  ])("follows the order in %s", (language, bride, groom) => {
+    const heading = (order) => text(build(id, { order, language })).querySelector("header h1")?.textContent ?? "";
+    expect(before(heading(undefined), bride, groom)).toBe(true);
+    expect(before(heading("bride-first"), bride, groom)).toBe(true);
+    expect(before(heading("groom-first"), groom, bride)).toBe(true);
+  });
+});
+
+describe("share text", () => {
+  it("names the groom first when groom-first", () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    text(build("royal", { order: "groom-first" }));
+    fireEvent.click(screen.getByRole("button", { name: "Share on WhatsApp" }));
+    const shared = decodeURIComponent(open.mock.calls[0][0].split("text=")[1]);
+    expect(before(shared, "Quentin", "Zinnia")).toBe(true);
+    open.mockRestore();
   });
 });

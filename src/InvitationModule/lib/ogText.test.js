@@ -3,7 +3,6 @@ import { ogDescription, ogTitle } from "./ogText";
 
 const inv = (language, order) => ({
   language,
-  ...{},
   couple: { order, bride: { name: { en: "Priya", hi: "प्रिया" } }, groom: { name: { en: "Rahul", hi: "राहुल" } } },
   mainDate: "2027-02-14",
   venue: { name: { en: "Rambagh Palace", hi: "रामबाग पैलेस" } },

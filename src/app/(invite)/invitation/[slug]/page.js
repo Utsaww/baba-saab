@@ -34,7 +34,7 @@ export default async function PublicInvitationPage({ params, searchParams }) {
   return (
     <>
       {result.mode === "preview" ? <PreviewBanner /> : null}
-      <InvitationRenderer invitation={result.invitation} ctx={{ mode: result.mode }} />
+      <InvitationRenderer invitation={result.invitation} ctx={{ mode: result.mode, slug: params.slug }} />
     </>
   );
 }

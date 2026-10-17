@@ -6,6 +6,7 @@ import { cleanDraft } from "@/InvitationModule/schema/draft";
 import { parseInvitation } from "@/InvitationModule/schema/invitation";
 import { previewInvitation } from "@/InvitationModule/lib/preview";
 import { getTemplate } from "@/InvitationModule/templates/registry";
+import { isWhatsappNumber } from "@/InvitationModule/lib/rsvp";
 
 // Guests have no login: the identity pool's guest role may call publicInvitation and nothing else.
 const client = generateServerClientUsingReqRes({ config: outputs, authMode: "identityPool" });
@@ -27,8 +28,12 @@ export async function loadPublicInvitation(slug, previewToken) {
     return { mode: "preview", invitation: previewInvitation(cleanDraft(content).draft, template).invitation };
   }
   const invitation = parseInvitation({ ...content, templateId: data.templateId });
-  // RSVPs are stored from Phase 4; until then a live form would silently drop answers.
-  return { mode: "live", invitation: { ...invitation, rsvp: { ...invitation.rsvp, enabled: false } } };
+  // Replies go to the family's WhatsApp. Publishing requires a valid number, but an older live copy may lack one:
+  // then there is nowhere to reply to, so the RSVP section is hidden.
+  if (invitation.rsvp.enabled && !isWhatsappNumber(invitation.hosts.contactPhone)) {
+    return { mode: "live", invitation: { ...invitation, rsvp: { ...invitation.rsvp, enabled: false } } };
+  }
+  return { mode: "live", invitation };
 }
 
 /** One lookup per request, shared by generateMetadata and the page. */

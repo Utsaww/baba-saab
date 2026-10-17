@@ -64,10 +64,29 @@ describe("publishChecklist", () => {
     ]);
   });
 
-  it("doesn't ask for an RSVP deadline while RSVPs are parked, even when an old draft has RSVP on", () => {
-    const draft = { ...complete(), rsvp: { enabled: true } };
-    expect(publishChecklist(draft)).toEqual([]);
-    expect(publishChecklist({ ...draft, rsvp: { enabled: true, deadline: "2027-02-01" } })).toEqual([]);
+  const NEED_NUMBER = {
+    id: "contactPhone",
+    message: "Add a valid WhatsApp number for the family (with country code, e.g. +91 98765 43210)",
+    step: 2,
+  };
+
+  it("asks for a valid family WhatsApp number when guests reply on WhatsApp", () => {
+    const draft = { ...complete(), rsvp: { enabled: true, channel: "whatsapp" } };
+    expect(publishChecklist(draft)).toEqual([NEED_NUMBER]);
+    expect(publishChecklist({ ...draft, hosts: { contactPhone: "  " } })).toEqual([NEED_NUMBER]);
+    expect(publishChecklist({ ...draft, hosts: { contactPhone: "12345" } })).toEqual([NEED_NUMBER]);
+    expect(publishChecklist({ ...draft, hosts: { contactPhone: "98765 43210" } })).toEqual([]);
+  });
+
+  it("doesn't ask for a number for legacy content switched on before WhatsApp replies", () => {
+    expect(publishChecklist({ ...complete(), rsvp: { enabled: true } })).toEqual([]);
+  });
+
+  it("doesn't need a last day to reply, and doesn't need a number when RSVP is off", () => {
+    const withPhone = { ...complete(), hosts: { contactPhone: "+91 98765 43210" } };
+    expect(publishChecklist({ ...withPhone, rsvp: { enabled: true, channel: "whatsapp" } })).toEqual([]);
+    expect(publishChecklist({ ...withPhone, rsvp: { enabled: true, channel: "whatsapp", deadline: "2027-02-01" } })).toEqual([]);
+    expect(publishChecklist({ ...complete(), rsvp: { enabled: false } })).toEqual([]);
   });
 
   it("calls an unnamed event by its number", () => {

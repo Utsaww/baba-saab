@@ -52,3 +52,11 @@ describe("date validation", () => {
     expect(parseInvitation({ ...minimalInvitation(), mainDate: "2028-02-29" }).mainDate).toBe("2028-02-29");
   });
 });
+
+describe("rsvp.channel", () => {
+  it("accepts WhatsApp as the reply channel and rejects anything else", async () => {
+    const { minimalInvitation } = await import("../testing/fixtures");
+    expect(parseInvitation({ ...minimalInvitation(), rsvp: { enabled: true, channel: "whatsapp" } }).rsvp.channel).toBe("whatsapp");
+    expect(() => parseInvitation({ ...minimalInvitation(), rsvp: { enabled: true, channel: "sms" } })).toThrow();
+  });
+});

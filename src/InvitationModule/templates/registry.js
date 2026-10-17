@@ -10,6 +10,9 @@ import { templeSample } from "./temple/sample";
 import MinimalTemplate from "./minimal";
 import { minimalFontVars, minimalPalettes } from "./minimal/palettes";
 import { minimalSample } from "./minimal/sample";
+import VelvetTemplate from "./velvet";
+import { velvetFontVars, velvetPalettes } from "./velvet/palettes";
+import { velvetSample } from "./velvet/sample";
 
 export const TEMPLATES = [
   {
@@ -47,6 +50,15 @@ export const TEMPLATES = [
     palettes: minimalPalettes,
     fontVars: minimalFontVars,
     sample: minimalSample,
+  },
+  {
+    id: "velvet",
+    name: "Velvet Envelope",
+    description: "Deep plum and gold with an envelope sealed in gold wax. Guests tap the seal to open it.",
+    Component: VelvetTemplate,
+    palettes: velvetPalettes,
+    fontVars: velvetFontVars,
+    sample: velvetSample,
   },
 ];
 

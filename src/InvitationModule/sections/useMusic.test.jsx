@@ -292,3 +292,132 @@ describe("useMusic", () => {
     }
   });
 });
+
+describe("useMusic fades and the remembered mute", () => {
+  const TIMERS = { toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] };
+  beforeEach(() => localStorage.clear());
+  afterEach(() => {
+    localStorage.clear();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it("fades music in from silence to a gentle volume over about 1.5 seconds", async () => {
+    vi.useFakeTimers(TIMERS);
+    const { play } = stubMedia();
+    render(<Harness />);
+    await act(async () => fireEvent.click(toggleButton()));
+    const el = play.mock.contexts[0];
+    expect(el.volume).toBe(0);
+    await act(async () => vi.advanceTimersByTime(750));
+    expect(el.volume).toBeGreaterThan(0.15);
+    expect(el.volume).toBeLessThan(0.3);
+    await act(async () => vi.advanceTimersByTime(800));
+    expect(el.volume).toBeCloseTo(0.45, 5);
+  });
+
+  it("fades in when the reveal starts the music", async () => {
+    vi.useFakeTimers(TIMERS);
+    const { play } = stubMedia();
+    render(<Harness />);
+    await act(async () => fireEvent.touchEnd(screen.getByText("Cover"))); // primes silently
+    await playOutsideGesture();
+    const el = play.mock.contexts[0];
+    expect(playLabel()).toBe("Pause music");
+    expect(el.volume).toBe(0);
+    await act(async () => vi.advanceTimersByTime(1600));
+    expect(el.volume).toBeCloseTo(0.45, 5);
+  });
+
+  it("fades out quickly and then pauses when the guest turns music off", async () => {
+    vi.useFakeTimers(TIMERS);
+    const { play } = stubMedia();
+    render(<Harness />);
+    await act(async () => fireEvent.click(toggleButton()));
+    await act(async () => vi.advanceTimersByTime(1600));
+    const el = play.mock.contexts[0];
+    await act(async () => fireEvent.click(toggleButton()));
+    expect(playLabel()).toBe("Play music");
+    expect(el.paused).toBe(false);
+    await act(async () => vi.advanceTimersByTime(200));
+    expect(el.volume).toBeGreaterThan(0);
+    expect(el.volume).toBeLessThan(0.45);
+    expect(el.paused).toBe(false);
+    await act(async () => vi.advanceTimersByTime(250));
+    expect(el.paused).toBe(true);
+    expect(el.volume).toBe(0);
+  });
+
+  it("keeps playing and fades back in when turned on again during the fade-out", async () => {
+    vi.useFakeTimers(TIMERS);
+    const { play } = stubMedia();
+    render(<Harness />);
+    await act(async () => fireEvent.click(toggleButton()));
+    await act(async () => vi.advanceTimersByTime(1600));
+    const el = play.mock.contexts[0];
+    await act(async () => fireEvent.click(toggleButton())); // off
+    await act(async () => vi.advanceTimersByTime(200));
+    await act(async () => fireEvent.click(toggleButton())); // on again
+    expect(playLabel()).toBe("Pause music");
+    await act(async () => vi.advanceTimersByTime(2000));
+    expect(el.paused).toBe(false);
+    expect(el.volume).toBeCloseTo(0.45, 5);
+  });
+
+  it("sets the volume straight away under reduced motion", async () => {
+    vi.stubGlobal("matchMedia", (query) => ({ matches: query.includes("reduce"), media: query }));
+    const { play, pause } = stubMedia();
+    render(<Harness />);
+    await act(async () => fireEvent.click(toggleButton()));
+    expect(play.mock.contexts[0].volume).toBeCloseTo(0.45, 5);
+    await act(async () => fireEvent.click(toggleButton()));
+    expect(pause).toHaveBeenCalled();
+  });
+
+  it("remembers on this device that the guest turned music off", async () => {
+    const { play } = stubMedia();
+    const { unmount } = render(<Harness />);
+    await act(async () => fireEvent.click(toggleButton())); // on
+    await act(async () => fireEvent.click(toggleButton())); // off
+    expect(localStorage.getItem("music:muted")).toBe("1");
+    unmount();
+
+    render(<Harness />);
+    expect(playLabel()).toBe("Play music");
+    const before = play.mock.calls.length;
+    await playOutsideGesture(); // the reveal
+    expect(play).toHaveBeenCalledTimes(before);
+    expect(playLabel()).toBe("Play music");
+
+    await act(async () => fireEvent.click(toggleButton()));
+    expect(playLabel()).toBe("Pause music");
+    expect(localStorage.getItem("music:muted")).toBeNull();
+  });
+
+  it("still plays and toggles when the device refuses storage", async () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("SecurityError");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("SecurityError");
+    });
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new Error("SecurityError");
+    });
+    stubMedia();
+    render(<Harness />);
+    await act(async () => fireEvent.click(toggleButton()));
+    expect(playLabel()).toBe("Pause music");
+    await act(async () => fireEvent.click(toggleButton()));
+    expect(playLabel()).toBe("Play music");
+  });
+
+  it("stops fading when unmounted", async () => {
+    vi.useFakeTimers(TIMERS);
+    stubMedia();
+    const { unmount } = render(<Harness />);
+    await act(async () => fireEvent.click(toggleButton()));
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});

@@ -1,6 +1,7 @@
 import { SECTION_IDS } from "../schema/invitation";
 import { hasText } from "./i18n";
 import { invocationText } from "./invocations";
+import { whatsappRsvpOn } from "./rsvp";
 
 const hasContent = {
   invocation: (inv) => inv.invocation.deity !== "none" || hasText(invocationText(inv.invocation)),
@@ -12,7 +13,7 @@ const hasContent = {
   schedule: (inv) => inv.events.length > 0,
   gallery: (inv) => inv.media.gallery.length > 0,
   film: (inv) => Boolean(inv.media.film?.url || inv.media.film?.key),
-  rsvp: (inv) => inv.rsvp.enabled,
+  rsvp: (inv) => whatsappRsvpOn(inv.rsvp),
   closing: (inv) => hasText(inv.hosts.closingLine) || inv.hosts.families.some(hasText),
 };
 

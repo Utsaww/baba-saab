@@ -40,8 +40,10 @@ describe("stepHasContent", () => {
     expect(stepHasContent(4, { events: [{ id: "a" }] })).toBe(true);
     expect(stepHasContent(8, content)).toBe(false);
   });
-  it("ticks step 7 from what it shows, not from the hidden RSVP switch", () => {
-    expect(stepHasContent(7, { rsvp: { enabled: true } })).toBe(false);
+  it("ticks step 7 when guests reply on WhatsApp or the credit is off", () => {
+    expect(stepHasContent(7, { rsvp: { enabled: true, channel: "whatsapp" } })).toBe(true);
+    expect(stepHasContent(7, { rsvp: { enabled: true } })).toBe(false); // legacy, not opted in
+    expect(stepHasContent(7, { rsvp: { enabled: false } })).toBe(false);
     expect(stepHasContent(7, {})).toBe(false);
     expect(stepHasContent(7, { showCredit: true })).toBe(false);
     expect(stepHasContent(7, { showCredit: false })).toBe(true);

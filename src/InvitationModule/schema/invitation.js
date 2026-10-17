@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const GALLERY_MAX = 12;
-export const TEMPLATE_IDS = ["royal", "floral", "temple", "minimal"];
+export const TEMPLATE_IDS = ["royal", "floral", "temple", "minimal", "velvet"];
 export const LANGUAGES = ["en", "hi", "both"];
 export const STATUSES = ["draft", "published", "offline", "deleted"];
 // The cover always renders first and cannot be hidden, so it is not a section id.
@@ -105,6 +105,8 @@ export const invitationSchema = z.object({
   rsvp: z
     .object({
       enabled: z.boolean().default(false),
+      // Set when staff turn on "Guests reply on WhatsApp"; older content without it shows no RSVP form.
+      channel: z.enum(["whatsapp"]).optional(),
       deadline: isoDate.optional(),
       askGuestCount: z.boolean().default(true),
       askMeal: z.boolean().default(false),

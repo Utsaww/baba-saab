@@ -15,11 +15,10 @@ import { invocationText } from "../../lib/invocations";
 import { formatDate, formatDots, formatTime } from "../../lib/datetime";
 import { countdownTarget } from "../../lib/countdown";
 import { mediaUrl } from "../../lib/media";
-import { isRsvpClosed } from "../../lib/rsvp";
+import { isRsvpClosed, isWhatsappNumber, rsvpMessage, whatsappRsvpUrl } from "../../lib/rsvp";
 import { coupleTitle } from "../../lib/names";
 
 const dateLang = (lang) => (lang === "hi" ? "hi" : "en");
-const previewRsvp = (lang) => async () => ({ ok: false, message: plainText(UI.rsvpPreview, lang) });
 
 function Section({ id, s, title, lang, children }) {
   return (
@@ -198,12 +197,19 @@ function FilmSection({ inv, lang, s }) {
   );
 }
 
+// Guests reply on WhatsApp to the family's number; previews work the same and say so.
 function Rsvp({ inv, lang, s, ctx }) {
   const deadline = inv.rsvp.deadline ? formatDate(inv.rsvp.deadline, dateLang(lang)) : null;
-  const onSubmit = ctx.mode === "preview" || !ctx.onRsvpSubmit ? previewRsvp(lang) : ctx.onRsvpSubmit;
+  const preview = ctx.mode === "preview";
+  const compose = (reply) => {
+    const url = whatsappRsvpUrl(inv, reply, lang);
+    return url ? { url, message: rsvpMessage(inv, reply, lang) } : null;
+  };
   // Decided after mount: cached server HTML must not depend on the clock, or hydration fails after the deadline.
   const [closed, setClosed] = useState(false);
   useEffect(() => setClosed(isRsvpClosed(inv.rsvp)), [inv.rsvp]);
+  // Nowhere to reply to on a live page (publishing requires a valid number, so this is an old copy): no section.
+  if (!preview && !isWhatsappNumber(inv.hosts.contactPhone)) return null;
   return (
     <Section id="rsvp" s={s} title={UI.rsvp} lang={lang}>
       <RsvpForm
@@ -215,7 +221,10 @@ function Rsvp({ inv, lang, s, ctx }) {
         closedOnText={deadline}
         deadlineText={deadline}
         contactPhone={inv.hosts.contactPhone}
-        onSubmit={onSubmit}
+        preview={preview}
+        // One remembered reply per live invitation; previews never touch the device.
+        storageKey={!preview && ctx.slug ? `rsvp:${ctx.slug}` : undefined}
+        compose={compose}
         s={s}
       />
     </Section>

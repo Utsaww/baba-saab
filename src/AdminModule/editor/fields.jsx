@@ -94,7 +94,7 @@ export function Toggle({ label, description, checked, onChange }) {
   );
 }
 
-export function ChipGroup({ legend, options, value, onChange }) {
+export function ChipGroup({ legend, options, value, onChange, hint }) {
   return (
     <fieldset>
       <legend className="mb-2 text-sm font-medium">{legend}</legend>
@@ -106,6 +106,7 @@ export function ChipGroup({ legend, options, value, onChange }) {
           </button>
         ))}
       </div>
+      {hint && <p className="mt-1 text-xs text-stone-500">{hint}</p>}
     </fieldset>
   );
 }

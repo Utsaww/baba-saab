@@ -18,6 +18,11 @@ describe("generateSlug", () => {
   it("uses English names with a 4-char suffix", () => {
     expect(generateSlug(content({ en: "Priya" }, { en: "Rahul" }), fixed)).toBe("priya-weds-rahul-k3f9");
   });
+  it("puts the groom first when groom-first", () => {
+    const c = content({ en: "Priya" }, { en: "Rahul" });
+    c.couple.order = "groom-first";
+    expect(generateSlug(c, fixed)).toBe("rahul-weds-priya-k3f9");
+  });
   it("falls back to invitation-<6> when an English name is missing", () => {
     expect(generateSlug(content({ hi: "प्रिया" }, { en: "Rahul" }), fixed)).toBe("invitation-k3f9pq");
   });

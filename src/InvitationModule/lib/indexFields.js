@@ -6,7 +6,8 @@ const clean = (s) => (typeof s === "string" ? s.trim() : "");
 export function indexFields(draft) {
   const bride = draft.couple?.bride?.name;
   const groom = draft.couple?.groom?.name;
-  const names = [textFor(bride, "en"), textFor(groom, "en")].filter(Boolean);
+  const ordered = draft.couple?.order === "groom-first" ? [groom, bride] : [bride, groom];
+  const names = ordered.map((n) => textFor(n, "en")).filter(Boolean);
   const phoneDigits = clean(draft.hosts?.contactPhone).replace(/\D/g, "");
   const searchParts = [bride?.en, bride?.hi, groom?.en, groom?.hi].map(clean).filter(Boolean);
   if (phoneDigits) searchParts.push(phoneDigits);

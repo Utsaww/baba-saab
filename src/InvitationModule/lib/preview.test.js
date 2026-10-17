@@ -17,6 +17,14 @@ describe("previewInvitation", () => {
     expect(invitation.events).toEqual([]);
   });
 
+  it("keeps the chosen couple order in the preview", () => {
+    const { invitation } = previewInvitation(
+      { templateId: "royal", theme: { palette: "maroon-gold" }, couple: { order: "groom-first" } },
+      royal,
+    );
+    expect(invitation.couple.order).toBe("groom-first");
+  });
+
   it("uses the draft's own details when they are filled in", () => {
     const { invitation, usedSample } = previewInvitation(
       {

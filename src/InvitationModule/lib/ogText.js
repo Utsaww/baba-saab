@@ -1,5 +1,6 @@
 import { formatDate } from "./datetime";
 import { textFor } from "./i18n";
+import { couplePair } from "./names";
 
 export const PREVIEW_TITLE = "Wedding invitation preview";
 
@@ -7,9 +8,8 @@ const lang = (inv) => (inv.language === "hi" ? "hi" : "en");
 
 export function ogTitle(inv) {
   const l = lang(inv);
-  const bride = textFor(inv.couple.bride.name, l);
-  const groom = textFor(inv.couple.groom.name, l);
-  return l === "hi" ? `${bride} और ${groom} का शुभ विवाह` : `${bride} & ${groom} are getting married`;
+  const [first, second] = couplePair(inv).map((p) => textFor(p.name, l));
+  return l === "hi" ? `${first} और ${second} का शुभ विवाह` : `${first} & ${second} are getting married`;
 }
 
 export function ogDescription(inv) {

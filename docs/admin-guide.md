@@ -108,6 +108,7 @@ Change the design, colour palette or language at any time. Nothing you've typed 
 ## Editor step 2: Couple & families
 
 - **Bride and groom:** names, and the parents line, for example "D/o Smt. Sunita & Shri Rajesh Sharma".
+- **Who is named first?** Choose **Bride first** or **Groom first**. Usually the bride's family lists the bride first, and the groom's family lists the groom first. The choice decides the order of the names, photos and parents lines everywhere on the invitation, in WhatsApp share text and preview cards, and in newly generated link names. Links that already exist never change. On a live invitation, click **Update live invitation** (step 8) to send the new order to guests.
 - **Blessing at the top:** the symbol (Shri Ganesh, Om or none) and a shloka. Pick one of the ready-made shlokas, or choose **Our own text** and type the family's own.
 - **Families:** add each family's name for the closing message. **Closing line** is the sign-off, for example "With love and blessings from the Sharma and Mehra families".
 - **Family contact phone:** shown to guests in the closing message at the end of the invitation. Search on the Invitations page also finds invitations by this number. **If guests reply on WhatsApp (step 7), this must be the family's WhatsApp number**, because every RSVP is sent there. The invitation can't be published without it while RSVPs are on.

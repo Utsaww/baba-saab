@@ -17,10 +17,11 @@ export function slugify(text) {
     .replace(/^-+|-+$/g, "");
 }
 
-/** "<bride>-weds-<groom>-<4char>" from the English names, or "invitation-<6char>" when one is missing. */
+/** "<bride>-weds-<groom>-<4char>" (groom first when the invitation says so) from the English names, or "invitation-<6char>" when one is missing. */
 export function generateSlug(content, random = randomSuffix) {
-  const bride = slugify(content?.couple?.bride?.name?.en);
-  const groom = slugify(content?.couple?.groom?.name?.en);
+  let bride = slugify(content?.couple?.bride?.name?.en);
+  let groom = slugify(content?.couple?.groom?.name?.en);
+  if (content?.couple?.order === "groom-first") [bride, groom] = [groom, bride];
   if (!bride || !groom) return `invitation-${random(6)}`;
   const suffix = `-${random(4)}`;
   const middle = "-weds-";

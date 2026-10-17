@@ -64,7 +64,12 @@ export const invitationSchema = z.object({
   }),
   status: z.enum(STATUSES).default("draft"),
   language: z.enum(LANGUAGES).default("en"),
-  couple: z.object({ bride: person, groom: person }),
+  couple: z.object({
+    bride: person,
+    groom: person,
+    // Who is named first everywhere the couple is printed. Absent means bride first.
+    order: z.enum(["bride-first", "groom-first"]).optional(),
+  }),
   hosts: z
     .object({
       closingLine: localised,

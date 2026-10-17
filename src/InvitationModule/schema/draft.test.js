@@ -108,4 +108,11 @@ describe("cleanDraft keeps the RSVP channel", () => {
     const { draft } = cleanDraft({ templateId: "royal", theme: { palette: "maroon-gold" }, rsvp: { enabled: true, channel: "whatsapp" } });
     expect(draft.rsvp).toEqual({ enabled: true, channel: "whatsapp" });
   });
+
+  it("keeps couple.order and drops an invalid one", () => {
+    const ok = cleanDraft({ ...base(), couple: { order: "groom-first" } });
+    expect(ok.draft.couple.order).toBe("groom-first");
+    const bad = cleanDraft({ ...base(), couple: { order: "sideways" } });
+    expect(bad.errors["couple.order"]).toBeDefined();
+  });
 });

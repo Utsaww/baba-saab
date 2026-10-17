@@ -16,7 +16,7 @@ import { formatDate, formatDots, formatTime } from "../../lib/datetime";
 import { countdownTarget } from "../../lib/countdown";
 import { mediaUrl } from "../../lib/media";
 import { isRsvpClosed, isWhatsappNumber, rsvpMessage, whatsappRsvpUrl } from "../../lib/rsvp";
-import { coupleTitle } from "../../lib/names";
+import { couplePair, coupleTitle } from "../../lib/names";
 
 const dateLang = (lang) => (lang === "hi" ? "hi" : "en");
 
@@ -69,7 +69,7 @@ function Couple({ inv, lang, s }) {
     <Section id="couple" s={s}>
       <T as="p" v={UI.together} lang={lang} className={s.eyebrow} />
       <div className={s.couple}>
-        {[inv.couple.bride, inv.couple.groom].map((person, i) => (
+        {couplePair(inv).map((person, i) => (
           <div key={i} className={s.person}>
             {person.photoKey && (
               <div className={s.personPhoto}>

@@ -28,11 +28,29 @@ export function validateRsvpInput(input, { askGuestCount }) {
 
 const MEAL_LABEL = { veg: UI.mealVeg, nonveg: UI.mealNonVeg, jain: UI.mealJain };
 
-// The family's number as wa.me wants it: digits only, with India's 91 on a 10-digit number.
+// The family's number as wa.me wants it: country code and number, digits only.
+// Spaces, dashes, dots and brackets are dropped, as is a leading "+" or international "00";
+// a local "0" before a 10-digit Indian number goes, and a 10-digit number gets India's 91.
+// Anything else (letters, stray symbols) gives "".
 export function whatsappDigits(phone) {
-  let digits = String(phone ?? "").replace(/\D/g, "");
+  let digits = String(phone ?? "").trim().replace(/[\s\-().]/g, "");
+  if (digits.startsWith("+")) digits = digits.slice(1);
+  else if (digits.startsWith("00")) digits = digits.slice(2);
+  if (!/^\d+$/.test(digits)) return "";
   if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
   return digits.length === 10 ? `91${digits}` : digits;
+}
+
+// A number WhatsApp can open a chat with: 11 to 15 digits once normalised.
+export function isWhatsappNumber(phone) {
+  const digits = whatsappDigits(phone);
+  return digits.length >= 11 && digits.length <= 15;
+}
+
+// Guests reply on WhatsApp only when staff opted in to it in step 7. Content switched on before
+// WhatsApp replies existed (`enabled` without `channel`) stays hidden until staff turn it on again.
+export function whatsappRsvpOn(rsvp) {
+  return Boolean(rsvp?.enabled && rsvp?.channel === "whatsapp");
 }
 
 // The reply the guest sends, one "Label: value" per line, leaving out anything empty.
@@ -68,7 +86,7 @@ export function rsvpMessage(inv, values, lang) {
 
 // A WhatsApp chat with the family, the reply already typed. Null without a family number.
 export function whatsappRsvpUrl(inv, values, lang) {
-  const digits = whatsappDigits(inv.hosts?.contactPhone);
-  if (!digits) return null;
+  if (!isWhatsappNumber(inv.hosts?.contactPhone)) return null;
+  const digits = whatsappDigits(inv.hosts.contactPhone);
   return `https://wa.me/${digits}?text=${encodeURIComponent(rsvpMessage(inv, values, lang))}`;
 }

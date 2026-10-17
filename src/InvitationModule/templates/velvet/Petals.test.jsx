@@ -160,6 +160,13 @@ describe("Petals", () => {
     expect(ctx.fills.at(-1)).toBe("#123456");
   });
 
+  it("doesn't re-read styles on a resize that changes nothing", () => {
+    render(<Petals active />);
+    const styles = vi.spyOn(window, "getComputedStyle");
+    act(() => window.dispatchEvent(new Event("resize")));
+    expect(styles).not.toHaveBeenCalled();
+  });
+
   it("resizes the canvas only when its size or pixel ratio changes", () => {
     render(<Petals active />);
     expect(ctx.setTransform).toHaveBeenCalledTimes(1);

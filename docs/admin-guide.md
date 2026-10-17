@@ -8,7 +8,7 @@ This guide grows as new parts of the invitation system go live. Everything descr
 |---|---|
 | **Dashboard** | Your starting page after signing in. |
 | **Invitations** | Create invitations for customers, fill in their details and continue saved drafts. |
-| **Templates** | Browse the 4 invitation designs with sample details, try their colour palettes and languages, and show them to customers. |
+| **Templates** | Browse the 5 invitation designs with sample details, try their colour palettes and languages, and show them to customers. |
 | **Music** | The shared Music Library: songs any invitation can use as background music. |
 | **Staff** | *Owner only.* Invite people to the admin area and remove them. |
 | **Help** | This guide. |
@@ -277,7 +277,7 @@ On a template's preview page:
 
 > The names, dates and photos are sample details. A customer's own details are added when invitations can be created.
 
-## The four designs
+## The five designs
 
 | Template | Look | How guests open it |
 |---|---|---|
@@ -285,6 +285,7 @@ On a template's preview page:
 | **Floral Pastel** | Soft watercolour florals | Scroll or swipe up (or tap) |
 | **Temple Classic** | Temple motifs and kolam borders | Tap the sealed envelope |
 | **Modern Minimal** | Monogram cover, clean typography | Tap to reveal |
+| **Velvet Envelope** | Deep plum (or midnight / emerald) and gold, floral arch, falling gold petals | Tap the gold wax seal on the envelope |
 
 Every design includes the same sections. Ones without details are hidden automatically:
 

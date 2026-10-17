@@ -130,6 +130,21 @@ describe("<RsvpForm>", () => {
     expect(screen.queryByText(/Your last reply is filled in/)).not.toBeInTheDocument();
   });
 
+  it("ignores a stored attending answer that isn't yes, no or maybe", async () => {
+    localStorage.setItem("rsvp:meera-weds-arjun", JSON.stringify({ name: "Verma Ji", attending: "bogus" }));
+    render(<RsvpForm {...base} />);
+    await act(async () => {});
+    expect(screen.getByLabelText("Name")).toHaveValue("Verma Ji");
+    for (const label of ["Joyfully accept", "Regretfully decline", "Not sure yet"]) expect(screen.getByLabelText(label)).not.toBeChecked();
+  });
+
+  it("says so instead of doing nothing when the reply can't be addressed", async () => {
+    render(<RsvpForm {...base} preview compose={() => null} />);
+    await fillAndSend();
+    expect(open).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("Replies can't be sent: the family's WhatsApp number isn't valid.");
+  });
+
   it("ignores a stored reply that isn't valid", async () => {
     localStorage.setItem("rsvp:meera-weds-arjun", "{not json");
     render(<RsvpForm {...base} />);

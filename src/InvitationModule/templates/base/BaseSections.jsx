@@ -15,7 +15,7 @@ import { invocationText } from "../../lib/invocations";
 import { formatDate, formatDots, formatTime } from "../../lib/datetime";
 import { countdownTarget } from "../../lib/countdown";
 import { mediaUrl } from "../../lib/media";
-import { isRsvpClosed, rsvpMessage, whatsappRsvpUrl } from "../../lib/rsvp";
+import { isRsvpClosed, isWhatsappNumber, rsvpMessage, whatsappRsvpUrl } from "../../lib/rsvp";
 import { coupleTitle } from "../../lib/names";
 
 const dateLang = (lang) => (lang === "hi" ? "hi" : "en");
@@ -208,8 +208,8 @@ function Rsvp({ inv, lang, s, ctx }) {
   // Decided after mount: cached server HTML must not depend on the clock, or hydration fails after the deadline.
   const [closed, setClosed] = useState(false);
   useEffect(() => setClosed(isRsvpClosed(inv.rsvp)), [inv.rsvp]);
-  // Nowhere to reply to on a live page (publishing requires the number, so this is an old copy): no section.
-  if (!preview && !inv.hosts.contactPhone) return null;
+  // Nowhere to reply to on a live page (publishing requires a valid number, so this is an old copy): no section.
+  if (!preview && !isWhatsappNumber(inv.hosts.contactPhone)) return null;
   return (
     <Section id="rsvp" s={s} title={UI.rsvp} lang={lang}>
       <RsvpForm
@@ -222,7 +222,8 @@ function Rsvp({ inv, lang, s, ctx }) {
         deadlineText={deadline}
         contactPhone={inv.hosts.contactPhone}
         preview={preview}
-        storageKey={`rsvp:${inv.slug ?? inv.id ?? inv.templateId}`}
+        // One remembered reply per live invitation; previews never touch the device.
+        storageKey={!preview && ctx.slug ? `rsvp:${ctx.slug}` : undefined}
         compose={compose}
         s={s}
       />

@@ -51,7 +51,7 @@ export function makeSample({ templateId, palette, language, bride, groom }) {
       coverKey: GALLERY[2],
       gallery: GALLERY.map((key, i) => ({ key, caption: i === 0 ? { en: "Where it began", hi: "जहाँ से शुरुआत हुई" } : undefined })),
     },
-    rsvp: { enabled: true, deadline: "2027-01-31", askGuestCount: true, askMeal: true },
+    rsvp: { enabled: true, channel: "whatsapp", deadline: "2027-01-31", askGuestCount: true, askMeal: true },
     showCredit: true,
   };
 }

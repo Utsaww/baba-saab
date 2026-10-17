@@ -102,3 +102,10 @@ describe("cleanDraft gallery limit", () => {
     expect(errors["media.gallery"]).toBe("The gallery holds up to 12 photos");
   });
 });
+
+describe("cleanDraft keeps the RSVP channel", () => {
+  it("keeps rsvp.channel", () => {
+    const { draft } = cleanDraft({ templateId: "royal", theme: { palette: "maroon-gold" }, rsvp: { enabled: true, channel: "whatsapp" } });
+    expect(draft.rsvp).toEqual({ enabled: true, channel: "whatsapp" });
+  });
+});

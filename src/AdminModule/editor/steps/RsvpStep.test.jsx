@@ -12,7 +12,7 @@ describe("RsvpStep", () => {
     expect(screen.getByText(/Guests' replies open WhatsApp to the family contact number from step 2/)).toBeInTheDocument();
     expect(screen.queryByLabelText("Last day to reply")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("checkbox", { name: /Guests reply on WhatsApp/ }));
-    expect(latest().rsvp.enabled).toBe(true);
+    expect(latest().rsvp).toMatchObject({ enabled: true, channel: "whatsapp" });
     fireEvent.change(screen.getByLabelText("Last day to reply"), { target: { value: "2027-01-31" } });
     expect(latest().rsvp.deadline).toBe("2027-01-31");
     const count = screen.getByRole("checkbox", { name: /Ask how many people are coming/ });
@@ -24,7 +24,7 @@ describe("RsvpStep", () => {
   });
 
   it("clears the last day to reply when it is emptied", () => {
-    const { latest } = renderStep(RsvpStep, { ...base(), rsvp: { enabled: true, deadline: "2027-01-31" } });
+    const { latest } = renderStep(RsvpStep, { ...base(), rsvp: { enabled: true, channel: "whatsapp", deadline: "2027-01-31" } });
     fireEvent.change(screen.getByLabelText("Last day to reply"), { target: { value: "" } });
     expect(latest().rsvp.deadline).toBeUndefined();
   });
@@ -48,5 +48,22 @@ describe("RsvpStep", () => {
   it("shows no take-offline date without one", () => {
     renderStep(RsvpStep, base());
     expect(screen.queryByLabelText("Take offline on")).not.toBeInTheDocument();
+  });
+});
+
+describe("RsvpStep with legacy RSVP content", () => {
+  it("shows WhatsApp replies as off until staff turn them on", async () => {
+    const { latest } = renderStep(RsvpStep, { ...base(), rsvp: { enabled: true, deadline: "2027-01-31" } });
+    const toggle = screen.getByRole("checkbox", { name: /Guests reply on WhatsApp/ });
+    expect(toggle).not.toBeChecked();
+    expect(screen.queryByLabelText("Last day to reply")).not.toBeInTheDocument();
+    await userEvent.click(toggle);
+    expect(latest().rsvp).toMatchObject({ enabled: true, channel: "whatsapp", deadline: "2027-01-31" });
+  });
+
+  it("turns WhatsApp replies off", async () => {
+    const { latest } = renderStep(RsvpStep, { ...base(), rsvp: { enabled: true, channel: "whatsapp" } });
+    await userEvent.click(screen.getByRole("checkbox", { name: /Guests reply on WhatsApp/ }));
+    expect(latest().rsvp.enabled).toBe(false);
   });
 });

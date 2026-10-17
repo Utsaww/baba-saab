@@ -31,7 +31,7 @@ describe("registry lookups", () => {
 describe("server render", () => {
   it("does not depend on the clock, so cached HTML hydrates after the RSVP deadline", () => {
     const royal = getTemplate("royal");
-    const inv = build(royal, { rsvp: { enabled: true, deadline: "2027-01-31" } });
+    const inv = build(royal, { rsvp: { enabled: true, channel: "whatsapp", deadline: "2027-01-31" } });
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2027-01-15T00:00:00Z"));
     const before = renderToString(<InvitationRenderer invitation={inv} />);
@@ -44,7 +44,7 @@ describe("server render", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2027-02-20T00:00:00Z"));
     const royal = getTemplate("royal");
-    render(<InvitationRenderer invitation={build(royal, { language: "en", rsvp: { enabled: true, deadline: "2027-01-31" } })} />);
+    render(<InvitationRenderer invitation={build(royal, { language: "en", rsvp: { enabled: true, channel: "whatsapp", deadline: "2027-01-31" } })} />);
     act(() => vi.advanceTimersByTime(0));
     expect(screen.getByRole("status")).toHaveTextContent("RSVPs closed on");
   });
@@ -147,15 +147,69 @@ describe.each(TEMPLATES.map((t) => [t.id, t]))("template %s", (_id, template) =>
 
 describe("RSVP on WhatsApp in every template", () => {
   it.each(TEMPLATES.map((t) => [t.id, t]))("%s notes in previews that replies go to the family's WhatsApp", (_id, template) => {
-    render(<InvitationRenderer invitation={build(template, { language: "en", rsvp: { enabled: true } })} ctx={{ mode: "preview" }} />);
+    render(<InvitationRenderer invitation={build(template, { language: "en", rsvp: { enabled: true, channel: "whatsapp" } })} ctx={{ mode: "preview" }} />);
     expect(screen.getByText("Preview — replies go to the family's WhatsApp")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Send RSVP on WhatsApp" })).toBeInTheDocument();
   });
 
   it("hides the RSVP section on a live page that has no family number", () => {
     const royal = getTemplate("royal");
-    const inv = build(royal, { language: "en", rsvp: { enabled: true }, hosts: { ...royal.sample.hosts, contactPhone: undefined } });
+    const inv = build(royal, { language: "en", rsvp: { enabled: true, channel: "whatsapp" }, hosts: { ...royal.sample.hosts, contactPhone: undefined } });
     const { container } = render(<InvitationRenderer invitation={inv} />);
     expect(container.querySelector('[data-section="rsvp"]')).toBeNull();
+  });
+});
+
+describe("RSVP opt-in, numbers and reply memory", () => {
+  const royal = getTemplate("royal");
+
+  it("renders no RSVP section for legacy content switched on before WhatsApp replies", () => {
+    const { container } = render(<InvitationRenderer invitation={build(royal, { language: "en", rsvp: { enabled: true } })} ctx={{ mode: "preview" }} />);
+    expect(container.querySelector('[data-section="rsvp"]')).toBeNull();
+  });
+
+  it("hides the RSVP section on a live page whose number isn't a valid WhatsApp number", () => {
+    const inv = build(royal, { language: "en", rsvp: { enabled: true, channel: "whatsapp" }, hosts: { ...royal.sample.hosts, contactPhone: " 12345 " } });
+    const { container } = render(<InvitationRenderer invitation={inv} ctx={{ slug: "a-weds-b" }} />);
+    expect(container.querySelector('[data-section="rsvp"]')).toBeNull();
+  });
+
+  async function reply(slug, name) {
+    const user = (await import("@testing-library/user-event")).default;
+    await user.type(screen.getByLabelText("Name"), name);
+    await user.type(screen.getByLabelText("Phone"), "9876543210");
+    await user.click(screen.getByLabelText("Regretfully decline"));
+    await user.click(screen.getByRole("button", { name: "Send RSVP on WhatsApp" }));
+  }
+  const live = (slug) => <InvitationRenderer invitation={build(royal, { language: "en", rsvp: { enabled: true, channel: "whatsapp" } })} ctx={{ slug }} />;
+
+  it("remembers a guest's reply per invitation, so two invitations never share one", async () => {
+    vi.spyOn(window, "open").mockImplementation(() => null);
+    localStorage.clear();
+    const first = render(live("asha-weds-ravi"));
+    await reply("asha-weds-ravi", "Verma Ji");
+    first.unmount();
+
+    const other = render(live("meera-weds-arjun"));
+    await act(async () => {});
+    expect(screen.getByLabelText("Name")).toHaveValue("");
+    other.unmount();
+
+    render(live("asha-weds-ravi"));
+    await act(async () => {});
+    expect(screen.getByLabelText("Name")).toHaveValue("Verma Ji");
+    localStorage.clear();
+  });
+
+  it("never reads or writes the guest's device in previews", async () => {
+    vi.spyOn(window, "open").mockImplementation(() => null);
+    const get = vi.spyOn(Storage.prototype, "getItem");
+    const set = vi.spyOn(Storage.prototype, "setItem");
+    render(<InvitationRenderer invitation={build(royal, { language: "en", rsvp: { enabled: true, channel: "whatsapp" } })} ctx={{ mode: "preview", slug: "asha-weds-ravi" }} />);
+    await reply("asha-weds-ravi", "Verma Ji");
+    const rsvpKeys = (spy) => spy.mock.calls.filter(([key]) => String(key).startsWith("rsvp:"));
+    expect(rsvpKeys(get)).toEqual([]);
+    expect(rsvpKeys(set)).toEqual([]);
+    vi.restoreAllMocks();
   });
 });

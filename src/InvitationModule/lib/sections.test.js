@@ -20,7 +20,7 @@ describe("visibleSections", () => {
       venue: { name: { en: "Riviera" }, travelNotes: { en: "Airport 20 km" } },
       events: [{ id: "e", name: { en: "Sangeet" }, date: "2026-12-03" }],
       media: { gallery: [{ key: "a.jpg" }], film: { type: "youtube", url: "https://youtu.be/abcdefghijk" } },
-      rsvp: { enabled: true },
+      rsvp: { enabled: true, channel: "whatsapp" },
       hosts: { families: [{ en: "Sharma family" }] },
     });
     expect(visibleSections(inv)).toEqual([
@@ -44,5 +44,14 @@ describe("orderedSectionIds", () => {
 
   it("uses the default order when none is stored", () => {
     expect(orderedSectionIds(undefined)).toEqual(SECTION_IDS);
+  });
+});
+
+describe("RSVP section opt-in", () => {
+  it("hides RSVP for legacy content that was switched on before WhatsApp replies", () => {
+    expect(visibleSections(build({ rsvp: { enabled: true } }))).not.toContain("rsvp");
+  });
+  it("shows RSVP once staff opt in to WhatsApp replies", () => {
+    expect(visibleSections(build({ rsvp: { enabled: true, channel: "whatsapp" } }))).toContain("rsvp");
   });
 });

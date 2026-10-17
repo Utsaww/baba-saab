@@ -1,6 +1,7 @@
 import { hasText } from "@/InvitationModule/lib/i18n";
 import { publishChecklist } from "@/InvitationModule/lib/checklist";
 import { cleanDraft } from "@/InvitationModule/schema/draft";
+import { whatsappRsvpOn } from "@/InvitationModule/lib/rsvp";
 import { slugify } from "../../guideAnchors";
 import TemplateStep from "./TemplateStep";
 import CoupleStep from "./CoupleStep";
@@ -41,7 +42,7 @@ export function stepHasContent(number, content) {
       return (content.theme?.hidden ?? []).length > 0 || (content.theme?.sectionOrder ?? []).length > 0;
     case 7:
       // The offline date isn't content; RSVP on WhatsApp and the credit switch are.
-      return Boolean(content.rsvp?.enabled) || content.showCredit === false;
+      return whatsappRsvpOn(content.rsvp) || content.showCredit === false;
     case 8:
       return publishChecklist(cleanDraft(content).draft ?? {}).length === 0;
     default:

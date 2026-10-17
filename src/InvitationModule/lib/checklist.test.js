@@ -64,18 +64,28 @@ describe("publishChecklist", () => {
     ]);
   });
 
-  it("asks for the family's WhatsApp number when guests reply on WhatsApp", () => {
-    const draft = { ...complete(), rsvp: { enabled: true } };
-    expect(publishChecklist(draft)).toEqual([
-      { id: "contactPhone", message: "Add the family's WhatsApp number for RSVPs", step: 2 },
-    ]);
-    expect(publishChecklist({ ...draft, hosts: { contactPhone: "  " } })).toHaveLength(1);
+  const NEED_NUMBER = {
+    id: "contactPhone",
+    message: "Add a valid WhatsApp number for the family (with country code, e.g. +91 98765 43210)",
+    step: 2,
+  };
+
+  it("asks for a valid family WhatsApp number when guests reply on WhatsApp", () => {
+    const draft = { ...complete(), rsvp: { enabled: true, channel: "whatsapp" } };
+    expect(publishChecklist(draft)).toEqual([NEED_NUMBER]);
+    expect(publishChecklist({ ...draft, hosts: { contactPhone: "  " } })).toEqual([NEED_NUMBER]);
+    expect(publishChecklist({ ...draft, hosts: { contactPhone: "12345" } })).toEqual([NEED_NUMBER]);
+    expect(publishChecklist({ ...draft, hosts: { contactPhone: "98765 43210" } })).toEqual([]);
+  });
+
+  it("doesn't ask for a number for legacy content switched on before WhatsApp replies", () => {
+    expect(publishChecklist({ ...complete(), rsvp: { enabled: true } })).toEqual([]);
   });
 
   it("doesn't need a last day to reply, and doesn't need a number when RSVP is off", () => {
     const withPhone = { ...complete(), hosts: { contactPhone: "+91 98765 43210" } };
-    expect(publishChecklist({ ...withPhone, rsvp: { enabled: true } })).toEqual([]);
-    expect(publishChecklist({ ...withPhone, rsvp: { enabled: true, deadline: "2027-02-01" } })).toEqual([]);
+    expect(publishChecklist({ ...withPhone, rsvp: { enabled: true, channel: "whatsapp" } })).toEqual([]);
+    expect(publishChecklist({ ...withPhone, rsvp: { enabled: true, channel: "whatsapp", deadline: "2027-02-01" } })).toEqual([]);
     expect(publishChecklist({ ...complete(), rsvp: { enabled: false } })).toEqual([]);
   });
 

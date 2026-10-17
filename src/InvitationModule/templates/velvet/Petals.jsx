@@ -57,12 +57,12 @@ export default function Petals({ active, count = 16, className }) {
 
     let ratio = 0;
     function resize() {
-      readColour();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = canvas.clientWidth || window.innerWidth;
       const h = canvas.clientHeight || window.innerHeight;
       // Mobile URL bars fire resize constantly; only reallocate the backing store on a real change.
       if (w === width && h === height && dpr === ratio) return;
+      readColour();
       width = w;
       height = h;
       ratio = dpr;

@@ -1,10 +1,13 @@
 "use client";
 
+import { whatsappRsvpOn } from "@/InvitationModule/lib/rsvp";
 import { Group, TextInput, Toggle } from "../fields";
 import OfflineDateField from "../lifecycle/OfflineDateField";
 
 export default function RsvpStep({ content, update, errors = {}, offlineField }) {
   const rsvp = content.rsvp ?? {};
+  // Older content may have `enabled` without `channel`: it shows as off until staff opt in here.
+  const on = whatsappRsvpOn(rsvp);
   return (
     <div className="space-y-6">
       {offlineField ? (
@@ -16,10 +19,10 @@ export default function RsvpStep({ content, update, errors = {}, offlineField })
         <Toggle
           label="Guests reply on WhatsApp"
           description="Guests' replies open WhatsApp to the family contact number from step 2. Nothing is stored by Baba Saab."
-          checked={rsvp.enabled}
-          onChange={(v) => update(["rsvp", "enabled"], v)}
+          checked={on}
+          onChange={(v) => update(["rsvp"], v ? { ...rsvp, enabled: true, channel: "whatsapp" } : { ...rsvp, enabled: false })}
         />
-        {rsvp.enabled && (
+        {on && (
           <>
             <TextInput
               label="Last day to reply"

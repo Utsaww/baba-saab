@@ -70,13 +70,16 @@ describe("publishAction", () => {
     expect(data.publishRecord).not.toHaveBeenCalled();
   });
   it("refuses RSVP on WhatsApp without the family's number", async () => {
-    data.getInvitation.mockResolvedValue(inv({ content: { ...ready, rsvp: { enabled: true } } }));
+    data.getInvitation.mockResolvedValue(inv({ content: { ...ready, rsvp: { enabled: true, channel: "whatsapp" } } }));
     const r = await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
     expect(r.ok).toBe(false);
-    expect(r.missing).toContainEqual({ message: "Add the family's WhatsApp number for RSVPs", step: 2 });
+    expect(r.missing).toContainEqual({
+      message: "Add a valid WhatsApp number for the family (with country code, e.g. +91 98765 43210)",
+      step: 2,
+    });
   });
   it("publishes RSVP on WhatsApp with a number and no last day to reply", async () => {
-    data.getInvitation.mockResolvedValue(inv({ content: { ...ready, hosts: { contactPhone: "+91 98765 43210" }, rsvp: { enabled: true } } }));
+    data.getInvitation.mockResolvedValue(inv({ content: { ...ready, hosts: { contactPhone: "+91 98765 43210" }, rsvp: { enabled: true, channel: "whatsapp" } } }));
     data.publishRecord.mockResolvedValue({ data: { status: "published" } });
     const r = await publishAction({ id: "inv-1", expectedVersion: 4, slug: "priya-weds-rahul-k3f9" });
     expect(r.ok).toBe(true);

@@ -7,7 +7,8 @@ import T from "./Text";
 
 const EMPTY = { name: "", phone: "", attending: "", guestCount: "1", eventIds: [], meal: "", message: "", website: "" };
 const HONEYPOT_STYLE = { position: "absolute", left: "-10000px", width: 1, height: 1, overflow: "hidden" };
-const REMEMBERED = ["name", "phone", "attending", "guestCount", "meal", "message"];
+const REMEMBERED = ["name", "phone", "guestCount", "meal", "message"];
+const ATTENDING = ["yes", "no", "maybe"];
 
 // The guest's last reply on this device. Storage can be missing or refused (private mode, full disk);
 // then the form simply starts empty.
@@ -17,6 +18,7 @@ function loadReply(key, events) {
     if (!saved || typeof saved !== "object") return null;
     const values = { ...EMPTY };
     for (const field of REMEMBERED) if (typeof saved[field] === "string") values[field] = saved[field];
+    if (ATTENDING.includes(saved.attending)) values.attending = saved.attending;
     const ids = new Set(events.map((e) => e.id));
     values.eventIds = Array.isArray(saved.eventIds) ? saved.eventIds.filter((id) => ids.has(id)) : [];
     return values;
@@ -54,6 +56,7 @@ export default function RsvpForm({
   const [remembered, setRemembered] = useState(false);
   const [sent, setSent] = useState(null); // { url, message } of the last reply
   const [copied, setCopied] = useState(false);
+  const [unsendable, setUnsendable] = useState(false); // the family's number can't be used
   const messageBox = useRef(null);
 
   // Read after mount so the server HTML never depends on this device.
@@ -109,6 +112,7 @@ export default function RsvpForm({
       message: values.message.trim() || undefined,
     };
     const composed = compose?.(reply);
+    setUnsendable(!composed);
     if (!composed) return;
     if (storageKey) saveReply(storageKey, values);
     setCopied(false);
@@ -209,6 +213,9 @@ export default function RsvpForm({
             <input name="website" tabIndex={-1} autoComplete="off" value={values.website} onChange={set("website")} />
           </label>
         </div>
+        {unsendable && (
+          <T as="p" v={UI.rsvpBadNumber} lang={lang} className={s.fieldError} role="alert" />
+        )}
         {contactPhone ? (
           <button type="submit" className={s.button}>
             <T v={UI.submit} lang={lang} />

@@ -25,6 +25,10 @@ export const UI = {
   rsvpClosed: { en: "RSVPs closed on", hi: "उत्तर देने की अंतिम तिथि थी" },
   rsvpContact: { en: "For changes, please contact the family:", hi: "बदलाव के लिए परिवार से संपर्क करें:" },
   rsvpPreviewNote: { en: "Preview — replies go to the family's WhatsApp", hi: "पूर्वावलोकन — उत्तर परिवार के व्हाट्सऐप पर जाएँगे" },
+  rsvpBadNumber: {
+    en: "Replies can't be sent: the family's WhatsApp number isn't valid.",
+    hi: "उत्तर नहीं भेजा जा सकता: परिवार का व्हाट्सऐप नंबर सही नहीं है।",
+  },
   rsvpNoPhone: { en: "Add the family's WhatsApp number to enable replies", hi: "उत्तर चालू करने के लिए परिवार का व्हाट्सऐप नंबर जोड़ें" },
   rsvpRemembered: {
     en: "Your last reply is filled in — change anything and send again",

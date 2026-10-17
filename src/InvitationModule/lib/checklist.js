@@ -1,5 +1,6 @@
 import { invitationSchema } from "../schema/invitation";
 import { textFor } from "./i18n";
+import { isWhatsappNumber, whatsappRsvpOn } from "./rsvp";
 
 const LANGUAGE_NAMES = { en: "English", hi: "Hindi" };
 
@@ -53,9 +54,10 @@ export function publishChecklist(draft) {
     if (!event.date) add(`event${i}.date`, `Add a date for ${name}`, 4);
     if (!event.time) add(`event${i}.time`, `Add a time for ${name}`, 4);
   });
-  // Guests' RSVPs open WhatsApp to the family's number, so there must be one. The last day to reply is optional.
-  if (draft.rsvp?.enabled && !filled(draft.hosts?.contactPhone)) {
-    add("contactPhone", "Add the family's WhatsApp number for RSVPs", 2);
+  // Guests' RSVPs open WhatsApp to the family's number, so it must be one WhatsApp can use.
+  // The last day to reply is optional.
+  if (whatsappRsvpOn(draft.rsvp) && !isWhatsappNumber(draft.hosts?.contactPhone)) {
+    add("contactPhone", "Add a valid WhatsApp number for the family (with country code, e.g. +91 98765 43210)", 2);
   }
 
   // Anything the strict schema still rejects once the obvious gaps are filled.

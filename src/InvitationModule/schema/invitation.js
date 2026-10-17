@@ -105,6 +105,8 @@ export const invitationSchema = z.object({
   rsvp: z
     .object({
       enabled: z.boolean().default(false),
+      // Set when staff turn on "Guests reply on WhatsApp"; older content without it shows no RSVP form.
+      channel: z.enum(["whatsapp"]).optional(),
       deadline: isoDate.optional(),
       askGuestCount: z.boolean().default(true),
       askMeal: z.boolean().default(false),

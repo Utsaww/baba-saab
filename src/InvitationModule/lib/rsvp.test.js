@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isRsvpClosed, rsvpMessage, validateRsvpInput, whatsappDigits, whatsappRsvpUrl } from "./rsvp";
+import { isRsvpClosed, isWhatsappNumber, rsvpMessage, validateRsvpInput, whatsappDigits, whatsappRsvpOn, whatsappRsvpUrl } from "./rsvp";
 
 describe("isRsvpClosed", () => {
   const rsvp = { enabled: true, deadline: "2026-10-31" };
@@ -108,5 +108,39 @@ describe("whatsappRsvpUrl", () => {
   });
   it("gives null without a family number", () => {
     expect(whatsappRsvpUrl({ ...inv, hosts: {} }, reply, "en")).toBeNull();
+  });
+});
+
+describe("isWhatsappNumber", () => {
+  it("accepts numbers that normalise to 11-15 digits", () => {
+    expect(isWhatsappNumber("+91 98765 43210")).toBe(true);
+    expect(isWhatsappNumber("98765 43210")).toBe(true); // 91 added
+    expect(isWhatsappNumber("(+91) 98765-43210")).toBe(true);
+    expect(isWhatsappNumber("0044 20 7946 0958")).toBe(true); // leading 00 dropped
+    expect(isWhatsappNumber("+1 415 555 2671")).toBe(true);
+  });
+  it("rejects short, long, lettered and empty numbers", () => {
+    expect(isWhatsappNumber("12345")).toBe(false);
+    expect(isWhatsappNumber("98765 4321")).toBe(false); // 9 digits
+    expect(isWhatsappNumber("+91 98765 43210 1234")).toBe(false); // 16 digits
+    expect(isWhatsappNumber("98765abc10")).toBe(false);
+    expect(isWhatsappNumber("   ")).toBe(false);
+    expect(isWhatsappNumber(undefined)).toBe(false);
+  });
+  it("shares its normalising with whatsappDigits", () => {
+    expect(whatsappDigits("0044 20 7946 0958")).toBe("442079460958");
+    expect(whatsappDigits("(+91) 98765-43210")).toBe("919876543210");
+  });
+  it("gives no WhatsApp link for an invalid number", () => {
+    expect(whatsappRsvpUrl({ ...inv, hosts: { contactPhone: "12345" } }, reply, "en")).toBeNull();
+  });
+});
+
+describe("whatsappRsvpOn", () => {
+  it("is on only when staff opted in to WhatsApp replies", () => {
+    expect(whatsappRsvpOn({ enabled: true, channel: "whatsapp" })).toBe(true);
+    expect(whatsappRsvpOn({ enabled: true })).toBe(false); // legacy content from before WhatsApp replies
+    expect(whatsappRsvpOn({ enabled: false, channel: "whatsapp" })).toBe(false);
+    expect(whatsappRsvpOn(undefined)).toBe(false);
   });
 });

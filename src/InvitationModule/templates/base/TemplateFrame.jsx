@@ -9,7 +9,8 @@ import { musicSrc } from "../../lib/media";
 import { UI } from "../../lib/ui-strings";
 
 // Shared page skeleton: opening overlay, cover, visible sections in order, credit, music control.
-export default function TemplateFrame({ inv, ctx = {}, s, Cover = CoverBase, Opening }) {
+// `sections` lets a template swap in its own component for a section id (usually wrapping the shared one).
+export default function TemplateFrame({ inv, ctx = {}, s, Cover = CoverBase, Opening, sections }) {
   const lang = inv.language;
   const music = useMusic(musicSrc(inv.media.music));
 
@@ -23,7 +24,7 @@ export default function TemplateFrame({ inv, ctx = {}, s, Cover = CoverBase, Ope
       <main className={s.main}>
         <Cover inv={inv} lang={lang} s={s} />
         {visibleSections(inv).map((id) => {
-          const SectionComponent = SECTION_COMPONENTS[id];
+          const SectionComponent = sections?.[id] ?? SECTION_COMPONENTS[id];
           return <SectionComponent key={id} inv={inv} lang={lang} s={s} ctx={ctx} />;
         })}
       </main>

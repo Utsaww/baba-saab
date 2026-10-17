@@ -6,6 +6,7 @@ export const velvetFontVars = {
 // --bg is the invitation card, --surface the lifted band (event cards), --recessed the sunken band.
 // --stage sits behind the card; --envelope/--envelope-shade/--fold paint the opening envelope.
 // --primary is gold (headings, rules, seal) and --accent the bright gold for numerals.
+// --sage tints the arch's leaves and second vine; --petal is the falling-petal gold.
 export const velvetPalettes = [
   {
     id: "plum-gold",
@@ -25,6 +26,8 @@ export const velvetPalettes = [
       "--envelope": "#6B4E96",
       "--envelope-shade": "#5A3F82",
       "--fold": "#48306A",
+      "--sage": "#A9C3A0",
+      "--petal": "#F0D29E",
       "--error": "#FFB3BF",
     },
   },
@@ -46,6 +49,8 @@ export const velvetPalettes = [
       "--envelope": "#33436E",
       "--envelope-shade": "#28375C",
       "--fold": "#18213A",
+      "--sage": "#9DBFAE",
+      "--petal": "#EED09A",
       "--error": "#FFB3BF",
     },
   },
@@ -67,6 +72,8 @@ export const velvetPalettes = [
       "--envelope": "#2E6A55",
       "--envelope-shade": "#245845",
       "--fold": "#173A2F",
+      "--sage": "#BFD8B4",
+      "--petal": "#F0D29E",
       "--error": "#FFB3BF",
     },
   },

@@ -19,6 +19,7 @@ export const UI = {
   gallery: { en: "Our moments", hi: "हमारे पल" },
   film: { en: "The invitation film", hi: "निमंत्रण फ़िल्म" },
   rsvp: { en: "RSVP", hi: "उपस्थिति की पुष्टि" },
+  sendRsvp: { en: "Send your RSVP", hi: "अपनी उपस्थिति भेजें" },
   rsvpBy: { en: "Kindly respond by", hi: "कृपया उत्तर दें" },
   rsvpClosed: { en: "RSVPs closed on", hi: "उत्तर देने की अंतिम तिथि थी" },
   rsvpContact: { en: "For changes, please contact the family:", hi: "बदलाव के लिए परिवार से संपर्क करें:" },

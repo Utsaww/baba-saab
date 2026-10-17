@@ -7,6 +7,11 @@ import { getTemplate, TEMPLATES } from "../registry";
 import { velvetFontVars, velvetPalettes } from "./palettes";
 import { velvetSample } from "./sample";
 import own from "./velvet.module.scss";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+// The stylesheet source, for rules jsdom cannot evaluate (CSS counters, masks).
+const scss = readFileSync(resolve(__dirname, "velvet.module.scss"), "utf8");
 
 // WCAG 2 relative luminance and contrast ratio for #rrggbb colours.
 function luminance(hex) {
@@ -174,5 +179,63 @@ describe("velvet fade-up wiring", () => {
     vi.stubGlobal("IntersectionObserver", undefined);
     const { container } = render(<InvitationRenderer invitation={build()} ctx={{ mode: "preview", skipOpening: true }} />);
     for (const el of container.querySelectorAll("[data-section]")) expect(el).not.toHaveClass(own.fadePending);
+  });
+});
+
+describe("velvet Part A decoration", () => {
+  const page = (overrides = {}) =>
+    render(<InvitationRenderer invitation={build({ language: "en", ...overrides })} ctx={{ mode: "preview", skipOpening: true }} />);
+
+  it("crowns the cover with a floral arch and the couple's monogram", () => {
+    const { container } = page();
+    const cover = container.querySelector("header").parentElement;
+    expect(within(cover).getByRole("img", { name: "Floral arch" })).toBeInTheDocument();
+    expect(within(cover).getByText("M&A")).toBeInTheDocument();
+  });
+
+  it("embosses the envelope paper with blossoms behind the seal", () => {
+    render(<InvitationRenderer invitation={build({ language: "en" })} />);
+    const envelope = screen.getByRole("button", { name: "Tap to open" });
+    expect(envelope.querySelectorAll('svg[aria-hidden="true"] [data-part="blossom"]').length).toBeGreaterThan(20);
+  });
+
+  it("offers a Send your RSVP button under the venue that jumps to the RSVP form", () => {
+    const { container } = page();
+    const link = screen.getByRole("link", { name: "Send your RSVP" });
+    expect(link).toHaveAttribute("href", "#rsvp");
+    expect(container.querySelector("#rsvp")).not.toBeNull();
+    // It sits straight after the venue section, before the next section.
+    const venue = container.querySelector('[data-section="venue"]');
+    expect(venue.nextElementSibling).toContainElement(link);
+  });
+
+  it("writes the RSVP button in Hindi for a Hindi invitation", () => {
+    page({ language: "hi" });
+    expect(screen.getByRole("link", { name: "अपनी उपस्थिति भेजें" })).toHaveAttribute("href", "#rsvp");
+  });
+
+  it("leaves the RSVP button and anchor out when RSVP is off", () => {
+    const { container } = page({ rsvp: { enabled: false } });
+    expect(screen.queryByRole("link", { name: "Send your RSVP" })).toBeNull();
+    expect(container.querySelector("#rsvp")).toBeNull();
+  });
+
+  it("numbers the event cards 01, 02, … with a CSS counter", () => {
+    expect(scss).toMatch(/\.events\s*\{[^}]*counter-reset:\s*velvet-event/);
+    expect(scss).toMatch(/\.event\s*\{[^}]*counter-increment:\s*velvet-event/);
+    expect(scss).toMatch(/content:\s*counter\(velvet-event,\s*decimal-leading-zero\)/);
+  });
+
+  it("divides sections with a four-point star between hairlines", () => {
+    expect(scss).toMatch(/\$ornament:.*id='star'/);
+  });
+
+  it("starts the falling petals only once the envelope has opened", () => {
+    vi.useFakeTimers();
+    const { container } = render(<InvitationRenderer invitation={build({ language: "en" })} />);
+    expect(container.querySelector("canvas")).toBeNull();
+    act(() => screen.getByRole("button", { name: "Tap to open" }).click());
+    act(() => vi.advanceTimersByTime(1000));
+    expect(container.querySelector('canvas[aria-hidden="true"]')).not.toBeNull();
   });
 });

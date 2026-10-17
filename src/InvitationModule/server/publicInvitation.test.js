@@ -22,13 +22,18 @@ describe("loadPublicInvitation", () => {
     await loadPublicInvitation("a-b", "tok");
     expect(query).toHaveBeenLastCalledWith({}, { slug: "a-b", previewToken: "tok" });
   });
-  it("parses the live copy and switches RSVP off until Phase 4", async () => {
+  it("parses the live copy and keeps RSVP on, since replies go to the family's WhatsApp", async () => {
     const copy = { ...minimalSample, rsvp: { ...minimalSample.rsvp, enabled: true } };
     query.mockResolvedValue(live(JSON.stringify(copy)));
     const r = await loadPublicInvitation("a-b");
     expect(r.mode).toBe("live");
     expect(r.invitation.couple.bride.name).toEqual(copy.couple.bride.name);
-    expect(r.invitation.rsvp.enabled).toBe(false);
+    expect(r.invitation.rsvp.enabled).toBe(true);
+  });
+  it("hides RSVP on a live page that has no family number to reply to", async () => {
+    const copy = { ...minimalSample, hosts: { ...minimalSample.hosts, contactPhone: undefined }, rsvp: { enabled: true } };
+    query.mockResolvedValue(live(JSON.stringify(copy)));
+    expect((await loadPublicInvitation("a-b")).invitation.rsvp.enabled).toBe(false);
   });
   it("accepts content that arrives as an object or double-encoded JSON", async () => {
     query.mockResolvedValue(live(JSON.stringify(JSON.stringify(minimalSample))));

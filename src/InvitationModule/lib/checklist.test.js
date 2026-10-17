@@ -64,10 +64,19 @@ describe("publishChecklist", () => {
     ]);
   });
 
-  it("doesn't ask for an RSVP deadline while RSVPs are parked, even when an old draft has RSVP on", () => {
+  it("asks for the family's WhatsApp number when guests reply on WhatsApp", () => {
     const draft = { ...complete(), rsvp: { enabled: true } };
-    expect(publishChecklist(draft)).toEqual([]);
-    expect(publishChecklist({ ...draft, rsvp: { enabled: true, deadline: "2027-02-01" } })).toEqual([]);
+    expect(publishChecklist(draft)).toEqual([
+      { id: "contactPhone", message: "Add the family's WhatsApp number for RSVPs", step: 2 },
+    ]);
+    expect(publishChecklist({ ...draft, hosts: { contactPhone: "  " } })).toHaveLength(1);
+  });
+
+  it("doesn't need a last day to reply, and doesn't need a number when RSVP is off", () => {
+    const withPhone = { ...complete(), hosts: { contactPhone: "+91 98765 43210" } };
+    expect(publishChecklist({ ...withPhone, rsvp: { enabled: true } })).toEqual([]);
+    expect(publishChecklist({ ...withPhone, rsvp: { enabled: true, deadline: "2027-02-01" } })).toEqual([]);
+    expect(publishChecklist({ ...complete(), rsvp: { enabled: false } })).toEqual([]);
   });
 
   it("calls an unnamed event by its number", () => {

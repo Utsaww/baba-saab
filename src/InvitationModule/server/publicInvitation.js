@@ -27,8 +27,12 @@ export async function loadPublicInvitation(slug, previewToken) {
     return { mode: "preview", invitation: previewInvitation(cleanDraft(content).draft, template).invitation };
   }
   const invitation = parseInvitation({ ...content, templateId: data.templateId });
-  // RSVPs are stored from Phase 4; until then a live form would silently drop answers.
-  return { mode: "live", invitation: { ...invitation, rsvp: { ...invitation.rsvp, enabled: false } } };
+  // Replies go to the family's WhatsApp. Publishing requires the number, but an older live copy may lack it:
+  // then there is nowhere to reply to, so the RSVP section is hidden.
+  if (invitation.rsvp.enabled && !invitation.hosts.contactPhone?.trim()) {
+    return { mode: "live", invitation: { ...invitation, rsvp: { ...invitation.rsvp, enabled: false } } };
+  }
+  return { mode: "live", invitation };
 }
 
 /** One lookup per request, shared by generateMetadata and the page. */

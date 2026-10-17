@@ -158,7 +158,31 @@
 .choice { display: flex; gap: 10px; align-items: center; min-height: 44px; input { width: 20px; height: 20px; min-height: 0; accent-color: var(--primary); } }
 .fieldError { color: var(--error, #e5484d); font-size: 14px; }
 .rsvpDeadline, .rsvpClosed { color: var(--muted); }
-.rsvpThanks { font-size: 20px; color: var(--primary); }
+.rsvpNote { color: var(--muted); font-size: 14px; }
+.rsvpSent {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 16px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+  border-radius: 12px;
+}
+.rsvpMessageBox {
+  width: 100%;
+  font: inherit;
+  font-size: 15px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--text) 25%, transparent);
+  background: var(--bg);
+  color: var(--text);
+  white-space: pre-wrap;
+  resize: vertical;
+}
+.rsvpActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rsvpActions .calLink { margin-top: 0; }
 
 .closingLine { font-size: 18px; margin: 8px 0 16px; }
 .families { list-style: none; padding: 0; display: grid; gap: 4px; color: var(--muted); margin-bottom: 16px; }

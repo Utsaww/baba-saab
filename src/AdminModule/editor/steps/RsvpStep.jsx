@@ -1,10 +1,10 @@
 "use client";
 
-import { Group, Toggle } from "../fields";
+import { Group, TextInput, Toggle } from "../fields";
 import OfflineDateField from "../lifecycle/OfflineDateField";
 
-// RSVPs are parked until a customer asks for them: their settings are hidden, and stored `rsvp` values are kept as they are.
-export default function RsvpStep({ content, update, offlineField }) {
+export default function RsvpStep({ content, update, errors = {}, offlineField }) {
+  const rsvp = content.rsvp ?? {};
   return (
     <div className="space-y-6">
       {offlineField ? (
@@ -12,6 +12,28 @@ export default function RsvpStep({ content, update, offlineField }) {
           <OfflineDateField {...offlineField} />
         </Group>
       ) : null}
+      <Group title="RSVP">
+        <Toggle
+          label="Guests reply on WhatsApp"
+          description="Guests' replies open WhatsApp to the family contact number from step 2. Nothing is stored by Baba Saab."
+          checked={rsvp.enabled}
+          onChange={(v) => update(["rsvp", "enabled"], v)}
+        />
+        {rsvp.enabled && (
+          <>
+            <TextInput
+              label="Last day to reply"
+              type="date"
+              value={rsvp.deadline}
+              error={errors["rsvp.deadline"]}
+              hint="Optional. After this day the form closes and shows the family's phone number instead."
+              onChange={(v) => update(["rsvp", "deadline"], v || undefined)}
+            />
+            <Toggle label="Ask how many people are coming" checked={rsvp.askGuestCount ?? true} onChange={(v) => update(["rsvp", "askGuestCount"], v)} />
+            <Toggle label="Ask about meal preference" checked={rsvp.askMeal ?? false} onChange={(v) => update(["rsvp", "askMeal"], v)} />
+          </>
+        )}
+      </Group>
       <Group title="Other settings">
         <Toggle
           label='Show "Created by Baba Saab Events"'

@@ -120,7 +120,7 @@ export default function CoupleStep({ content, update, language }) {
           type="tel"
           inputMode="tel"
           value={content.hosts?.contactPhone}
-          hint="Shown to guests after RSVPs close. Also used to search for this invitation."
+          hint="Guests' RSVP replies open WhatsApp to this number. Also shown after RSVPs close, and used to search for this invitation."
           onChange={(v) => update(["hosts", "contactPhone"], v || undefined)}
         />
       </Group>

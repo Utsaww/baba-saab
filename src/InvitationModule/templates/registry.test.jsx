@@ -144,3 +144,18 @@ describe.each(TEMPLATES.map((t) => [t.id, t]))("template %s", (_id, template) =>
     expect(container.textContent).not.toContain("Created by Baba Saab Events");
   });
 });
+
+describe("RSVP on WhatsApp in every template", () => {
+  it.each(TEMPLATES.map((t) => [t.id, t]))("%s notes in previews that replies go to the family's WhatsApp", (_id, template) => {
+    render(<InvitationRenderer invitation={build(template, { language: "en", rsvp: { enabled: true } })} ctx={{ mode: "preview" }} />);
+    expect(screen.getByText("Preview — replies go to the family's WhatsApp")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send RSVP on WhatsApp" })).toBeInTheDocument();
+  });
+
+  it("hides the RSVP section on a live page that has no family number", () => {
+    const royal = getTemplate("royal");
+    const inv = build(royal, { language: "en", rsvp: { enabled: true }, hosts: { ...royal.sample.hosts, contactPhone: undefined } });
+    const { container } = render(<InvitationRenderer invitation={inv} />);
+    expect(container.querySelector('[data-section="rsvp"]')).toBeNull();
+  });
+});

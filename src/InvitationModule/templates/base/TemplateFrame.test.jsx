@@ -26,4 +26,13 @@ describe("TemplateFrame sections", () => {
     expect(screen.getByText("Custom venue")).toBeInTheDocument();
     expect(container.querySelector('[data-section="couple"]')).not.toBeNull();
   });
+
+  it("leaves out sections the template's cover already shows", () => {
+    const { container } = render(
+      <TemplateFrame inv={invitation} ctx={{ skipOpening: true }} s={{}} Opening={() => null} coverSections={["invocation", "couple"]} />,
+    );
+    expect(container.querySelector('[data-section="invocation"]')).toBeNull();
+    expect(container.querySelector('[data-section="couple"]')).toBeNull();
+    expect(container.querySelector('[data-section="saveTheDate"]')).not.toBeNull();
+  });
 });

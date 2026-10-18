@@ -7,7 +7,8 @@ const CHECK_EVERY_MOVES = 8;
 const SAMPLE_STRIDE = 16;
 const FALLBACK_COLOUR = "#c9a54c";
 
-function clearedRatio(ctx, width, height) {
+// Share of the cover already scratched away (sampled, for speed). Also used by Temple's date cards.
+export function clearedRatio(ctx, width, height) {
   if (!width || !height) return 0;
   const { data } = ctx.getImageData(0, 0, width, height);
   let clear = 0;

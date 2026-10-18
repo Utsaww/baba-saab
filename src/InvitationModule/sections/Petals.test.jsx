@@ -160,6 +160,28 @@ describe("Petals", () => {
     expect(ctx.fills.at(-1)).toBe("#123456");
   });
 
+  it("alternates two petal colours when the page sets a second one", () => {
+    const { container } = render(<Petals active count={4} />);
+    const canvas = container.querySelector("canvas");
+    canvas.style.setProperty("--petal", "#aa0000");
+    canvas.style.setProperty("--petal-2", "#00bb00");
+    act(() => setHidden(true));
+    act(() => setHidden(false));
+    ctx.fills.length = 0;
+    act(() => runFrame(16));
+    expect(new Set(ctx.fills)).toEqual(new Set(["#aa0000", "#00bb00"]));
+  });
+
+  it("uses the one colour for every petal when no second colour is set", () => {
+    const { container } = render(<Petals active count={4} />);
+    container.querySelector("canvas").style.setProperty("--petal", "#aa0000");
+    act(() => setHidden(true));
+    act(() => setHidden(false));
+    ctx.fills.length = 0;
+    act(() => runFrame(16));
+    expect(new Set(ctx.fills)).toEqual(new Set(["#aa0000"]));
+  });
+
   it("doesn't re-read styles on a resize that changes nothing", () => {
     render(<Petals active />);
     const styles = vi.spyOn(window, "getComputedStyle");

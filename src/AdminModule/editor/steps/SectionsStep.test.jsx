@@ -31,4 +31,13 @@ describe("SectionsStep", () => {
     expect(order).toHaveLength(11);
     expect(latest().theme.palette).toBe("maroon-gold");
   });
+
+  it("explains, for Temple Classic only, that the blessing and couple stay together at the top", () => {
+    const note = "In Temple Classic, the blessing and couple always appear together at the top.";
+    const { unmount } = renderStep(SectionsStep, base());
+    expect(screen.queryByText(note)).toBeNull();
+    unmount();
+    renderStep(SectionsStep, { ...base(), templateId: "temple", theme: { palette: "kumkum" } });
+    expect(screen.getByText(note)).toBeInTheDocument();
+  });
 });

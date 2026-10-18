@@ -4,7 +4,7 @@ import { royalSample } from "./royal/sample";
 import FloralTemplate from "./floral";
 import { floralFontVars, floralPalettes } from "./floral/palettes";
 import { floralSample } from "./floral/sample";
-import TempleTemplate from "./temple";
+import TempleTemplate, { TEMPLE_COVER_SECTIONS } from "./temple";
 import { templeFontVars, templePalettes } from "./temple/palettes";
 import { templeSample } from "./temple/sample";
 import MinimalTemplate from "./minimal";
@@ -36,11 +36,13 @@ export const TEMPLATES = [
   {
     id: "temple",
     name: "Temple Classic",
-    description: "Temple motifs and kolam borders in rich traditional colours. Guests tap a sealed envelope to open it.",
+    description: "Ivory paper with wine, rose and gold. Guests open a wax-sealed envelope, then scratch three cards to reveal the date.",
     Component: TempleTemplate,
     palettes: templePalettes,
     fontVars: templeFontVars,
     sample: templeSample,
+    // Shown inside the template's cover, so not repeated as their own sections.
+    coverSections: TEMPLE_COVER_SECTIONS,
   },
   {
     id: "minimal",

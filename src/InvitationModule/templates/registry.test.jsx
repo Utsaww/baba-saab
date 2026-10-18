@@ -11,6 +11,8 @@ const build = (template, overrides = {}) =>
   parseInvitation({ ...template.sample, ...overrides, theme: { ...template.sample.theme, ...overrides.theme } });
 
 const renderedOrder = (container) => [...container.querySelectorAll("[data-section]")].map((el) => el.dataset.section);
+// Sections a template draws inside its cover (e.g. Temple's hero) are not repeated as their own sections.
+const expectedOrder = (template, ids) => ids.filter((id) => !(template.coverSections ?? []).includes(id));
 
 describe("registry lookups", () => {
   it("returns null for an unknown template", () => {
@@ -79,11 +81,12 @@ describe("calendar downloads", () => {
 });
 
 describe("temple opening", () => {
-  it("shows the couple on one line inside the envelope, clear of the flap", () => {
+  it("shows the couple's names above the envelope, in both languages", () => {
     const temple = getTemplate("temple");
     render(<InvitationRenderer invitation={build(temple, { language: "both" })} />);
     const cover = screen.getByRole("dialog", { name: "Invitation cover" });
     expect(within(cover).getByText("Meera & Arjun")).toBeInTheDocument();
+    expect(within(cover).getByText("मीरा & अर्जुन")).toBeInTheDocument();
   });
 });
 
@@ -97,7 +100,7 @@ describe.each(TEMPLATES.map((t) => [t.id, t]))("template %s", (_id, template) =>
   it.each(template.palettes.map((p) => [p.id]))("renders every visible section with palette %s", (paletteId) => {
     const inv = build(template, { theme: { palette: paletteId } });
     const { container } = render(<InvitationRenderer invitation={inv} ctx={{ mode: "preview" }} />);
-    expect(renderedOrder(container)).toEqual(visibleSections(inv));
+    expect(renderedOrder(container)).toEqual(expectedOrder(template, visibleSections(inv)));
     expect(container.textContent).not.toContain("undefined");
   });
 
@@ -119,7 +122,7 @@ describe.each(TEMPLATES.map((t) => [t.id, t]))("template %s", (_id, template) =>
   it("omits sections that have no content", () => {
     const inv = parseInvitation({ ...minimalInvitation(), templateId: template.id, theme: { palette: template.palettes[0].id } });
     const { container } = render(<InvitationRenderer invitation={inv} />);
-    expect(renderedOrder(container)).toEqual(["invocation", "couple", "saveTheDate", "countdown", "venue"]);
+    expect(renderedOrder(container)).toEqual(expectedOrder(template, ["invocation", "couple", "saveTheDate", "countdown", "venue"]));
   });
 
   it("renders an event without a time", () => {
@@ -147,7 +150,10 @@ describe.each(TEMPLATES.map((t) => [t.id, t]))("template %s", (_id, template) =>
 
 describe("RSVP on WhatsApp in every template", () => {
   it.each(TEMPLATES.map((t) => [t.id, t]))("%s notes in previews that replies go to the family's WhatsApp", (_id, template) => {
-    render(<InvitationRenderer invitation={build(template, { language: "en", rsvp: { enabled: true, channel: "whatsapp" } })} ctx={{ mode: "preview" }} />);
+    // Temple locks everything after Save the Date until the cards are scratched, so it uses its editor
+    // preview (skipOpening). The other templates keep the plain preview path.
+    const ctx = template.id === "temple" ? { mode: "preview", skipOpening: true } : { mode: "preview" };
+    render(<InvitationRenderer invitation={build(template, { language: "en", rsvp: { enabled: true, channel: "whatsapp" } })} ctx={ctx} />);
     expect(screen.getByText("Preview — replies go to the family's WhatsApp")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Send RSVP on WhatsApp" })).toBeInTheDocument();
   });

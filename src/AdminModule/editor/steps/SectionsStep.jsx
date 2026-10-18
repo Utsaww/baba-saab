@@ -35,6 +35,9 @@ export default function SectionsStep({ content, update }) {
       <p className="text-sm text-stone-600">
         The cover always comes first. Sections with nothing filled in stay hidden on the invitation automatically.
       </p>
+      {content.templateId === "temple" && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">In Temple Classic, the blessing and couple always appear together at the top.</p>
+      )}
       <ol aria-label="Sections in order" className="divide-y divide-stone-200 rounded-xl border border-stone-200 bg-white">
         {order.map((id, i) => {
           const label = SECTION_LABELS[id];

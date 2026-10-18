@@ -37,3 +37,13 @@ export function formatDots(date) {
   const m = DATE_RE.exec(date ?? "");
   return m ? `${m[3]} · ${m[2]} · ${m[1]}` : "";
 }
+
+// Month, day and year as separate strings (e.g. Temple's three scratch cards). English uses the
+// short month ("Nov"); Hindi the full name ("नवंबर"), since its short forms ("नव॰") read poorly.
+export function dateParts(date, lang = "en") {
+  const m = DATE_RE.exec(date ?? "");
+  if (!m) return null;
+  const hi = lang === "hi";
+  const month = new Intl.DateTimeFormat(locale(hi ? "hi" : "en"), { month: hi ? "long" : "short", timeZone: TIME_ZONE }).format(istInstant(date, "12:00"));
+  return { month, day: String(Number(m[3])), year: m[1] };
+}

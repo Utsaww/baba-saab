@@ -1,5 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { formatDate, formatDots, formatTime, istInstant } from "./datetime";
+import { dateParts, formatDate, formatDots, formatTime, istInstant } from "./datetime";
+
+describe("dateParts", () => {
+  it("splits a date into a short month, the day and the year in English", () => {
+    expect(dateParts("2027-11-27", "en")).toEqual({ month: "Nov", day: "27", year: "2027" });
+    expect(dateParts("2026-03-04", "en")).toEqual({ month: "Mar", day: "4", year: "2026" });
+  });
+  it("names the month in Hindi, keeping the digits", () => {
+    expect(dateParts("2027-11-27", "hi")).toEqual({ month: "नवंबर", day: "27", year: "2027" });
+    expect(dateParts("2027-02-14", "hi").month).toBe("फ़रवरी");
+  });
+  it("uses English for anything but Hindi", () => {
+    expect(dateParts("2027-11-27", "both").month).toBe("Nov");
+  });
+  it("returns null for a missing or bad date", () => {
+    expect(dateParts(undefined, "en")).toBeNull();
+    expect(dateParts("27-11-2027", "en")).toBeNull();
+  });
+});
 
 describe("istInstant", () => {
   it("interprets date and time as IST", () => {

@@ -26,6 +26,30 @@ describe("reveals", () => {
     expect(onReveal).toHaveBeenCalledTimes(1);
   });
 
+  it("EnvelopeReveal tells the template it is opening at once, and can wait longer before revealing", () => {
+    vi.useFakeTimers();
+    const onReveal = vi.fn();
+    const onOpen = vi.fn();
+    render(<EnvelopeReveal onReveal={onReveal} onOpen={onOpen} delay={1500} label="Open" />);
+    const button = screen.getByRole("button", { name: "Open" });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    act(() => vi.advanceTimersByTime(ENVELOPE_MS));
+    expect(onReveal).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1500 - ENVELOPE_MS));
+    expect(onReveal).toHaveBeenCalledTimes(1);
+  });
+
+  it("EnvelopeReveal accepts a delay chosen when the guest taps (e.g. shorter under reduced motion)", () => {
+    vi.useFakeTimers();
+    const onReveal = vi.fn();
+    render(<EnvelopeReveal onReveal={onReveal} delay={() => 200} label="Open" />);
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    act(() => vi.advanceTimersByTime(200));
+    expect(onReveal).toHaveBeenCalledTimes(1);
+  });
+
   it("ScrollReveal reveals on downward wheel or click, only once", () => {
     const onReveal = vi.fn();
     render(<ScrollReveal onReveal={onReveal}>Scroll</ScrollReveal>);

@@ -15,7 +15,7 @@ import { mergeStyles } from "../../lib/styles";
 import useFadeUp from "./useFadeUp";
 import FloralArch from "./FloralArch";
 import Emboss from "./Emboss";
-import Petals from "./Petals";
+import Petals from "../../sections/Petals";
 
 const s = mergeStyles(base, own);
 // Fade classes exist only in this template's module, so take them from it directly.

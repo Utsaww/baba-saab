@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { seeded } from "./seeded";
+import { seeded } from "../lib/seeded";
 
 const TAU = Math.PI * 2;
 const DEFAULT_COLOUR = "#E7C68C";
 const MAX_STEP = 0.05; // seconds; a long pause never makes petals jump
 
-// Slow-falling gold petals over the card column, started once the envelope has opened.
+// Slow-falling petals over the card column, started once the envelope has opened.
+// Colours come from the page: --petal, and optionally --petal-2 for every other petal.
 // Nothing renders on the server or under reduced motion; the canvas never takes taps.
 export default function Petals({ active, count = 16, className }) {
   // False on the server and on first paint, so server and client HTML always match.
@@ -50,9 +51,11 @@ export default function Petals({ active, count = 16, className }) {
       alpha: 0.25 + rand() * 0.3,
     }));
     // Re-read on start and resize so a palette switch in the live editor preview shows.
-    let colour = DEFAULT_COLOUR;
+    let colours = [DEFAULT_COLOUR, DEFAULT_COLOUR];
     function readColour() {
-      colour = getComputedStyle(canvas).getPropertyValue("--petal").trim() || DEFAULT_COLOUR;
+      const style = getComputedStyle(canvas);
+      const first = style.getPropertyValue("--petal").trim() || DEFAULT_COLOUR;
+      colours = [first, style.getPropertyValue("--petal-2").trim() || first];
     }
 
     let ratio = 0;
@@ -77,8 +80,8 @@ export default function Petals({ active, count = 16, className }) {
       const step = last ? Math.min((now - last) / 1000, MAX_STEP) : 1 / 60;
       last = now;
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = colour;
-      for (const p of petals) {
+      for (let i = 0; i < petals.length; i++) {
+        const p = petals[i];
         p.y += (p.fall * step) / height;
         p.phase += p.swaySpeed * step;
         p.turn += p.spin * step;
@@ -90,6 +93,7 @@ export default function Petals({ active, count = 16, className }) {
         ctx.translate(p.x * width + Math.sin(p.phase) * p.sway, p.y * height);
         ctx.rotate(p.turn);
         ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = colours[i % 2];
         ctx.beginPath();
         ctx.ellipse(0, 0, p.size, p.size * 0.55, 0, 0, TAU);
         ctx.fill();

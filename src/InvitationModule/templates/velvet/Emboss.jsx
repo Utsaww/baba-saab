@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { round1, seeded } from "./seeded";
+import { round1, seeded } from "../../lib/seeded";
 
 const PETALS = [0, 72, 144, 216, 288];
 

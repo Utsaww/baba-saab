@@ -1,5 +1,5 @@
 import st from "./velvet.module.scss";
-import { round1, seeded } from "./seeded";
+import { round1, seeded } from "../../lib/seeded";
 
 // Cubic Bézier vines for the left side of a 360 × 150 box; the right side mirrors them.
 const VINES = {

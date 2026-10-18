@@ -3,9 +3,12 @@ import {
   Cormorant_Garamond,
   Great_Vibes,
   Inter,
+  Italianno,
   Lora,
   Marcellus,
   Playfair_Display,
+  Prata,
+  Tenor_Sans,
   Tiro_Devanagari_Hindi,
 } from "next/font/google";
 
@@ -18,8 +21,11 @@ const lora = Lora({ subsets: ["latin"], variable: "--font-lora", display: "swap"
 const marcellus = Marcellus({ subsets: ["latin"], weight: "400", variable: "--font-marcellus", display: "swap", preload: false });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair", display: "swap", preload: false });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap", preload: false });
+const prata = Prata({ subsets: ["latin"], weight: "400", variable: "--font-prata", display: "swap", preload: false });
+const italianno = Italianno({ subsets: ["latin"], weight: "400", variable: "--font-italianno", display: "swap", preload: false });
+const tenor = Tenor_Sans({ subsets: ["latin"], weight: "400", variable: "--font-tenor", display: "swap", preload: false });
 const hindi = Tiro_Devanagari_Hindi({ subsets: ["devanagari", "latin"], weight: "400", variable: "--font-hindi", display: "swap", preload: false });
 
-export const fontVariables = [cinzel, cormorant, greatVibes, lora, marcellus, playfair, inter, hindi]
+export const fontVariables = [cinzel, cormorant, greatVibes, lora, marcellus, playfair, inter, prata, italianno, tenor, hindi]
   .map((f) => f.variable)
   .join(" ");

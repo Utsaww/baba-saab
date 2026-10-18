@@ -8,3 +8,6 @@ export const Marcellus = font("marcellus");
 export const Playfair_Display = font("playfair");
 export const Inter = font("inter");
 export const Tiro_Devanagari_Hindi = font("hindi");
+export const Prata = font("prata");
+export const Italianno = font("italianno");
+export const Tenor_Sans = font("tenor");

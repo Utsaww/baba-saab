@@ -84,6 +84,26 @@ describe("ScratchCard", () => {
     expect(onReveal).not.toHaveBeenCalled();
   });
 
+  it("repaints the foil when the card changes size, but not on a resize that changes nothing", () => {
+    const ctx = fakeContext({ cleared: false });
+    withCanvas(ctx);
+    card();
+    expect(ctx.fillRect).toHaveBeenCalledTimes(1);
+    fireEvent(window, new Event("resize"));
+    expect(ctx.fillRect).toHaveBeenCalledTimes(1);
+    HTMLCanvasElement.prototype.getBoundingClientRect.mockImplementation(() => ({ left: 0, top: 0, width: 110, height: 86, right: 110, bottom: 86 }));
+    fireEvent(window, new Event("resize"));
+    expect(ctx.fillRect).toHaveBeenCalledTimes(2);
+  });
+
+  it("stops listening for resizes when unmounted", () => {
+    const remove = vi.spyOn(window, "removeEventListener");
+    withCanvas(fakeContext({ cleared: false }));
+    const { unmount } = card();
+    unmount();
+    expect(remove).toHaveBeenCalledWith("resize", expect.any(Function));
+  });
+
   it("shows the value plainly once revealed: no foil, no button", () => {
     const { container } = card({ revealed: true });
     expect(screen.queryByRole("button")).toBeNull();

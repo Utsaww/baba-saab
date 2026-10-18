@@ -4,6 +4,8 @@
 
 // Paper grain: fractal noise, blended over paper at low opacity.
 $grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+// The same grain pre-faded (6% opacity), for use as a plain background layer behind content.
+$grain-faint: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
 // A diamond between two fading hairlines, with two dots. Used as a mask so it takes the palette's gold.
 $ornament: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 16'%3E%3Cdefs%3E%3ClinearGradient id='a'%3E%3Cstop offset='0' stop-opacity='0'/%3E%3Cstop offset='1'/%3E%3C/linearGradient%3E%3ClinearGradient id='b'%3E%3Cstop offset='0'/%3E%3Cstop offset='1' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='28' y='7.5' width='56' height='1' fill='url(%23a)'/%3E%3Crect x='116' y='7.5' width='56' height='1' fill='url(%23b)'/%3E%3Ccircle cx='89' cy='8' r='1.6'/%3E%3Ccircle cx='111' cy='8' r='1.6'/%3E%3Cpath d='M100 1L106 8L100 15L94 8Z'/%3E%3C/svg%3E");
 
@@ -114,12 +116,12 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   position: relative;
   max-width: $column;
   padding: 0 20px 56px;
+  // Grain as the top background layer: it sits behind every section, so sections need no stacking
+  // order of their own (that would cap the shared Gallery's fixed lightbox under petals and mute).
   background:
+    $grain-faint,
     radial-gradient(ellipse 120% 60% at 50% 0%, color-mix(in srgb, var(--rose) 9%, transparent), transparent 70%),
     var(--bg);
-  &::after { @include grain(0.05); }
-  // Content above the grain.
-  > * { position: relative; z-index: 1; }
 }
 
 .credit {
@@ -223,6 +225,23 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   overflow-wrap: anywhere;
 }
 .heroPerson { display: flex; flex-direction: column; align-items: center; }
+// An arched portrait in a gold double ring, above the name.
+.portrait {
+  position: relative;
+  display: block;
+  width: 112px;
+  height: 136px;
+  margin: 6px 0 14px;
+  border-radius: 999px 999px 12px 12px;
+  overflow: hidden;
+  background: var(--band);
+  box-shadow:
+    0 0 0 1px var(--gold),
+    0 0 0 5px var(--bg),
+    0 0 0 6px color-mix(in srgb, var(--gold) 55%, transparent),
+    0 18px 28px -16px color-mix(in srgb, var(--primary-deep) 60%, transparent);
+  img { object-fit: cover; }
+}
 .heroName {
   font-family: var(--font-script), cursive;
   font-size: clamp(58px, 18vw, 84px);
@@ -426,7 +445,8 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 // Sections behind the lock fade up when it opens.
-.gateOpen { animation: unlock 0.9s $ease-out both; }
+// Backwards fill only: once finished, the wrapper must not stay a stacking context (it holds the gallery's lightbox).
+.gateOpen { animation: unlock 0.9s $ease-out backwards; }
 @keyframes unlock {
   from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: none; }
@@ -742,11 +762,12 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   color: var(--primary-deep);
 }
 .letterRule { @include ornament(90px); height: 9px; max-width: 34%; }
-.letterDate {
+.letterLine {
   @include label(11px, 0.3em);
   font-size: max(10px, 3.4cqi);
   padding-left: 0.3em;
   color: var(--primary);
+  :global(.hiLine) { margin-top: 0.15em; padding-left: 0; }
 }
 
 // The pocket: left, right and bottom panels folded over the letter, each its own paper.
@@ -849,7 +870,7 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
     inset 0 3px 6px rgba(255, 255, 255, 0.35),
     0 8px 16px -4px rgba(0, 0, 0, 0.45);
   transition: opacity 0.35s ease, transform 0.35s ease;
-  animation: sealGlow 2.6s ease-in-out infinite;
+
   // The pressed ring.
   &::before {
     content: "";
@@ -870,9 +891,20 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   color: color-mix(in srgb, var(--primary-deep) 85%, black);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45), 0 -1px 0 rgba(0, 0, 0, 0.25);
 }
+// The idle glow: a soft halo whose opacity pulses (cheap to animate, unlike a filter).
+.seal::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  box-shadow: 0 0 16px 5px color-mix(in srgb, var(--gold) 65%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  animation: sealGlow 2.6s ease-in-out infinite;
+}
 @keyframes sealGlow {
-  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
-  50% { filter: drop-shadow(0 0 12px color-mix(in srgb, var(--gold) 70%, transparent)); }
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
 }
 
 // Gold glints burst from the mouth: the canvas spans the envelope and the space above it.
@@ -902,7 +934,8 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   .flap { transform: rotateX(180deg); z-index: 0; }
   .flapShadow { opacity: 0; }
   .letter { transform: translateY(-50%); }
-  .seal { opacity: 0; transform: translate(-50%, -50%) scale(0.8); animation: none; }
+  .seal { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  .seal::after { animation: none; opacity: 0; }
 }
 .envelopeStage:has(.envelope[data-open="true"]) ~ .tapHint { opacity: 0; animation: none; transition: opacity 0.3s; }
 
@@ -929,7 +962,7 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   .opening { transition: opacity 0.5s ease; }
   .openingClosing { transform: none; }
   .flap, .letter, .envelope, .flapShadow { transition: none; }
-  .seal, .tapHint, .scrollChevron { animation: none; }
+  .seal::after, .tapHint, .scrollChevron { animation: none; }
   .envelope[data-open="true"] {
     .flap { transform: none; z-index: 4; }
     .letter { transform: none; }

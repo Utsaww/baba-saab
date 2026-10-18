@@ -150,8 +150,10 @@ describe.each(TEMPLATES.map((t) => [t.id, t]))("template %s", (_id, template) =>
 
 describe("RSVP on WhatsApp in every template", () => {
   it.each(TEMPLATES.map((t) => [t.id, t]))("%s notes in previews that replies go to the family's WhatsApp", (_id, template) => {
-    // The editor preview: no opening, and nothing waits behind Temple's scratch-card lock.
-    render(<InvitationRenderer invitation={build(template, { language: "en", rsvp: { enabled: true, channel: "whatsapp" } })} ctx={{ mode: "preview", skipOpening: true }} />);
+    // Temple locks everything after Save the Date until the cards are scratched, so it uses its editor
+    // preview (skipOpening). The other templates keep the plain preview path.
+    const ctx = template.id === "temple" ? { mode: "preview", skipOpening: true } : { mode: "preview" };
+    render(<InvitationRenderer invitation={build(template, { language: "en", rsvp: { enabled: true, channel: "whatsapp" } })} ctx={ctx} />);
     expect(screen.getByText("Preview — replies go to the family's WhatsApp")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Send RSVP on WhatsApp" })).toBeInTheDocument();
   });

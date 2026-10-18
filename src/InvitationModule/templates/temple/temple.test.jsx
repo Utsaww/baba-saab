@@ -10,6 +10,22 @@ import { TEMPLE_COVER_SECTIONS } from "./index";
 import { templeFontVars, templePalettes } from "./palettes";
 import { templeSample } from "./sample";
 import own from "./temple.module.scss";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+// The stylesheet source, for stacking and animation rules jsdom cannot evaluate.
+const scss = readFileSync(resolve(__dirname, "temple.module.scss"), "utf8");
+// The text of the first top-level rule for `selector`, braces balanced.
+function rule(selector) {
+  const at = scss.indexOf(`\n${selector} {`);
+  if (at < 0) return "";
+  let depth = 0;
+  for (let i = scss.indexOf("{", at); i < scss.length; i++) {
+    if (scss[i] === "{") depth++;
+    if (scss[i] === "}" && --depth === 0) return scss.slice(at, i + 1);
+  }
+  return "";
+}
 
 // WCAG 2 relative luminance and contrast ratio for #rrggbb colours.
 function luminance(hex) {
@@ -131,13 +147,12 @@ describe("temple sample", () => {
 });
 
 describe("temple opening", () => {
-  it("is a wine envelope sealed with the couple's monogram, with the date on the letter inside", () => {
+  it("is a wine envelope sealed with the couple's monogram", () => {
     guest(build({ language: "en" }));
     const cover = screen.getByRole("dialog", { name: "Invitation cover" });
     const envelope = within(cover).getByRole("button", { name: "Tap to open the invitation" });
     expect(envelope).toHaveAttribute("data-open", "false");
     expect(envelope.querySelector('[data-part="seal"]')).toHaveTextContent("M&A");
-    expect(envelope.querySelector('[data-part="letter"]')).toHaveTextContent("27 · 11 · 2027");
     expect(within(cover).getByText("Tap to open", { selector: "p" })).toBeInTheDocument();
   });
 
@@ -145,6 +160,20 @@ describe("temple opening", () => {
     guest(build({ language: "en", couple: { ...templeSample.couple, order: "groom-first" } }));
     const envelope = screen.getByRole("button", { name: "Tap to open the invitation" });
     expect(envelope.querySelector('[data-part="seal"]')).toHaveTextContent("A&M");
+  });
+
+  it("puts only the monogram and a 'Save the Date' line on the letter", () => {
+    guest(build({ language: "en" }));
+    const letter = screen.getByRole("button", { name: "Tap to open the invitation" }).querySelector('[data-part="letter"]');
+    expect(letter).toHaveTextContent("M&A");
+    expect(letter).toHaveTextContent("Save the Date");
+    expect(letter.textContent).not.toMatch(/\d/);
+  });
+
+  it("writes the letter's line in Hindi for a Hindi invitation", () => {
+    guest(build({ language: "hi" }));
+    const letter = screen.getByRole("button", { name: "निमंत्रण खोलने के लिए टैप करें" }).querySelector('[data-part="letter"]');
+    expect(letter).toHaveTextContent("तिथि याद रखें");
   });
 
   it("is labelled in Hindi for a Hindi invitation", () => {
@@ -223,9 +252,54 @@ describe("temple hero", () => {
     expect(within(container.querySelector("header")).queryByRole("img", { name: "Shri Ganeshaya Namah" })).toBeNull();
   });
 
-  it("never gives the date away before the scratch cards", () => {
+  it("never gives the date away before the scratch cards — not in the hero, not on the envelope", () => {
     const { container } = guest(build({ language: "en" }));
     expect(container.querySelector("main header").textContent).not.toMatch(/2027|November/);
+    const cover = screen.getByRole("dialog", { name: "Invitation cover" });
+    expect(cover.textContent).not.toMatch(/2027|November|27 · 11/);
+  });
+
+  it("shows each person's portrait above their name, in the chosen order", () => {
+    const withPhotos = (order) => ({
+      ...templeSample.couple,
+      order,
+      bride: { ...templeSample.couple.bride, photoKey: "https://example.com/bride.jpg" },
+      groom: { ...templeSample.couple.groom, photoKey: "https://example.com/groom.jpg" },
+    });
+    for (const [order, first, second] of [["bride-first", "bride", "groom"], ["groom-first", "groom", "bride"]]) {
+      const { container, unmount } = editor(build({ language: "en", couple: withPhotos(order) }));
+      const portraits = [...container.querySelectorAll('header [data-part="portrait"] img')];
+      expect(portraits.map((img) => img.getAttribute("src"))).toEqual([`https://example.com/${first}.jpg`, `https://example.com/${second}.jpg`]);
+      const name = first === "bride" ? "Meera" : "Arjun";
+      // Decorative inside the heading: the name sits right below, so it isn't read twice.
+      expect(portraits[0]).toHaveAttribute("alt", "");
+      // The portrait sits in its own person's block, before the name.
+      const person = portraits[0].closest('[data-part="person"]');
+      expect(person.firstElementChild).toHaveAttribute("data-part", "portrait");
+      expect(person.textContent).toContain(name);
+      unmount();
+    }
+  });
+
+  it("shows no portrait frame for someone without a photo", () => {
+    const { container } = editor(build({ language: "en" }));
+    expect(container.querySelectorAll('[data-part="portrait"]')).toHaveLength(0);
+  });
+
+  it("drops the parents lines and portraits when staff hide the couple, keeping the names", () => {
+    const couple = { ...templeSample.couple, bride: { ...templeSample.couple.bride, photoKey: "https://example.com/bride.jpg" } };
+    const { container } = editor(build({ language: "en", couple, theme: { hidden: ["couple"] } }));
+    const header = container.querySelector("header");
+    expect(header.textContent).toContain("Meera");
+    expect(header.textContent).not.toContain("Daughter of");
+    expect(header.querySelectorAll('[data-part="portrait"]')).toHaveLength(0);
+  });
+
+  it("doesn't preload the faint cover photo", () => {
+    const { container } = editor(build({ language: "en" }));
+    const cover = container.querySelector(`header img[src="${build().media.coverKey}"]`);
+    expect(cover).not.toBeNull();
+    expect(cover).not.toHaveAttribute("data-priority");
   });
 
   it("writes the blessing in Hindi for a Hindi invitation", () => {
@@ -374,5 +448,29 @@ describe("temple sections", () => {
   it("names the couple groom-first in the closing when the groom is named first", () => {
     const { container } = editor(build({ language: "en", couple: { ...templeSample.couple, order: "groom-first" } }));
     expect(section(container, "closing").querySelector('[data-part="closing-names"]')).toHaveTextContent("Arjun & Meera");
+  });
+});
+
+describe("temple layering and motion (stylesheet)", () => {
+  it("doesn't trap the gallery lightbox: no stacking context on the page's sections", () => {
+    // A z-index on .main's children would cap the fixed lightbox (z 60) under the petals and mute button.
+    expect(rule(".main")).not.toBe("");
+    expect(rule(".main")).not.toMatch(/z-index/);
+    // The paper grain is a background layer of .main itself: behind the content, never over it.
+    expect(rule(".main")).toMatch(/background:\s*\$grain-faint,/);
+    expect(rule(".main")).not.toMatch(/::(before|after)/);
+    // The unlock fade must not keep filling once done: a lingering transform/opacity animation keeps
+    // the gate wrapper (around the gallery) a stacking context, trapping the lightbox again.
+    expect(rule(".gateOpen")).toMatch(/animation:/);
+    expect(rule(".gateOpen")).not.toMatch(/\b(both|forwards)\b/);
+  });
+
+  it("glows the seal with opacity rather than a repainting filter, and stops once it opens or under reduced motion", () => {
+    const start = scss.indexOf("@keyframes sealGlow");
+    const keyframes = scss.slice(start, scss.indexOf("\n}", start) + 2);
+    expect(keyframes).toMatch(/opacity/);
+    expect(keyframes).not.toMatch(/filter/);
+    expect(rule('.envelope[data-open="true"]')).toMatch(/\.seal::after\s*\{[^}]*animation:\s*none/);
+    expect(rule("@media (prefers-reduced-motion: reduce)")).toMatch(/\.seal::after[^{]*\{[^}]*animation:\s*none/);
   });
 });

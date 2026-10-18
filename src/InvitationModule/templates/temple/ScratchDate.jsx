@@ -65,13 +65,26 @@ export const ScratchCard = forwardRef(function ScratchCard({ label, value, lang,
   const done = useRef(false);
 
   useEffect(() => {
-    if (revealed) return;
+    if (revealed) return undefined;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext?.("2d");
-    if (!ctx) return;
-    paintFoil(canvas, ctx);
+    if (!ctx) return undefined;
+    let size = "";
+    const paint = () => {
+      const { width, height } = canvas.getBoundingClientRect();
+      const next = `${Math.round(width)}x${Math.round(height)}:${window.devicePixelRatio || 1}`;
+      if (next === size) return; // mobile URL bars fire resize constantly; repaint only on a real change
+      size = next;
+      paintFoil(canvas, ctx);
+      last.current = null;
+    };
+    paint();
     // The button's CSS gradient covered the value until now; the canvas takes over.
     if (canvas.parentElement) canvas.parentElement.dataset.painted = "true";
+    // A new size (rotation, the scrollbar returning as the opening closes) would stretch the foil
+    // and offset the brush, so repaint it fresh. Any scratching so far starts over.
+    window.addEventListener("resize", paint);
+    return () => window.removeEventListener("resize", paint);
   }, [revealed]);
 
   function finish() {

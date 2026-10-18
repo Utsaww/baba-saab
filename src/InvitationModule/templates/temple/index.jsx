@@ -76,7 +76,8 @@ function Opening({ inv, lang, open }) {
           <span className={s.letter} data-part="letter">
             <span className={s.letterMono}>{mono}</span>
             <span className={s.letterRule} aria-hidden="true" />
-            <span className={s.letterDate}>{formatDots(inv.mainDate)}</span>
+            {/* No date here: the scratch cards reveal it. */}
+            <T v={UI.saveTheDate} lang={lang} className={s.letterLine} />
           </span>
           <span className={s.envLeft} aria-hidden="true" />
           <span className={s.envRight} aria-hidden="true" />
@@ -98,9 +99,16 @@ function Opening({ inv, lang, open }) {
 }
 
 // ---------- Hero (the cover) ----------
+// One person in the hero: portrait (when uploaded), name in script, parents line.
 function Person({ person, lang }) {
   return (
-    <span className={s.heroPerson}>
+    <span className={s.heroPerson} data-part="person">
+      {person.photoKey && (
+        <span className={s.portrait} data-part="portrait">
+          {/* Decorative inside the heading: the name follows straight after. */}
+          <Image src={mediaUrl(person.photoKey)} alt="" fill sizes="132px" />
+        </span>
+      )}
       <T v={person.name} lang={lang} className={s.heroName} />
       <T v={person.parentsLine} lang={lang} className={s.heroParents} />
     </span>
@@ -112,12 +120,13 @@ function Hero({ inv, lang }) {
   const withInvocation = shown.includes("invocation");
   const withParents = shown.includes("couple");
   const [first, second] = couplePair(inv);
-  const strip = (p) => (withParents ? p : { ...p, parentsLine: undefined });
+  // Hiding "the couple" in step 6 drops the portraits and parents lines; the names always show.
+  const strip = (p) => (withParents ? p : { ...p, parentsLine: undefined, photoKey: undefined });
   return (
     <header className={s.hero}>
       {inv.media.coverKey && (
         <div className={s.coverImage}>
-          <Image src={mediaUrl(inv.media.coverKey)} alt="" fill priority sizes="(max-width: 560px) 100vw, 520px" />
+          <Image src={mediaUrl(inv.media.coverKey)} alt="" fill sizes="(max-width: 560px) 100vw, 520px" />
         </div>
       )}
       <div className={s.heroFrame}>

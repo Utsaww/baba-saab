@@ -85,6 +85,8 @@ export const invitationSchema = z.object({
     })
     .default({}),
   mainDate: isoDate,
+  // Last day of a multi-day wedding. Optional; the editor and checklist check it is 1-7 days after mainDate.
+  mainDateEnd: isoDate.optional(),
   venue: z.object({
     name: localised,
     address: localised,

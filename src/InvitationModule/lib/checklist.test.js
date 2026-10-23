@@ -95,3 +95,17 @@ describe("publishChecklist", () => {
     expect(publishChecklist(draft).map((i) => i.message)).toEqual(["Add a name for event 1"]);
   });
 });
+
+describe("publishChecklist end date", () => {
+  it("accepts a valid end date and an absent one", () => {
+    expect(publishChecklist({ ...complete(), mainDateEnd: "2027-02-15" })).toEqual([]);
+    expect(publishChecklist(complete())).toEqual([]);
+  });
+  it("flags an end date that is not 1-7 days after the wedding date, linking to step 3", () => {
+    for (const mainDateEnd of ["2027-02-14", "2027-02-10", "2027-02-22"]) {
+      expect(publishChecklist({ ...complete(), mainDateEnd })).toEqual([
+        { id: "mainDateEnd", message: "Fix the end date: pick a date 1–7 days after the wedding date", step: 3 },
+      ]);
+    }
+  });
+});

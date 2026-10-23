@@ -75,7 +75,7 @@ export const UI = {
   },
   scrollCue: { en: "Scroll", hi: "आगे देखें" },
   month: { en: "Month", hi: "माह" },
-  day: { en: "Day", hi: "दिन" },
+  date: { en: "Date", hi: "दिनांक" },
   year: { en: "Year", hi: "वर्ष" },
   scratch: { en: "Scratch", hi: "खुरचें" },
   scratchCard: { en: "scratch, or press Enter to reveal", hi: "खुरचें, या देखने के लिए एंटर दबाएँ" },

@@ -312,12 +312,12 @@ describe("temple hero", () => {
 describe("temple scratch cards", () => {
   const cardValues = (el) => [...el.querySelectorAll('[data-part="value"]')].map((v) => v.textContent);
 
-  it("offers Month, Day and Year cards for the wedding date", () => {
+  it("offers Month, Date and Year cards for the wedding date", () => {
     const { container } = guest(build({ language: "en" }));
     const std = section(container, "saveTheDate");
     expect(within(std).getAllByRole("button", { name: /: scratch, or press Enter to reveal$/ }).map((b) => b.getAttribute("aria-label"))).toEqual([
       "Month: scratch, or press Enter to reveal",
-      "Day: scratch, or press Enter to reveal",
+      "Date: scratch, or press Enter to reveal",
       "Year: scratch, or press Enter to reveal",
     ]);
     expect(cardValues(std)).toEqual(["Nov", "27", "2027"]);
@@ -327,7 +327,7 @@ describe("temple scratch cards", () => {
     const { container } = guest(build({ language: "hi" }));
     const std = section(container, "saveTheDate");
     expect(cardValues(std)).toEqual(["नवंबर", "27", "2027"]);
-    for (const label of ["माह", "दिन", "वर्ष"]) expect(within(std).getByText(label)).toBeInTheDocument();
+    for (const label of ["माह", "दिनांक", "वर्ष"]) expect(within(std).getByText(label)).toBeInTheDocument();
   });
 
   it("locks every section after Save the Date until all three are revealed", () => {
@@ -365,7 +365,7 @@ describe("temple scratch cards", () => {
     const [month] = within(std).getAllByRole("button", { name: /scratch/ });
     month.focus();
     await user.keyboard("{Enter}");
-    expect(document.activeElement).toHaveAttribute("aria-label", "Day: scratch, or press Enter to reveal");
+    expect(document.activeElement).toHaveAttribute("aria-label", "Date: scratch, or press Enter to reveal");
     expect(isLocked(section(container, "venue"))).toBe(true);
     await user.keyboard(" ");
     expect(document.activeElement).toHaveAttribute("aria-label", "Year: scratch, or press Enter to reveal");
@@ -472,5 +472,43 @@ describe("temple layering and motion (stylesheet)", () => {
     expect(keyframes).not.toMatch(/filter/);
     expect(rule('.envelope[data-open="true"]')).toMatch(/\.seal::after\s*\{[^}]*animation:\s*none/);
     expect(rule("@media (prefers-reduced-motion: reduce)")).toMatch(/\.seal::after[^{]*\{[^}]*animation:\s*none/);
+  });
+});
+
+describe("temple multi-day dates", () => {
+  const cardValues = (el) => [...el.querySelectorAll('[data-part="value"]')].map((v) => v.textContent);
+  const range = { mainDate: "2026-12-11", mainDateEnd: "2026-12-12" };
+
+  it("shows 11–12 on the cards and the range sentence when the end date is valid", () => {
+    const { container } = guest(build({ language: "en", ...range }));
+    const std = section(container, "saveTheDate");
+    expect(cardValues(std)).toEqual(["Dec", "11–12", "2026"]);
+    fireEvent.click(within(std).getByRole("button", { name: "Reveal" }));
+    expect(std).toHaveTextContent("Friday 11 – Saturday 12 December 2026");
+  });
+
+  it("shows a plain day when the end date is absent or invalid", () => {
+    for (const mainDateEnd of [undefined, "2026-12-11", "2026-12-25"]) {
+      const { container, unmount } = guest(build({ language: "en", mainDate: "2026-12-11", mainDateEnd }));
+      const std = section(container, "saveTheDate");
+      expect(cardValues(std)).toEqual(["Dec", "11", "2026"]);
+      fireEvent.click(within(std).getByRole("button", { name: "Reveal" }));
+      expect(std).toHaveTextContent("Friday, 11 December 2026");
+      unmount();
+    }
+  });
+
+  it("reads in Hindi", () => {
+    const { container } = guest(build({ language: "hi", ...range }));
+    const std = section(container, "saveTheDate");
+    expect(cardValues(std)).toEqual(["दिसंबर", "11–12", "2026"]);
+    fireEvent.click(within(std).getByRole("button", { name: "दिखाएँ" }));
+    expect(std).toHaveTextContent("शुक्रवार 11 – शनिवार 12 दिसंबर 2026");
+  });
+
+  it("keeps the date out of the envelope letter", () => {
+    guest(build({ language: "en", ...range }));
+    const letter = document.querySelector('[data-part="letter"]');
+    expect(letter.textContent).not.toMatch(/11|Dec|2026/);
   });
 });

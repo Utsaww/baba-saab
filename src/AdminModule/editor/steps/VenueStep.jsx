@@ -14,6 +14,14 @@ export default function VenueStep({ content, update, errors, language }) {
           hint="Used for the countdown and the save-the-date."
           onChange={(v) => update(["mainDate"], v || undefined)}
         />
+        <TextInput
+          label="Ends on (for multi-day weddings)"
+          type="date"
+          value={content.mainDateEnd}
+          error={errors.mainDateEnd}
+          hint="Leave empty for a single-day wedding."
+          onChange={(v) => update(["mainDateEnd"], v || undefined)}
+        />
       </Group>
       <Group title="Venue">
         <LocalisedInput label="Venue name" value={content.venue?.name} language={language} onChange={(v) => update(["venue", "name"], v)} />

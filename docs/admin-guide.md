@@ -118,6 +118,7 @@ For a **Both** invitation, each field has an English box and a Hindi box.
 ## Editor step 3: Date, venue & travel
 
 - **Main wedding date:** drives the countdown and the save-the-date.
+- **Ends on (for multi-day weddings):** optional. Pick the last day if the wedding runs over more than one day (up to 7 days after the main date); leave it empty for a single-day wedding. In Temple Classic the date cards then read, for example, **11–12 Dec 2026**, and the full date reads “Friday 11 – Saturday 12 December 2026”. The countdown still counts down to the main date, and other designs ignore this field.
 - **Venue name and address.**
 - **Google Maps link:** open the venue in Google Maps, tap **Share**, copy the link and paste it. It must start with `https://`.
 - **Travel notes:** nearest airport and railway station, weather tips. Put one point per line.

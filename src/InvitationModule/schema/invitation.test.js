@@ -60,3 +60,13 @@ describe("rsvp.channel", () => {
     expect(() => parseInvitation({ ...minimalInvitation(), rsvp: { enabled: true, channel: "sms" } })).toThrow();
   });
 });
+
+describe("mainDateEnd", () => {
+  it("is optional, so existing invitations stay valid", () => {
+    expect(parseInvitation(minimalInvitation()).mainDateEnd).toBeUndefined();
+  });
+  it("accepts an ISO date and rejects a bad one", () => {
+    expect(parseInvitation({ ...minimalInvitation(), mainDateEnd: "2027-02-15" }).mainDateEnd).toBe("2027-02-15");
+    expect(() => parseInvitation({ ...minimalInvitation(), mainDateEnd: "2027-02-31" })).toThrow();
+  });
+});

@@ -14,7 +14,7 @@ import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
 import { plainText } from "../../lib/i18n";
 import { invocationText } from "../../lib/invocations";
-import { dateParts, formatDate, formatDots } from "../../lib/datetime";
+import { dateParts, dateRangeParts, formatDateRange, formatDots } from "../../lib/datetime";
 import { couplePair, coupleTitle, monogram } from "../../lib/names";
 import { mediaUrl } from "../../lib/media";
 import { visibleSections } from "../../lib/sections";
@@ -169,8 +169,10 @@ function TempleSection({ id, title, eyebrow, lang, children }) {
 
 function SaveTheDate({ inv, lang }) {
   const gate = useContext(GateContext);
-  const parts = dateParts(inv.mainDate, dateLang(lang));
-  const longDate = formatDate(inv.mainDate, dateLang(lang));
+  // An absent or invalid end date is ignored by both helpers, leaving the single day.
+  const range = dateRangeParts(inv.mainDate, inv.mainDateEnd, dateLang(lang));
+  const parts = range && { month: range.month, day: range.date, year: range.year };
+  const longDate = formatDateRange(inv.mainDate, inv.mainDateEnd, dateLang(lang));
   return (
     <TempleSection id="saveTheDate" title={UI.saveTheDate} lang={lang}>
       {parts && <ScratchDate parts={parts} lang={lang} revealed={gate.revealed} onReveal={gate.reveal} cardRefs={gate.cardRefs} />}
@@ -188,7 +190,7 @@ function SaveTheDate({ inv, lang }) {
             {longDate}
             {lang === "both" && (
               <span className={s.longDateHi} lang="hi">
-                {formatDate(inv.mainDate, "hi")}
+                {formatDateRange(inv.mainDate, inv.mainDateEnd, "hi")}
               </span>
             )}
           </p>

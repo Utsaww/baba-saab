@@ -116,3 +116,23 @@ describe("cleanDraft keeps the RSVP channel", () => {
     expect(bad.errors["couple.order"]).toBeDefined();
   });
 });
+
+describe("cleanDraft end date", () => {
+  it("keeps a valid end date without an error", () => {
+    const { draft, errors } = cleanDraft({ ...base(), mainDate: "2026-12-11", mainDateEnd: "2026-12-12" });
+    expect(draft.mainDateEnd).toBe("2026-12-12");
+    expect(errors.mainDateEnd).toBeUndefined();
+  });
+  it("keeps an out-of-range end date but explains it", () => {
+    for (const mainDateEnd of ["2026-12-11", "2026-12-10", "2026-12-19"]) {
+      const { draft, errors } = cleanDraft({ ...base(), mainDate: "2026-12-11", mainDateEnd });
+      expect(draft.mainDateEnd).toBe(mainDateEnd);
+      expect(errors.mainDateEnd).toBe("Pick a date 1–7 days after the wedding date");
+    }
+  });
+  it("is optional", () => {
+    const { draft, errors } = cleanDraft({ ...base(), mainDate: "2026-12-11" });
+    expect(draft.mainDateEnd).toBeUndefined();
+    expect(errors.mainDateEnd).toBeUndefined();
+  });
+});

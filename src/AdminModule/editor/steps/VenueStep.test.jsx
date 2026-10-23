@@ -14,6 +14,21 @@ describe("VenueStep", () => {
     expect(latest().venue.name).toEqual({ en: "Riviera Resort" });
   });
 
+  it("sets and clears the end date for multi-day weddings", () => {
+    const { latest } = renderStep(VenueStep, { ...base(), mainDate: "2027-02-14" });
+    const input = screen.getByLabelText("Ends on (for multi-day weddings)");
+    expect(input).toHaveAccessibleDescription("Leave empty for a single-day wedding.");
+    fireEvent.change(input, { target: { value: "2027-02-15" } });
+    expect(latest().mainDateEnd).toBe("2027-02-15");
+    fireEvent.change(screen.getByLabelText("Ends on (for multi-day weddings)"), { target: { value: "" } });
+    expect(latest().mainDateEnd).toBeUndefined();
+  });
+
+  it("shows the end date error", () => {
+    renderStep(VenueStep, { ...base(), mainDate: "2027-02-14", mainDateEnd: "2027-02-14" });
+    expect(screen.getByLabelText("Ends on (for multi-day weddings)")).toHaveAttribute("aria-invalid", "true");
+  });
+
   it("explains a Maps link that isn't a full link, without losing the rest", () => {
     const { latest } = renderStep(VenueStep, { ...base(), venue: { name: { en: "Riviera" } } });
     fireEvent.change(screen.getByLabelText("Google Maps link"), { target: { value: "maps.google.com/x" } });

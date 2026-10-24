@@ -9,11 +9,12 @@ This guide grows as new parts of the invitation system go live. Everything descr
 | **Dashboard** | Your starting page after signing in. |
 | **Invitations** | Create invitations for customers, fill in their details and continue saved drafts. |
 | **Templates** | Browse the 5 invitation designs with sample details, try their colour palettes and languages, and show them to customers. |
+| **RSVPs** | Each invitation's guest replies: totals, a list you can edit, a CSV download and a private link for the family. Open it from the **RSVPs** button on an invitation's row or at the top of the editor. |
 | **Music** | The shared Music Library: songs any invitation can use as background music. |
 | **Staff** | *Owner only.* Invite people to the admin area and remove them. |
 | **Help** | This guide. |
 
-Guests can RSVP on WhatsApp: their reply opens WhatsApp to the family's number. Turn it on in **Editor step 7: Settings**.
+Guests can RSVP on WhatsApp: their reply is saved, then opens WhatsApp to the family's number. You and the family can see every reply on the **RSVPs** page. Turn it on in **Editor step 7: Settings**.
 
 ## Signing in
 
@@ -36,7 +37,7 @@ The temporary password works for 7 days. If it has expired, ask the owner to sen
 
 ## The dashboard
 
-After signing in you land on the **Dashboard**. It links to everything you can use. Your invitations and upcoming events will appear here as those features arrive. RSVPs go to the family's WhatsApp, not to Baba Saab, so they don't appear here.
+After signing in you land on the **Dashboard**. It links to everything you can use. Your invitations and upcoming events will appear here as those features arrive. Guest replies are on each invitation's **RSVPs** page, not on the dashboard.
 
 The yellow **New here?** banner links to this guide. Click **Dismiss** to hide it on this computer.
 
@@ -148,7 +149,7 @@ Choose which parts of the invitation guests see, and in what order. Untick **Sho
 ## Editor step 7: Settings
 
 - **Take offline on** appears here once the invitation is live. It is the date the invitation goes offline by itself. See **After the wedding** below.
-- **Guests reply on WhatsApp** adds an RSVP form to the invitation. When a guest sends it, WhatsApp opens with their reply already typed, addressed to the family contact number from step 2. Nothing is stored by Baba Saab. When it's on, you can also set:
+- **Guests reply on WhatsApp** adds an RSVP form to the invitation. When a guest sends it, WhatsApp opens with their reply already typed, addressed to the family contact number from step 2. The reply is also saved, so you and the family can see it on the **RSVPs** page (see **RSVPs page and family link** below). When it's on, you can also set:
   - **Last day to reply** (optional). After this day the form closes and shows the family's phone number instead.
   - **Ask how many people are coming** (on unless you untick it).
   - **Ask about meal preference** (vegetarian, non-vegetarian or Jain).
@@ -210,9 +211,47 @@ When **Guests reply on WhatsApp** is on in step 7, the invitation has an RSVP fo
 
 - **Sending:** the guest taps **Send RSVP on WhatsApp**. WhatsApp opens with their reply typed out, addressed to the family's number. The guest just presses send in WhatsApp. Replies arrive in the family's WhatsApp, in the invitation's language (English for a **Both** invitation).
 - **If WhatsApp doesn't open** (for example on a computer without WhatsApp), the reply is shown with **Copy message** and **Open WhatsApp** buttons, and the family's number to send it to.
-- **Nothing is stored by Baba Saab.** The guest's phone remembers their last reply, so if they come back the form is already filled in and they can change it and send again.
-- **After the last day to reply**, the form is replaced by a note with the family's phone number for changes.
+- **The reply is saved first**, then WhatsApp opens, so it counts even if the guest never presses send in WhatsApp. The guest's phone also remembers their last reply, so if they come back the form is already filled in and they can change it and send again.
+- **Replying again:** the same phone number and the same name updates that guest's earlier reply instead of adding a new one.
+- **After the last day to reply**, the form is replaced by a note with the family's phone number for changes. You can still add or change replies on the **RSVPs** page after that day.
 - **Previews:** the form works the same in the customer preview and the editor, with a note that replies go to the family's WhatsApp. Test it with your own phone. If the family's number is missing, previews say so, and the live invitation hides the form.
+
+### RSVPs page and family link
+
+Click **RSVPs** next to an invitation in the **Invitations** list, or at the top of the editor, to see its replies. In the list, a blue **N new** badge on the button counts replies that came in since you last opened the page. Opening the page clears it.
+
+**What you see**
+
+- **Totals** at the top: **Coming**, **Not coming**, **Maybe** and **People coming**, plus the people coming to each event.
+- **Search** by name or phone, and filter by **Event** or by **Attending**. Each reply shows the guest, phone, how many people, which events, meal, message, when they replied and whether the **Source** was **Guest** or **Staff**. On a phone each reply is a card.
+- A reply with no events ticked means every event.
+
+**The red "!"**
+
+If the same phone number replies with a different name, it becomes a separate guest, marked with a red **!** (same family). Everyone who shares that phone gets the mark, and hovering over it names the others. This is normal for a family sending replies from one phone. If it was a typo, edit or remove one of them.
+
+**Adding, editing and removing replies**
+
+- Click **Add reply** to enter a reply taken by phone or in person. Name is required. Phone is optional, because a caller may not give one. Then click **Save reply**.
+- Click **Edit** on a row to change it, or **Remove** and confirm to delete it.
+- Staff can do this at any time, even after the **Last day to reply**.
+
+**Download CSV**
+
+Click **Download CSV** for a file of every reply. It opens in Excel.
+
+**The family link**
+
+At the bottom of the page, **Family link** gives the family a private, read-only page with the same totals, search, red **!** marks and CSV download, but no way to edit.
+
+- It needs a saved link name first (editor step 8). Until then the page says so.
+- Use **Copy** or **Send on WhatsApp**.
+- **The family link shows guests' phone numbers, so share it only with the family.** Anyone who has the link can see them.
+- If the link went to the wrong person, click **New family link** and confirm. The old link stops working straight away and you get a fresh one to send.
+
+**When they are erased**
+
+RSVPs are erased together with their invitation (see **Permanent erase** below).
 
 ## After the wedding
 
@@ -244,7 +283,7 @@ A deleted invitation is **read-only**. You can look at it but not change it. Its
 
 Offline and deleted invitations are erased for good **30 days** after they went offline or were deleted. The daily job (around 3 am India time) does this. Erasing can't be undone.
 
-**What is erased:** the invitation, its photos, its film link, music uploaded for this invitation and its link name, which can then be used again.
+**What is erased:** the invitation, its RSVPs, its photos, its film link, music uploaded for this invitation and its link name, which can then be used again.
 
 **What is kept:** songs in the Music Library, even if the invitation used them.
 

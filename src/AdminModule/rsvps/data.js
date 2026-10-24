@@ -21,11 +21,12 @@ export async function listRsvps(invitationId) {
 }
 
 export const KEY_TAKEN = "Another reply already uses this name and phone — edit that one instead.";
+export const INVITATION_GONE = "This invitation no longer exists.";
 
-/** Thrown when an edit would land on another guest's row; its message is safe to show staff. */
+/** A refused save whose message is safe to show staff: an edit landing on another guest's row, or a gone invitation. */
 export class RsvpConflict extends Error {
-  constructor() {
-    super(KEY_TAKEN);
+  constructor(message = KEY_TAKEN) {
+    super(message);
     this.name = "RsvpConflict";
   }
 }
@@ -36,7 +37,11 @@ export class RsvpConflict extends Error {
  * created under the new key and the old one is deleted; landing on another row is refused.
  */
 export async function saveRsvp(invitationId, row, { previousKey } = {}) {
-  const Rsvp = cookieDataClient().models.Rsvp;
+  const { Rsvp, Invitation } = cookieDataClient().models;
+  // A staff page left open while the invitation was erased must not create orphan rows of guests' details.
+  const inv = await Invitation.get({ id: invitationId }, { selectionSet: ["id"] });
+  failIfErrors(inv.errors);
+  if (!inv.data) throw new RsvpConflict(INVITATION_GONE);
   const { phone, name, attending, guestCount, eventIds, meal, message } = row;
   const derived = rsvpKeyFor({ phone, name });
   const hasPhone = Boolean(derived.phoneKey);

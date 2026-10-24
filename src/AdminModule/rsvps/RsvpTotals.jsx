@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo } from "react";
 import { textFor } from "@/InvitationModule/lib/i18n";
 import { summarize } from "@/InvitationModule/lib/rsvpList";

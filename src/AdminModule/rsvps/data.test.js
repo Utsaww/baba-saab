@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const rsvp = vi.hoisted(() => ({ list: vi.fn(), create: vi.fn(), update: vi.fn(), get: vi.fn(), delete: vi.fn() }));
 const mutations = vi.hoisted(() => ({ regenerateFamilyToken: vi.fn(), markRsvpsSeen: vi.fn() }));
-vi.mock("@/AdminModule/dataClient", () => ({ cookieDataClient: () => ({ models: { Rsvp: rsvp }, mutations }) }));
+const invitation = vi.hoisted(() => ({ get: vi.fn() }));
+vi.mock("@/AdminModule/dataClient", () => ({ cookieDataClient: () => ({ models: { Rsvp: rsvp, Invitation: invitation }, mutations }) }));
 
-import { listRsvps, markSeenRecord, regenerateFamilyTokenRecord, removeRsvp, saveRsvp } from "./data";
+import { INVITATION_GONE, RsvpConflict, listRsvps, markSeenRecord, regenerateFamilyTokenRecord, removeRsvp, saveRsvp } from "./data";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -12,6 +13,7 @@ beforeEach(() => {
   rsvp.create.mockResolvedValue({ data: {} });
   rsvp.update.mockResolvedValue({ data: {} });
   rsvp.delete.mockResolvedValue({ data: {} });
+  invitation.get.mockResolvedValue({ data: { id: "inv" } });
 });
 
 describe("listRsvps", () => {
@@ -29,6 +31,20 @@ describe("listRsvps", () => {
 
 describe("saveRsvp", () => {
   const base = { name: "Asha Rao", attending: "yes", guestCount: 2, eventIds: ["e1"] };
+  it("refuses when the invitation no longer exists, writing nothing", async () => {
+    invitation.get.mockResolvedValue({ data: null });
+    const err = await saveRsvp("inv", { ...base, phone: "+91 98765 43210" }).catch((e) => e);
+    expect(err).toBeInstanceOf(RsvpConflict);
+    expect(err.message).toBe("This invitation no longer exists.");
+    expect(INVITATION_GONE).toBe("This invitation no longer exists.");
+    expect(invitation.get).toHaveBeenCalledWith({ id: "inv" }, { selectionSet: ["id"] });
+    for (const fn of [rsvp.create, rsvp.update, rsvp.delete]) expect(fn).not.toHaveBeenCalled();
+  });
+  it("passes on errors from the invitation check", async () => {
+    invitation.get.mockResolvedValue({ data: null, errors: [{ message: "denied" }] });
+    await expect(saveRsvp("inv", base)).rejects.toThrow("denied");
+    expect(rsvp.create).not.toHaveBeenCalled();
+  });
   it("keys a row with a phone by rsvpKeyFor and creates it as staff", async () => {
     await saveRsvp("inv", { ...base, phone: "+91 98765 43210" });
     const arg = rsvp.create.mock.calls[0][0];

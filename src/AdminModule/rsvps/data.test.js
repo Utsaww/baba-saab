@@ -77,7 +77,7 @@ describe("saveRsvp", () => {
   it("refuses an edit that lands on another guest's row, changing nothing", async () => {
     rsvp.get.mockResolvedValue({ data: { rsvpKey: "919876543210#asha verma" } });
     await expect(saveRsvp("inv", { ...base, name: "Asha Verma", phone: "+91 98765 43210" }, { previousKey: "919876543210#asha rao" }))
-      .rejects.toMatchObject({ name: "RsvpConflict", message: "Another reply already uses this name and phone — edit that one instead." });
+      .rejects.toMatchObject({ name: "RsvpConflict", message: "Another reply already uses this name and phone â€” edit that one instead." });
     expect(rsvp.create).not.toHaveBeenCalled();
     expect(rsvp.update).not.toHaveBeenCalled();
     expect(rsvp.delete).not.toHaveBeenCalled();

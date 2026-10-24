@@ -205,6 +205,23 @@ function Rsvp({ inv, lang, s, ctx }) {
     const url = whatsappRsvpUrl(inv, reply, lang);
     return url ? { url, message: rsvpMessage(inv, reply, lang) } : null;
   };
+  // Live replies are saved for the family's RSVP list before WhatsApp opens; previews save nothing.
+  const save =
+    ctx.mode === "live" && ctx.slug
+      ? async (reply) => {
+          try {
+            const res = await fetch("/api/rsvp", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ slug: ctx.slug, reply }),
+            });
+            const body = await res.json();
+            return body && typeof body === "object" ? body : { ok: false, reason: "error" };
+          } catch {
+            return { ok: false, reason: "error" };
+          }
+        }
+      : undefined;
   // Decided after mount: cached server HTML must not depend on the clock, or hydration fails after the deadline.
   const [closed, setClosed] = useState(false);
   useEffect(() => setClosed(isRsvpClosed(inv.rsvp)), [inv.rsvp]);
@@ -225,6 +242,7 @@ function Rsvp({ inv, lang, s, ctx }) {
         // One remembered reply per live invitation; previews never touch the device.
         storageKey={!preview && ctx.slug ? `rsvp:${ctx.slug}` : undefined}
         compose={compose}
+        save={save}
         s={s}
       />
     </Section>

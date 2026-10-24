@@ -20,7 +20,7 @@ export async function listRsvps(invitationId) {
   return rows;
 }
 
-export const KEY_TAKEN = "Another reply already uses this name and phone — edit that one instead.";
+export const KEY_TAKEN = "Another reply already uses this name and phone â€” edit that one instead.";
 
 /** Thrown when an edit would land on another guest's row; its message is safe to show staff. */
 export class RsvpConflict extends Error {
@@ -32,7 +32,7 @@ export class RsvpConflict extends Error {
 
 /**
  * Save one reply entered or edited by staff (source becomes "staff"). The key always follows the phone and name:
- * phone -> rsvpKeyFor, no phone -> an existing staff#… key or a fresh one. When an edit changes the key, the row is
+ * phone -> rsvpKeyFor, no phone -> an existing staff#â€¦ key or a fresh one. When an edit changes the key, the row is
  * created under the new key and the old one is deleted; landing on another row is refused.
  */
 export async function saveRsvp(invitationId, row, { previousKey } = {}) {

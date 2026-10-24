@@ -53,9 +53,9 @@ describe("success shapes", () => {
     await saveRsvpAction("inv", { name: "A" }, { previousKey: "old" });
     expect(data.saveRsvp).toHaveBeenCalledWith("inv", { name: "A" }, { previousKey: "old" });
     const { RsvpConflict } = await import("./data");
-    data.saveRsvp.mockRejectedValue(new RsvpConflict("Another reply already uses this name and phone — edit that one instead."));
+    data.saveRsvp.mockRejectedValue(new RsvpConflict("Another reply already uses this name and phone â€” edit that one instead."));
     cache.revalidatePath.mockClear();
-    expect(await saveRsvpAction("inv", { name: "A" })).toEqual({ ok: false, message: "Another reply already uses this name and phone — edit that one instead." });
+    expect(await saveRsvpAction("inv", { name: "A" })).toEqual({ ok: false, message: "Another reply already uses this name and phone â€” edit that one instead." });
     expect(cache.revalidatePath).not.toHaveBeenCalled();
   });
   it("a revalidate failure after a successful save does not report failure", async () => {

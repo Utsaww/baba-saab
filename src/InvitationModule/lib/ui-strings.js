@@ -38,6 +38,14 @@ export const UI = {
     en: "If WhatsApp didn't open, copy the message and send it to",
     hi: "अगर व्हाट्सऐप नहीं खुला, तो संदेश कॉपी करके इस नंबर पर भेजें:",
   },
+  rsvpSaved: {
+    en: "Your reply is saved. Send it on WhatsApp to let the family know personally.",
+    hi: "आपका उत्तर सहेज लिया गया है। परिवार को व्यक्तिगत रूप से बताने के लिए इसे व्हाट्सऐप पर भी भेजें।",
+  },
+  rsvpSaveFailed: {
+    en: "We couldn't save your reply — your WhatsApp message still reaches the family.",
+    hi: "हम आपका उत्तर सहेज नहीं सके — आपका व्हाट्सऐप संदेश फिर भी परिवार तक पहुँचेगा।",
+  },
   rsvpMessageBox: { en: "Your RSVP message", hi: "आपका उत्तर संदेश" },
   copyMessage: { en: "Copy message", hi: "संदेश कॉपी करें" },
   copied: { en: "Copied", hi: "कॉपी हो गया" },

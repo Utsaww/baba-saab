@@ -59,6 +59,8 @@ function RowError({ text }) {
  * CSS shows one; the hidden one is `display: none`, so assistive tech only meets the visible copy.
  */
 export default function RsvpTable({ rows, events, language, marks, pending = {}, errors = {}, onEdit, onRemove }) {
+  // Without handlers the table is read-only (the family page): no Actions column, no buttons.
+  const editable = Boolean(onEdit && onRemove);
   const lang = language === "hi" ? "hi" : "en";
   const eventNames = (ids) => {
     if (!ids?.length) return "All events";
@@ -92,10 +94,12 @@ export default function RsvpTable({ rows, events, language, marks, pending = {},
               {[r.phone, MEAL[r.meal], `${sourceLabel(r)} · ${when(r.updatedAt)}`].filter(Boolean).join(" · ")}
             </p>
             {r.message ? <p className="mt-1 whitespace-pre-line break-words text-stone-700">{r.message}</p> : null}
-            <div className="mt-3">
-              <Actions row={r} pending={pending[r.rsvpKey]} onEdit={onEdit} onRemove={onRemove} />
-              <RowError text={errors[r.rsvpKey]} />
-            </div>
+            {editable ? (
+              <div className="mt-3">
+                <Actions row={r} pending={pending[r.rsvpKey]} onEdit={onEdit} onRemove={onRemove} />
+                <RowError text={errors[r.rsvpKey]} />
+              </div>
+            ) : null}
           </li>
         ))}
       </ul>
@@ -109,9 +113,11 @@ export default function RsvpTable({ rows, events, language, marks, pending = {},
                   {h}
                 </th>
               ))}
-              <th scope="col" className="px-3 py-2">
-                <span className="sr-only">Actions</span>
-              </th>
+              {editable ? (
+                <th scope="col" className="px-3 py-2">
+                  <span className="sr-only">Actions</span>
+                </th>
+              ) : null}
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-200">
@@ -133,10 +139,12 @@ export default function RsvpTable({ rows, events, language, marks, pending = {},
                 <td className="max-w-xs whitespace-pre-line break-words px-3 py-2">{r.message ?? ""}</td>
                 <td className="whitespace-nowrap px-3 py-2 text-stone-600">{when(r.updatedAt)}</td>
                 <td className="px-3 py-2 text-stone-600">{sourceLabel(r)}</td>
-                <td className="px-3 py-2">
-                  <Actions row={r} pending={pending[r.rsvpKey]} onEdit={onEdit} onRemove={onRemove} />
-                  <RowError text={errors[r.rsvpKey]} />
-                </td>
+                {editable ? (
+                  <td className="px-3 py-2">
+                    <Actions row={r} pending={pending[r.rsvpKey]} onEdit={onEdit} onRemove={onRemove} />
+                    <RowError text={errors[r.rsvpKey]} />
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>

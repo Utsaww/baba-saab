@@ -4,36 +4,16 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { OFFLINE_MESSAGE } from "@/AdminModule/messages";
 import { textFor } from "@/InvitationModule/lib/i18n";
-import { familyMarks, filterRows, rsvpKeyFor, summarize, toCsv } from "@/InvitationModule/lib/rsvpList";
+import { familyMarks, filterRows, rsvpKeyFor, toCsv } from "@/InvitationModule/lib/rsvpList";
 import FamilyLinkPanel from "./FamilyLinkPanel";
 import RsvpForm, { ATTENDING_OPTIONS } from "./RsvpForm";
 import RsvpTable from "./RsvpTable";
+import RsvpTotals from "./RsvpTotals";
+import { csvFileName, downloadCsv } from "./downloadCsv";
+
 
 const button = "inline-flex min-h-[44px] items-center rounded-full px-5 text-sm disabled:opacity-40";
 const control = "min-h-[44px] rounded-md border border-stone-300 bg-white px-3 text-sm";
-
-export const csvFileName = ({ slug, id }) => `${slug || id}-rsvps.csv`;
-
-/** Saves the CSV text as a file. `toCsv` already starts with the BOM, so none is added here. */
-function downloadCsv(text, fileName) {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function Stat({ label, value }) {
-  return (
-    <div className="rounded-xl border border-stone-200 bg-white px-4 py-3">
-      <dt className="text-sm text-stone-600">{label}</dt>
-      <dd className="text-2xl font-semibold">{value}</dd>
-    </div>
-  );
-}
 
 export default function RsvpPage({ invitation, initialRows, actions }) {
   const { id, slug, title, language, events = [] } = invitation;
@@ -70,7 +50,6 @@ export default function RsvpPage({ invitation, initialRows, actions }) {
       .catch(() => {});
   }, [actions, id]);
 
-  const totals = useMemo(() => summarize(rows, events), [rows, events]);
   const marks = useMemo(() => familyMarks(rows), [rows]);
   const shown = useMemo(() => filterRows(rows, { q, eventId, attending }), [rows, q, eventId, attending]);
   const eventName = (e) => textFor(e.name, lang) || "Untitled event";
@@ -166,27 +145,7 @@ export default function RsvpPage({ invitation, initialRows, actions }) {
         </p>
       ) : (
         <>
-          <section aria-label="Totals" className="space-y-3">
-            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat label="Coming" value={totals.coming} />
-              <Stat label="Not coming" value={totals.notComing} />
-              <Stat label="Maybe" value={totals.maybe} />
-              <Stat label="People coming" value={totals.people} />
-            </dl>
-            {events.length ? (
-              <div>
-                <h2 className="text-sm font-medium text-stone-700">People coming per event</h2>
-                <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-                  {events.map((e) => (
-                    <div key={e.id} className="flex gap-2">
-                      <dt className="text-stone-600">{eventName(e)}</dt>
-                      <dd className="font-semibold">{totals.perEvent[e.id] ?? 0}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            ) : null}
-          </section>
+          <RsvpTotals rows={rows} events={events} lang={lang} />
 
           <div className="flex flex-wrap gap-3">
             <button ref={addRef} type="button" onClick={(e) => openForm(null, e.currentTarget)} className={`${button} bg-stone-900 text-white`}>

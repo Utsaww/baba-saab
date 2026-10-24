@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { publish, PublishError, regenerateToken, setSlug, updateLive } from "./publish";
+import { markRsvpsSeen, publish, PublishError, regenerateFamilyToken, regenerateToken, setSlug, updateLive } from "./publish";
 
 type Event = { fieldName: string; arguments: Record<string, any>; identity: { groups?: string[] | null } | null };
 
@@ -22,6 +22,10 @@ export const handler = async (event: Event) => {
         return await updateLive(db, tables, { id: a.id, expectedVersion: a.expectedVersion }, now);
       case "regeneratePreviewToken":
         return await regenerateToken(db, tables, { id: a.id });
+      case "regenerateFamilyToken":
+        return await regenerateFamilyToken(db, tables, { id: a.id });
+      case "markRsvpsSeen":
+        return await markRsvpsSeen(db, tables, { id: a.id });
       default:
         throw new PublishError("Unknown", `Unknown operation ${event.fieldName}.`);
     }

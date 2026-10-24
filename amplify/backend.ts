@@ -5,6 +5,7 @@ import { data } from "./data/resource";
 import { invitationLifecycle } from "./functions/invitation-lifecycle/resource";
 import { invitationPublic } from "./functions/invitation-public/resource";
 import { invitationPublish } from "./functions/invitation-publish/resource";
+import { rsvpGuest } from "./functions/rsvp-guest/resource";
 import { staffAdmin } from "./functions/staff-admin/resource";
 import { storage } from "./storage/resource";
 
@@ -16,6 +17,7 @@ const backend = defineBackend({
   invitationPublish,
   invitationPublic,
   invitationLifecycle,
+  rsvpGuest,
 });
 
 // Staff accounts are created only by the owner (admin:create, /admin/staff); nobody can sign themselves up.
@@ -79,3 +81,34 @@ bucket.grantDelete(lifecycleFn, "invitations/*");
 backend.invitationLifecycle.addEnvironment("INVITATION_MEDIA_BUCKET", bucket.bucketName);
 backend.invitationLifecycle.addEnvironment("INVITATION_TABLE", tables["Invitation"].tableName);
 backend.invitationLifecycle.addEnvironment("INVITATION_SLUG_TABLE", tables["InvitationSlug"].tableName);
+// Erasing an invitation erases its RSVPs too (before the record).
+tables["Rsvp"].grantReadWriteData(lifecycleFn);
+backend.invitationLifecycle.addEnvironment("RSVP_TABLE", tables["Rsvp"].tableName);
+
+// rsvp-guest serves guests: it reads invitations and link names but can't change them, and writes only replies
+// and rate-limit counters.
+const rsvpGuestFn = backend.rsvpGuest.resources.lambda;
+tables["Invitation"].grantReadData(rsvpGuestFn);
+tables["InvitationSlug"].grantReadData(rsvpGuestFn);
+tables["Rsvp"].grantReadWriteData(rsvpGuestFn);
+tables["RsvpLimit"].grantReadWriteData(rsvpGuestFn);
+// The one write it needs on Invitation: bumping the "N new replies" count, and nothing else on that table.
+rsvpGuestFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "BumpRsvpNewCountOnly",
+    effect: Effect.ALLOW,
+    actions: ["dynamodb:UpdateItem"],
+    resources: [tables["Invitation"].tableArn],
+    conditions: { "ForAllValues:StringEquals": { "dynamodb:Attributes": ["id", "rsvpNewCount"] } },
+  }),
+);
+backend.rsvpGuest.addEnvironment("INVITATION_TABLE", tables["Invitation"].tableName);
+backend.rsvpGuest.addEnvironment("INVITATION_SLUG_TABLE", tables["InvitationSlug"].tableName);
+backend.rsvpGuest.addEnvironment("RSVP_TABLE", tables["Rsvp"].tableName);
+backend.rsvpGuest.addEnvironment("RSVP_LIMIT_TABLE", tables["RsvpLimit"].tableName);
+
+// Rate-limit counters delete themselves once their hour is over (DynamoDB TTL on expiresAt, epoch seconds).
+backend.data.resources.cfnResources.amplifyDynamoDbTables["RsvpLimit"].timeToLiveAttribute = {
+  attributeName: "expiresAt",
+  enabled: true,
+};

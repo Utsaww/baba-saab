@@ -6,7 +6,7 @@ import { eraseInvitation } from "./erase";
 import { runLifecycle } from "./run";
 
 const NOW = new Date("2027-02-21T21:30:00.000Z"); // 03:00 IST on 22 Feb
-const cfg = { tables: { invitation: "Inv", slug: "Slug" }, bucket: "media-bucket" };
+const cfg = { tables: { invitation: "Inv", slug: "Slug", rsvp: "Rsvp" }, bucket: "media-bucket" };
 const condFail = () => Object.assign(new Error("cond"), { name: "ConditionalCheckFailedException" });
 
 const due = { id: "inv-due-0001", status: "published", version: 3, slug: "due", offlineOn: "2027-02-22" };

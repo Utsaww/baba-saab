@@ -165,3 +165,33 @@ export async function regenerateToken(db: Db, tables: Tables, { id }: { id: stri
   }
   return { previewToken };
 }
+
+// The secret in the family's private RSVP link. A new one makes the old link stop working at once.
+export async function regenerateFamilyToken(db: Db, tables: Tables, { id }: { id: string }) {
+  const familyToken = randomBytes(16).toString("base64url");
+  await updateExisting(db, tables, id, "SET familyToken = :t", { ":t": familyToken });
+  return { familyToken };
+}
+
+// Staff opened the RSVP page: nothing is new any more (shared across staff).
+export async function markRsvpsSeen(db: Db, tables: Tables, { id }: { id: string }) {
+  await updateExisting(db, tables, id, "SET rsvpNewCount = :zero", { ":zero": 0 });
+  return { ok: true };
+}
+
+async function updateExisting(db: Db, tables: Tables, id: string, UpdateExpression: string, values: Record<string, unknown>) {
+  try {
+    await db.send(
+      new UpdateCommand({
+        TableName: tables.invitation,
+        Key: { id },
+        UpdateExpression,
+        ConditionExpression: "attribute_exists(id)",
+        ExpressionAttributeValues: values,
+      }),
+    );
+  } catch (err) {
+    if (isConditionFailure(err)) throw new PublishError("NotFound", "That invitation no longer exists.");
+    throw err;
+  }
+}

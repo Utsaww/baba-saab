@@ -16,6 +16,7 @@ import { formatDate, formatDots, formatTime } from "../../lib/datetime";
 import { countdownTarget } from "../../lib/countdown";
 import { mediaUrl } from "../../lib/media";
 import { isRsvpClosed, isWhatsappNumber, rsvpMessage, whatsappRsvpUrl } from "../../lib/rsvp";
+import { postRsvp } from "../../lib/rsvpClient";
 import { couplePair, coupleTitle } from "../../lib/names";
 
 const dateLang = (lang) => (lang === "hi" ? "hi" : "en");
@@ -208,19 +209,7 @@ function Rsvp({ inv, lang, s, ctx }) {
   // Live replies are saved for the family's RSVP list before WhatsApp opens; previews save nothing.
   const save =
     ctx.mode === "live" && ctx.slug
-      ? async (reply) => {
-          try {
-            const res = await fetch("/api/rsvp", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ slug: ctx.slug, reply }),
-            });
-            const body = await res.json();
-            return body && typeof body === "object" ? body : { ok: false, reason: "error" };
-          } catch {
-            return { ok: false, reason: "error" };
-          }
-        }
+      ? (reply, opts) => postRsvp(ctx.slug, reply, opts)
       : undefined;
   // Decided after mount: cached server HTML must not depend on the clock, or hydration fails after the deadline.
   const [closed, setClosed] = useState(false);

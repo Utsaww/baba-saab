@@ -36,11 +36,18 @@ function saveReply(key, values) {
 }
 
 // One try, plus one more after a server or network error. Rate limits and closed replies won't change on a retry.
+// Each attempt gets 8s and the whole thing about 12s, so a slow connection never holds the guest on a blank tab for long.
+const ATTEMPT_MS = 8000;
+const BUDGET_MS = 12000;
+const MIN_RETRY_MS = 1000;
 async function attemptSave(save, reply) {
   let result = { ok: false, reason: "error" };
+  const started = Date.now();
   for (let attempt = 0; attempt < 2; attempt++) {
+    const left = BUDGET_MS - (Date.now() - started);
+    if (attempt > 0 && left < MIN_RETRY_MS) break;
     try {
-      result = (await save(reply)) ?? result;
+      result = (await save(reply, { timeoutMs: Math.min(ATTEMPT_MS, left) })) ?? result;
     } catch {
       result = { ok: false, reason: "error" };
     }
@@ -76,6 +83,8 @@ export default function RsvpForm({
   const [saving, setSaving] = useState(false);
   const [closedNow, setClosedNow] = useState(false); // the server says replies have closed
   const messageBox = useRef(null);
+  const busy = useRef(false); // true from the tap until the save settles
+  const closedNotice = useRef(null);
 
   // Read after mount so the server HTML never depends on this device.
   useEffect(() => {
@@ -89,9 +98,14 @@ export default function RsvpForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
+  // The notice replaces the form, so focus would otherwise fall to the page.
+  useEffect(() => {
+    if (closedNow) closedNotice.current?.focus();
+  }, [closedNow]);
+
   if (closed || closedNow) {
     return (
-      <p className={s.rsvpClosed} role="status">
+      <p className={s.rsvpClosed} role="status" ref={closedNotice} tabIndex={-1}>
         <T v={UI.rsvpClosed} lang={lang} /> {closedOnText}.{" "}
         {contactPhone && (
           <>
@@ -116,6 +130,7 @@ export default function RsvpForm({
 
   async function submit(e) {
     e.preventDefault();
+    if (busy.current) return;
     const found = validateRsvpInput(values, { askGuestCount });
     setErrors(found);
     if (Object.keys(found).length) return;
@@ -140,7 +155,7 @@ export default function RsvpForm({
       window.open(composed.url, "_blank", "noopener,noreferrer");
       return;
     }
-    if (saving) return;
+    busy.current = true;
     // Pop-up blockers only allow windows opened straight from the tap, not after the save has awaited.
     // So open a blank one now and point it at WhatsApp once the save has settled.
     const win = window.open("", "_blank");
@@ -154,6 +169,7 @@ export default function RsvpForm({
     setSaving(true);
     setSaveState(null);
     const result = await attemptSave(save, reply);
+    busy.current = false;
     setSaving(false);
     if (result.reason === "closed") {
       try {
@@ -196,6 +212,12 @@ export default function RsvpForm({
 
   return (
     <>
+      <div role="status" aria-live="polite">
+        {saving && <T as="p" v={UI.rsvpSaving} lang={lang} className={s.rsvpNote} />}
+        {!saving && saveState && (
+          <T as="p" v={saveState === "saved" ? UI.rsvpSaved : UI.rsvpSaveFailed} lang={lang} className={s.rsvpNote} />
+        )}
+      </div>
       <form className={s.rsvpForm} onSubmit={submit} noValidate>
         {preview && <T as="p" v={UI.rsvpPreviewNote} lang={lang} className={s.rsvpNote} />}
         {remembered && <T as="p" v={UI.rsvpRemembered} lang={lang} className={s.rsvpNote} />}
@@ -280,9 +302,6 @@ export default function RsvpForm({
       </form>
       {sent && (
         <div className={s.rsvpSent}>
-          {saveState && (
-            <T as="p" v={saveState === "saved" ? UI.rsvpSaved : UI.rsvpSaveFailed} lang={lang} className={s.rsvpNote} role="status" />
-          )}
           <p className={s.rsvpNote} aria-live="polite">
             <T v={UI.rsvpFallback} lang={lang} /> <a href={`tel:${contactPhone}`}>{contactPhone}</a>
           </p>

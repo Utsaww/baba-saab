@@ -42,6 +42,7 @@ export const UI = {
     en: "Your reply is saved. Send it on WhatsApp to let the family know personally.",
     hi: "आपका उत्तर सहेज लिया गया है। परिवार को व्यक्तिगत रूप से बताने के लिए इसे व्हाट्सऐप पर भी भेजें।",
   },
+  rsvpSaving: { en: "Saving…", hi: "सहेज रहे हैं…" },
   rsvpSaveFailed: {
     en: "We couldn't save your reply — your WhatsApp message still reaches the family.",
     hi: "हम आपका उत्तर सहेज नहीं सके — आपका व्हाट्सऐप संदेश फिर भी परिवार तक पहुँचेगा।",

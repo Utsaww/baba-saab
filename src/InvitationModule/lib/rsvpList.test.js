@@ -49,6 +49,9 @@ describe("family marks", () => {
     expect(m.has("919999999999#sam")).toBe(false);
     expect(m.has("staff#1")).toBe(false);
   });
+  it("skips rows without rsvpKey", () => {
+    expect(familyMarks([{ phoneKey: "1", name: "X" }, { phoneKey: "1", name: "Y" }]).size).toBe(0);
+  });
   it("note text", () => {
     expect(familyNote(["Asha", "Ravi"])).toBe("Same family as Asha, Ravi — replied from the same phone number");
   });
@@ -66,6 +69,8 @@ describe("filterRows", () => {
   it("filters by q on name or phone digits", () => {
     expect(filterRows(rows, { q: "ash" }).map((r) => r.name)).toEqual(["Asha"]);
     expect(filterRows(rows, { q: "90000" }).map((r) => r.name)).toEqual(["Ravi", "Mina"]);
+    expect(filterRows(rows, { q: "+91 98765" }).map((r) => r.name)).toEqual(["Asha"]);
+    expect(filterRows(rows, { q: "98765" }).map((r) => r.name)).toEqual(["Asha"]);
   });
   it("filters by event, keeping all-events replies", () => {
     expect(filterRows(rows, { eventId: "a" }).map((r) => r.name)).toEqual(["Mina", "Asha"]);
@@ -77,22 +82,57 @@ describe("filterRows", () => {
 });
 
 describe("toCsv", () => {
-  it("writes BOM, CRLF, quoting and Devanagari", () => {
+  const base = { phone: "98765 43210", attending: "yes", eventIds: ["a", "b"], updatedAt: "2026-10-24T17:00:00Z", source: "guest" };
+  const body = (rows, lang = "both") => toCsv(rows, events, lang).slice(1);
+
+  it("writes BOM, header, CRLF, quoting and Devanagari", () => {
     const rows = [
-      {
-        name: "प्रिया", phone: "98765 43210", attending: "yes", guestCount: 2, eventIds: ["a", "b"],
-        meal: "veg", message: 'Hi, "all"\nbest', updatedAt: "2026-01-01T00:00:00Z", source: "guest",
-      },
-      { name: "Ravi", phone: "1", attending: "no", eventIds: [], updatedAt: "2026-01-02T00:00:00Z", source: "staff" },
+      { ...base, name: "प्रिया", guestCount: 2, meal: "veg", message: 'Hi, "all"\nbest' },
+      { ...base, name: "Ravi", attending: "no", eventIds: [], updatedAt: "2026-01-02T00:00:00Z", source: "staff" },
     ];
     const csv = toCsv(rows, events, "both");
-    expect(csv.startsWith("﻿")).toBe(true);
-    const body = csv.slice(1);
-    expect(body.startsWith("Name,Phone,Attending,People,Events,Meal,Message,Replied,Source\r\n")).toBe(true);
-    expect(body).toContain('"प्रिया"'.replace(/"/g, ""));
-    expect(body).toContain('"Hi, ""all""\nbest"');
-    expect(body).toContain("Sangeet; Wedding");
-    expect(body.split("\r\n")).toHaveLength(4);
+    expect(csv.startsWith(String.fromCharCode(0xfeff))).toBe(true);
+    expect(csv.slice(1).startsWith("Name,Phone,Attending,People,Events,Meal,Message,Replied,Source\r\n")).toBe(true);
+    expect(csv).toContain("प्रिया");
+    expect(csv).toContain('"Hi, ""all""\nbest"');
+    expect(csv).toContain("Sangeet; Wedding");
+    expect(csv.slice(1).split("\r\n")).toHaveLength(4);
     expect(toCsv(rows, events, "hi")).toContain("संगीत; Wedding");
+  });
+
+  it("neutralises formula injection in every column", () => {
+    const out = body([
+      { ...base, name: '=HYPERLINK("http://x","y")', message: "@cmd", meal: "-1+1", source: "+x" },
+      { ...base, name: "\tTab", message: "\rCR" },
+    ]);
+    expect(out).toContain(`"'=HYPERLINK(""http://x"",""y"")"`);
+    expect(out).toContain(",'@cmd,");
+    expect(out).toContain(",'-1+1,");
+    expect(out).toContain(",'+x\r\n");
+    expect(out).toContain("'\tTab");
+    expect(out).toContain(`"'\rCR"`);
+  });
+
+  it("keeps the phone as text with a quote prefix", () => {
+    expect(body([{ ...base, name: "A", phone: "+91 98765 43210" }])).toContain(",'+91 98765 43210,");
+    expect(body([{ ...base, name: "A" }])).toContain(",'98765 43210,");
+  });
+
+  it("uses friendly attending labels, IST time and All events", () => {
+    const rows = [{ ...base, name: "A", eventIds: [] }];
+    const en = body(rows);
+    expect(en).toContain("A,'98765 43210,Coming,1,All events,");
+    expect(en).toContain("24 Oct 2026, 10:30 pm");
+    const hi = body(rows, "hi");
+    expect(hi).toContain("आ रहे हैं");
+    expect(hi).toContain("सभी कार्यक्रम");
+    expect(body([{ ...base, name: "B", attending: "no" }], "hi")).toContain("नहीं आ रहे");
+    expect(body([{ ...base, name: "C", attending: "maybe" }], "hi")).toContain("शायद");
+    expect(body([{ ...base, name: "B", attending: "no" }])).toContain("Not coming");
+  });
+
+  it("leaves People blank for no and maybe", () => {
+    expect(body([{ ...base, name: "B", attending: "no", guestCount: 3 }])).toContain("Not coming,,");
+    expect(body([{ ...base, name: "M", attending: "maybe", guestCount: 3 }])).toContain("Maybe,,");
   });
 });

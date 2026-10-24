@@ -352,6 +352,12 @@ export default function EditorShell({
           {showPreview ? "Hide preview" : "Preview"}
         </button>
         <div className="flex items-center gap-3">
+          <Link
+            href={`/admin/invitations/${invitation.id}/rsvps`}
+            className="inline-flex min-h-[44px] items-center rounded-full border border-stone-300 px-4 text-sm hover:bg-stone-100"
+          >
+            RSVPs
+          </Link>
           <SaveStatus state={state} />
           <InvitationMenu status={lifecycle.status} pending={publishPending} onTakeOffline={onTakeOffline} onDelete={onDelete} />
         </div>

@@ -157,6 +157,11 @@ describe("EditorShell", () => {
     renderShell(vi.fn());
     expect(screen.getByRole("link", { name: /Help for this step/ })).toHaveAttribute("href", "/admin/help#editor-step-2-couple-families");
   });
+
+  it("links to the invitation's RSVP page from the header", () => {
+    renderShell(vi.fn());
+    expect(screen.getByRole("link", { name: "RSVPs" })).toHaveAttribute("href", "/admin/invitations/inv-1/rsvps");
+  });
 });
 
 describe("EditorShell media", () => {

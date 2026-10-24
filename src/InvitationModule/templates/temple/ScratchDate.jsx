@@ -172,9 +172,9 @@ export const ScratchCard = forwardRef(function ScratchCard({ label, value, lang,
   );
 });
 
-const LABELS = [UI.month, UI.day, UI.year];
+const LABELS = [UI.month, UI.date, UI.year];
 
-// The three cards — Month, Day, Year — for the wedding date.
+// The three cards — Month, Date, Year — for the wedding date.
 export default function ScratchDate({ parts, lang, revealed, onReveal, cardRefs }) {
   const values = [parts.month, parts.day, parts.year];
   return (

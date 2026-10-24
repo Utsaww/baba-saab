@@ -1,4 +1,5 @@
 import { invitationSchema } from "../schema/invitation";
+import { endDateError } from "./datetime";
 import { textFor } from "./i18n";
 import { isWhatsappNumber, whatsappRsvpOn } from "./rsvp";
 
@@ -16,6 +17,7 @@ const STEP_FOR_FIELD = {
   hosts: 2,
   invocation: 2,
   mainDate: 3,
+  mainDateEnd: 3,
   venue: 3,
   events: 4,
   media: 5,
@@ -46,6 +48,7 @@ export function publishChecklist(draft) {
   needText("bride", "the bride's name", draft.couple?.bride?.name, 2);
   needText("groom", "the groom's name", draft.couple?.groom?.name, 2);
   if (!draft.mainDate) add("mainDate", "Add the wedding date", 3);
+  if (endDateError(draft.mainDate, draft.mainDateEnd)) add("mainDateEnd", "Fix the end date: pick a date 1–7 days after the wedding date", 3);
   needText("venueName", "the venue name", draft.venue?.name, 3);
   needText("venueAddress", "the venue address", draft.venue?.address, 3);
   (draft.events ?? []).forEach((event, i) => {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { endDateError } from "../lib/datetime";
 import { GALLERY_MAX, TEMPLATE_IDS, invitationSchema } from "./invitation";
 
 // Makes every field optional all the way down. zod's deepPartial() does not look inside
@@ -56,6 +57,9 @@ export function cleanDraft(input) {
         errors["media.gallery"] = `The gallery holds up to ${GALLERY_MAX} photos`;
         draft.media.gallery = draft.media.gallery.slice(0, GALLERY_MAX);
       }
+      // Kept so staff can fix it, but flagged: it must fall 1-7 days after the wedding date.
+      const endError = endDateError(draft.mainDate, draft.mainDateEnd);
+      if (endError) errors.mainDateEnd = endError;
       const valid = TEMPLATE_IDS.includes(draft.templateId) && Boolean(draft.theme?.palette);
       return { draft: valid ? draft : null, errors };
     }

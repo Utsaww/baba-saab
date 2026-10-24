@@ -65,3 +65,13 @@ describe("previewInvitation", () => {
     expect(invitation.couple.groom.name).toEqual(royal.sample.couple.groom.name);
   });
 });
+
+describe("previewInvitation end date", () => {
+  it("keeps mainDateEnd", () => {
+    const { invitation } = previewInvitation(
+      { templateId: "royal", theme: { palette: "maroon-gold" }, mainDate: "2027-02-14", mainDateEnd: "2027-02-15" },
+      royal,
+    );
+    expect(invitation.mainDateEnd).toBe("2027-02-15");
+  });
+});

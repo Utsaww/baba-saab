@@ -12,7 +12,7 @@ export async function listRsvps(invitationId) {
   const rows = [];
   let nextToken = null;
   do {
-    const page = await cookieDataClient().models.Rsvp.list({ invitationId: { eq: invitationId }, limit: 100, nextToken });
+    const page = await cookieDataClient().models.Rsvp.list({ invitationId, limit: 100, nextToken });
     failIfErrors(page.errors);
     rows.push(...page.data);
     nextToken = page.nextToken;
@@ -20,19 +20,33 @@ export async function listRsvps(invitationId) {
   return rows;
 }
 
-/** Create or update one reply entered by staff. Phone-less rows get a random key so they never collide. */
-export async function saveRsvp(invitationId, row) {
+export const KEY_TAKEN = "Another reply already uses this name and phone — edit that one instead.";
+
+/** Thrown when an edit would land on another guest's row; its message is safe to show staff. */
+export class RsvpConflict extends Error {
+  constructor() {
+    super(KEY_TAKEN);
+    this.name = "RsvpConflict";
+  }
+}
+
+/**
+ * Save one reply entered or edited by staff (source becomes "staff"). The key always follows the phone and name:
+ * phone -> rsvpKeyFor, no phone -> an existing staff#… key or a fresh one. When an edit changes the key, the row is
+ * created under the new key and the old one is deleted; landing on another row is refused.
+ */
+export async function saveRsvp(invitationId, row, { previousKey } = {}) {
   const Rsvp = cookieDataClient().models.Rsvp;
-  const { rsvpKey: existingKey, phone, name, attending, guestCount, eventIds, meal, message } = row;
-  const phoneKeyed = rsvpKeyFor({ phone, name });
-  const hasPhone = Boolean(phoneKeyed.phoneKey);
-  const rsvpKey = existingKey || (hasPhone ? phoneKeyed.rsvpKey : `staff#${randomUUID()}`);
+  const { phone, name, attending, guestCount, eventIds, meal, message } = row;
+  const derived = rsvpKeyFor({ phone, name });
+  const hasPhone = Boolean(derived.phoneKey);
+  const rsvpKey = hasPhone ? derived.rsvpKey : previousKey?.startsWith("staff#") ? previousKey : `staff#${randomUUID()}`;
   const fields = {
     invitationId,
     rsvpKey,
     name,
     phone: phone || null,
-    phoneKey: hasPhone ? phoneKeyed.phoneKey : null,
+    phoneKey: hasPhone ? derived.phoneKey : null,
     attending,
     guestCount: guestCount ?? null,
     eventIds: eventIds ?? [],
@@ -40,14 +54,20 @@ export async function saveRsvp(invitationId, row) {
     message: message || null,
     source: "staff",
   };
-  let exists = Boolean(existingKey);
-  if (!exists && hasPhone) {
+  const rekeyed = Boolean(previousKey) && previousKey !== rsvpKey;
+  let exists = previousKey === rsvpKey;
+  if (!exists && (hasPhone || rekeyed)) {
     const found = await Rsvp.get({ invitationId, rsvpKey });
     failIfErrors(found.errors);
     exists = Boolean(found.data);
+    if (exists && rekeyed) throw new RsvpConflict();
   }
   const { errors } = exists ? await Rsvp.update(fields) : await Rsvp.create(fields);
   failIfErrors(errors);
+  if (rekeyed) {
+    const removed = await Rsvp.delete({ invitationId, rsvpKey: previousKey });
+    failIfErrors(removed.errors);
+  }
   return { rsvpKey };
 }
 

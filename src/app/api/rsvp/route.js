@@ -8,6 +8,19 @@ const client = generateServerClientUsingReqRes({ config: outputs, authMode: "ide
 
 const REASONS = { Closed: "closed", RateLimited: "rate", Invalid: "invalid", NotFound: "invalid" };
 
+const MAX_BODY = 10 * 1024;
+const SLUG = /^[a-z0-9-]{3,60}$/;
+const STRING_FIELDS = ["name", "phone", "attending", "meal", "message", "website"];
+
+/** Shape only (types); the backend owns the real rules. */
+function shapeOk(reply) {
+  if (!reply || typeof reply !== "object" || Array.isArray(reply)) return false;
+  if (STRING_FIELDS.some((k) => reply[k] != null && typeof reply[k] !== "string")) return false;
+  if (reply.guestCount != null && typeof reply.guestCount !== "number") return false;
+  if (reply.eventIds != null && !(Array.isArray(reply.eventIds) && reply.eventIds.every((e) => typeof e === "string"))) return false;
+  return true;
+}
+
 const respond = (body) => Response.json(body, { headers: { "Cache-Control": "no-store" } });
 const fail = (reason) => respond({ ok: false, reason });
 
@@ -21,12 +34,14 @@ export async function POST(request) {
   try {
     let body;
     try {
-      body = await request.json();
+      const text = await request.text();
+      if (text.length > MAX_BODY) return fail("invalid");
+      body = JSON.parse(text);
     } catch {
       return fail("invalid");
     }
     const { slug, reply } = body ?? {};
-    if (typeof slug !== "string" || !slug || !reply || typeof reply !== "object" || Array.isArray(reply)) return fail("invalid");
+    if (typeof slug !== "string" || !SLUG.test(slug) || !shapeOk(reply)) return fail("invalid");
 
     const { data, errors } = await runWithAmplifyServerContext({
       nextServerContext: null,

@@ -7,7 +7,10 @@ vi.mock("next/cache", () => cache);
 const data = vi.hoisted(() => ({
   listRsvps: vi.fn(), saveRsvp: vi.fn(), removeRsvp: vi.fn(), regenerateFamilyTokenRecord: vi.fn(), markSeenRecord: vi.fn(),
 }));
-vi.mock("./data", () => data);
+vi.mock("./data", () => ({
+  ...data,
+  RsvpConflict: class RsvpConflict extends Error {},
+}));
 
 import { listRsvpsAction, markRsvpsSeenAction, newFamilyLinkAction, removeRsvpAction, saveRsvpAction } from "./actions";
 
@@ -43,8 +46,21 @@ describe("success shapes", () => {
   it("list returns rows", async () => expect(await listRsvpsAction("inv")).toEqual({ ok: true, rows: [{ name: "A" }] }));
   it("save returns the saved key and refreshes", async () => {
     expect(await saveRsvpAction("inv", { name: "A" })).toEqual({ ok: true, rsvpKey: "k" });
-    expect(data.saveRsvp).toHaveBeenCalledWith("inv", { name: "A" });
+    expect(data.saveRsvp).toHaveBeenCalledWith("inv", { name: "A" }, { previousKey: undefined });
     expect(cache.revalidatePath).toHaveBeenCalledWith("/admin/invitations/inv/edit");
+  });
+  it("passes previousKey to saveRsvp and shows a key conflict to staff", async () => {
+    await saveRsvpAction("inv", { name: "A" }, { previousKey: "old" });
+    expect(data.saveRsvp).toHaveBeenCalledWith("inv", { name: "A" }, { previousKey: "old" });
+    const { RsvpConflict } = await import("./data");
+    data.saveRsvp.mockRejectedValue(new RsvpConflict("Another reply already uses this name and phone — edit that one instead."));
+    cache.revalidatePath.mockClear();
+    expect(await saveRsvpAction("inv", { name: "A" })).toEqual({ ok: false, message: "Another reply already uses this name and phone — edit that one instead." });
+    expect(cache.revalidatePath).not.toHaveBeenCalled();
+  });
+  it("a revalidate failure after a successful save does not report failure", async () => {
+    cache.revalidatePath.mockImplementationOnce(() => { throw new Error("cache"); });
+    expect(await saveRsvpAction("inv", { name: "A" })).toEqual({ ok: true, rsvpKey: "k" });
   });
   it("remove refreshes", async () => {
     expect(await removeRsvpAction("inv", "k")).toEqual({ ok: true });

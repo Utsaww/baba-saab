@@ -18,7 +18,7 @@ describe("listRsvps", () => {
   it("follows nextToken across pages", async () => {
     rsvp.list.mockResolvedValueOnce({ data: [{ name: "a" }], nextToken: "t" }).mockResolvedValueOnce({ data: [{ name: "b" }] });
     expect((await listRsvps("inv")).map((r) => r.name)).toEqual(["a", "b"]);
-    expect(rsvp.list.mock.calls[0][0].invitationId).toEqual({ eq: "inv" });
+    expect(rsvp.list.mock.calls[0][0]).toEqual({ invitationId: "inv", limit: 100, nextToken: null });
     expect(rsvp.list.mock.calls[1][0].nextToken).toBe("t");
   });
   it("throws on errors", async () => {
@@ -41,12 +41,48 @@ describe("saveRsvp", () => {
     expect(arg.phoneKey).toBeNull();
     expect(arg.source).toBe("staff");
   });
-  it("updates in place when the row already has an rsvpKey", async () => {
-    await saveRsvp("inv", { ...base, rsvpKey: "staff#abc" });
+  it("updates in place when previousKey equals the recomputed key", async () => {
+    await saveRsvp("inv", { ...base, phone: "+91 98765 43210", meal: "veg" }, { previousKey: "919876543210#asha rao" });
     expect(rsvp.create).not.toHaveBeenCalled();
-    expect(rsvp.update.mock.calls[0][0]).toMatchObject({ invitationId: "inv", rsvpKey: "staff#abc", name: "Asha Rao" });
+    expect(rsvp.delete).not.toHaveBeenCalled();
+    expect(rsvp.update.mock.calls[0][0]).toMatchObject({ rsvpKey: "919876543210#asha rao", source: "staff", meal: "veg" });
   });
-  it("updates when the phone-derived key already exists", async () => {
+  it("keeps a phone-less staff key on edit", async () => {
+    await saveRsvp("inv", { ...base, name: "Renamed" }, { previousKey: "staff#abc" });
+    expect(rsvp.update.mock.calls[0][0]).toMatchObject({ rsvpKey: "staff#abc", phoneKey: null });
+    expect(rsvp.delete).not.toHaveBeenCalled();
+  });
+  it("rename: creates under the new key, then deletes the old", async () => {
+    const order = [];
+    rsvp.create.mockImplementation(async () => (order.push("create"), { data: {} }));
+    rsvp.delete.mockImplementation(async () => (order.push("delete"), { data: {} }));
+    const r = await saveRsvp("inv", { ...base, name: "Asha  Verma", phone: "+91 98765 43210" }, { previousKey: "919876543210#asha rao" });
+    expect(r.rsvpKey).toBe("919876543210#asha verma");
+    expect(rsvp.create.mock.calls[0][0]).toMatchObject({ rsvpKey: "919876543210#asha verma", phoneKey: "919876543210" });
+    expect(rsvp.delete).toHaveBeenCalledWith({ invitationId: "inv", rsvpKey: "919876543210#asha rao" });
+    expect(order).toEqual(["create", "delete"]);
+  });
+  it("adding a phone to a staff# row re-keys it by phone", async () => {
+    const r = await saveRsvp("inv", { ...base, phone: "+91 98765 43210" }, { previousKey: "staff#abc" });
+    expect(r.rsvpKey).toBe("919876543210#asha rao");
+    expect(rsvp.create.mock.calls[0][0]).toMatchObject({ phoneKey: "919876543210" });
+    expect(rsvp.delete).toHaveBeenCalledWith({ invitationId: "inv", rsvpKey: "staff#abc" });
+  });
+  it("clearing the phone moves the row to a staff# key with no phoneKey", async () => {
+    const r = await saveRsvp("inv", { ...base, phone: "" }, { previousKey: "919876543210#asha rao" });
+    expect(r.rsvpKey).toMatch(/^staff#/);
+    expect(rsvp.create.mock.calls[0][0]).toMatchObject({ phone: null, phoneKey: null });
+    expect(rsvp.delete).toHaveBeenCalledWith({ invitationId: "inv", rsvpKey: "919876543210#asha rao" });
+  });
+  it("refuses an edit that lands on another guest's row, changing nothing", async () => {
+    rsvp.get.mockResolvedValue({ data: { rsvpKey: "919876543210#asha verma" } });
+    await expect(saveRsvp("inv", { ...base, name: "Asha Verma", phone: "+91 98765 43210" }, { previousKey: "919876543210#asha rao" }))
+      .rejects.toMatchObject({ name: "RsvpConflict", message: "Another reply already uses this name and phone — edit that one instead." });
+    expect(rsvp.create).not.toHaveBeenCalled();
+    expect(rsvp.update).not.toHaveBeenCalled();
+    expect(rsvp.delete).not.toHaveBeenCalled();
+  });
+  it("a new row whose phone-derived key already exists overwrites it (duplicate rule)", async () => {
     rsvp.get.mockResolvedValue({ data: { rsvpKey: "x" } });
     await saveRsvp("inv", { ...base, phone: "+91 98765 43210" });
     expect(rsvp.update).toHaveBeenCalled();

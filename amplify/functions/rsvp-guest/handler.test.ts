@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.hoisted(() => {
+  process.env.RSVP_IP_SALT = "salt-from-env";
+});
+
 vi.mock("./submit", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./submit")>();
   return { ...actual, submit: vi.fn(async () => ({ ok: true, updated: false })) };
@@ -20,9 +24,24 @@ describe("rsvp-guest handler", () => {
   });
 
   it("serves submitRsvp to guests without any login", async () => {
-    const args = { slug: "a-b", reply: { name: "x" }, ipHash: "f".repeat(64) };
+    const args = { slug: "a-b", reply: { name: "x" }, clientIp: "203.0.113.7" };
     await expect(handler(event("submitRsvp", args))).resolves.toEqual({ ok: true, updated: false });
-    expect(submit).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ rsvp: expect.any(String) }), args, expect.any(Number));
+    expect(submit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ rsvp: expect.any(String) }),
+      args,
+      expect.any(Number),
+      "salt-from-env",
+    );
+  });
+  it("refuses to start when RSVP_IP_SALT is missing or empty", async () => {
+    for (const value of ["", undefined]) {
+      vi.resetModules();
+      if (value === undefined) vi.stubEnv("RSVP_IP_SALT", undefined as unknown as string);
+      else vi.stubEnv("RSVP_IP_SALT", value);
+      await expect(import("./handler")).rejects.toThrow("RSVP_IP_SALT");
+    }
+    vi.unstubAllEnvs();
   });
   it("serves familyRsvps to guests without any login", async () => {
     await expect(handler(event("familyRsvps", { slug: "a-b", token: "t" }))).resolves.toBeNull();

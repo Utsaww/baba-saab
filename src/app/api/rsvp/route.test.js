@@ -10,8 +10,6 @@ vi.mock("@/AdminModule/auth/amplifyServer", () => ({
   outputs: { o: 1 },
   runWithAmplifyServerContext: (a) => (run(a.nextServerContext), a.operation({})),
 }));
-import { createHash } from "node:crypto";
-
 import { POST } from "./route";
 
 const req = (body, headers = {}) =>
@@ -25,27 +23,28 @@ beforeEach(() => {
 });
 
 describe("POST /api/rsvp", () => {
-  it("returns ok and updated, passing slug, reply JSON and an ip hash", async () => {
+  it("returns ok and updated, passing slug, reply JSON and the client IP", async () => {
     const res = await POST(req({ slug: "a-b", reply }, { "x-forwarded-for": "1.1.1.1, 2.2.2.2" }));
     expect(await res.json()).toEqual({ ok: true, updated: false });
     const [, args] = mutation.mock.calls[0];
     expect(args.slug).toBe("a-b");
     expect(JSON.parse(args.reply)).toEqual(reply);
-    expect(args.ipHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(args.clientIp).toBe("1.1.1.1");
+    expect(args).not.toHaveProperty("ipHash");
   });
-  it("uses the guest identity pool and no server context, and hashes sha256(ip + salt)", async () => {
+  it("uses the guest identity pool and no server context", async () => {
     expect(make).toHaveBeenCalledWith({ config: { o: 1 }, authMode: "identityPool" });
     await POST(req({ slug: "a-b", reply }, { "x-forwarded-for": "1.1.1.1" }));
     expect(run).toHaveBeenCalledWith(null);
-    expect(mutation.mock.calls[0][1].ipHash).toBe(createHash("sha256").update("1.1.1.1baba-saab-rsvp").digest("hex"));
   });
-  it("hashes the first forwarded IP: same IP same hash, different IP different hash", async () => {
-    const hashOf = async (h) => { mutation.mockClear(); await POST(req({ slug: "a-b", reply }, h)); return mutation.mock.calls[0][1].ipHash; };
-    const a = await hashOf({ "x-forwarded-for": "1.1.1.1, 9.9.9.9" });
-    expect(await hashOf({ "x-forwarded-for": "1.1.1.1" })).toBe(a);
-    expect(await hashOf({ "x-forwarded-for": "2.2.2.2" })).not.toBe(a);
-    expect(await hashOf({ "x-real-ip": "1.1.1.1" })).toBe(a);
-    expect(await hashOf({})).toMatch(/^[0-9a-f]{64}$/);
+  it("passes the first forwarded IP, then x-real-ip, then unknown — trimmed and capped at 64", async () => {
+    const ipOf = async (h) => { mutation.mockClear(); await POST(req({ slug: "a-b", reply }, h)); return mutation.mock.calls[0][1].clientIp; };
+    expect(await ipOf({ "x-forwarded-for": "  1.1.1.1 , 9.9.9.9" })).toBe("1.1.1.1");
+    expect(await ipOf({ "x-forwarded-for": "2001:db8::1" })).toBe("2001:db8::1");
+    expect(await ipOf({ "x-real-ip": " 3.3.3.3 " })).toBe("3.3.3.3");
+    expect(await ipOf({ "x-forwarded-for": " , 9.9.9.9", "x-real-ip": "4.4.4.4" })).toBe("4.4.4.4");
+    expect(await ipOf({})).toBe("unknown");
+    expect(await ipOf({ "x-forwarded-for": "a".repeat(100) })).toBe("a".repeat(64));
   });
   it.each([["Closed", "closed"], ["RateLimited", "rate"], ["Invalid", "invalid"], ["NotFound", "invalid"], ["Weird", "error"]])(
     "maps errorType %s to %s", async (errorType, reason) => {

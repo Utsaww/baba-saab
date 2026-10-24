@@ -1,7 +1,7 @@
 import { defineFunction } from "@aws-amplify/backend";
 
-// Serves the two guest operations (submitRsvp, familyRsvps). backend.ts grants it read-only access to
-// Invitation and InvitationSlug and read/write to Rsvp and RsvpLimit — nothing else.
+// Serves the two guest operations (submitRsvp, familyRsvps). backend.ts grants it only the calls it makes: GetItem on
+// Invitation and InvitationSlug (plus bumping rsvpNewCount), GetItem/PutItem/Query on Rsvp, UpdateItem on RsvpLimit.
 export const rsvpGuest = defineFunction({
   name: "rsvp-guest",
   entry: "./handler.ts",

@@ -210,7 +210,7 @@ const schema = a.schema({
   // Guests (no login) can call these two and nothing else about RSVPs. Each enforces its own rules.
   submitRsvp: a
     .mutation()
-    .arguments({ slug: a.string().required(), reply: a.json().required(), ipHash: a.string().required() })
+    .arguments({ slug: a.string().required(), reply: a.json().required(), clientIp: a.string().required() })
     .returns(a.json())
     .authorization((allow) => [allow.guest()])
     .handler(a.handler.function(rsvpGuest)),

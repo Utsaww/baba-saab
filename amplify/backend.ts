@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { defineBackend } from "@aws-amplify/backend";
 import { AnyPrincipal, Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { auth } from "./auth/resource";
@@ -85,13 +86,36 @@ backend.invitationLifecycle.addEnvironment("INVITATION_SLUG_TABLE", tables["Invi
 tables["Rsvp"].grantReadWriteData(lifecycleFn);
 backend.invitationLifecycle.addEnvironment("RSVP_TABLE", tables["Rsvp"].tableName);
 
-// rsvp-guest serves guests: it reads invitations and link names but can't change them, and writes only replies
-// and rate-limit counters.
+// rsvp-guest is reachable without any login, so its role lists exactly the calls its code makes — no table-wide
+// grantReadData (that includes Scan, which would expose every invitation's tokens and drafts) and no delete or
+// batch writes. If the code ever needs another call, add it here on purpose.
 const rsvpGuestFn = backend.rsvpGuest.resources.lambda;
-tables["Invitation"].grantReadData(rsvpGuestFn);
-tables["InvitationSlug"].grantReadData(rsvpGuestFn);
-tables["Rsvp"].grantReadWriteData(rsvpGuestFn);
-tables["RsvpLimit"].grantReadWriteData(rsvpGuestFn);
+rsvpGuestFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "ReadInvitationAndLinkName",
+    effect: Effect.ALLOW,
+    actions: ["dynamodb:GetItem"],
+    resources: [tables["Invitation"].tableArn, tables["InvitationSlug"].tableArn],
+  }),
+);
+// Replies: look up an earlier reply (GetItem), save one (PutItem), list them for the family page (Query).
+rsvpGuestFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "ReadWriteReplies",
+    effect: Effect.ALLOW,
+    actions: ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:Query"],
+    resources: [tables["Rsvp"].tableArn],
+  }),
+);
+// Rate limits: one atomic conditional UpdateItem per counter; nothing reads them back.
+rsvpGuestFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "CountRateLimits",
+    effect: Effect.ALLOW,
+    actions: ["dynamodb:UpdateItem"],
+    resources: [tables["RsvpLimit"].tableArn],
+  }),
+);
 // The one write it needs on Invitation: bumping the "N new replies" count, and nothing else on that table.
 rsvpGuestFn.addToRolePolicy(
   new PolicyStatement({
@@ -102,6 +126,9 @@ rsvpGuestFn.addToRolePolicy(
     conditions: { "ForAllValues:StringEquals": { "dynamodb:Attributes": ["id", "rsvpNewCount"] } },
   }),
 );
+// Salt for hashing guests' network addresses into rate-limit keys. A fresh random value at every synth, so it
+// rotates on each deploy; that only resets the current hourly windows. Never committed, never logged.
+backend.rsvpGuest.addEnvironment("RSVP_IP_SALT", randomBytes(32).toString("hex"));
 backend.rsvpGuest.addEnvironment("INVITATION_TABLE", tables["Invitation"].tableName);
 backend.rsvpGuest.addEnvironment("INVITATION_SLUG_TABLE", tables["InvitationSlug"].tableName);
 backend.rsvpGuest.addEnvironment("RSVP_TABLE", tables["Rsvp"].tableName);

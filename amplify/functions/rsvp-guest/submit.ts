@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { GetCommand, PutCommand, UpdateCommand, type DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { asContent, isRsvpClosed, isSlug, isWhatsappNumber, rsvpKeyFor, validateRsvpInput, whatsappRsvpOn } from "./keys";
 
@@ -18,7 +19,7 @@ const HOUR_MS = 3_600_000;
 const NAME_MAX = 100;
 const MESSAGE_MAX = 1000;
 const MEALS = ["veg", "nonveg", "jain"];
-const IP_HASH = /^[a-f0-9]{64}$/; // sha256 hex, computed by the website's /api/rsvp route
+const CLIENT_IP_MAX = 64; // the website's /api/rsvp route passes the first forwarded address, capped at 64
 
 /** The invitation a link name points at, or null. */
 export async function findInvitation(db: Db, tables: Pick<Tables, "invitation" | "slug">, slug: unknown) {
@@ -95,13 +96,18 @@ async function countOrRefuse(db: Db, table: string, key: string, max: number, no
 export async function submit(
   db: Db,
   tables: Tables,
-  { slug, reply, ipHash }: { slug: unknown; reply: unknown; ipHash: unknown },
+  { slug, reply, clientIp }: { slug: unknown; reply: unknown; clientIp: unknown },
   nowMs: number,
+  ipSalt: string,
 ): Promise<{ ok: true; updated: boolean }> {
+  if (!ipSalt) throw new Error("rsvp-guest: RSVP_IP_SALT is not set");
   const raw = asContent(reply);
   if (!raw) throw invalid();
   if (raw.website) throw invalid(); // a bot filled the hidden field
-  if (typeof ipHash !== "string" || !IP_HASH.test(ipHash)) throw invalid();
+  const ip = typeof clientIp === "string" ? clientIp.trim() : "";
+  if (!ip || ip.length > CLIENT_IP_MAX) throw invalid();
+  // Only the salted hash is used: the raw address is never stored or logged.
+  const ipHash = createHash("sha256").update(ip + ipSalt).digest("hex");
   if (!isSlug(slug)) throw notFound();
 
   const inv = await findInvitation(db, tables, slug);
@@ -120,11 +126,12 @@ export async function submit(
     new GetCommand({ TableName: tables.rsvp, Key: { invitationId, rsvpKey }, ConsistentRead: true }),
   );
   const now = new Date(nowMs).toISOString();
+  // Server-owned fields go last so nothing in the reply can ever override them.
   const item: Record<string, unknown> = {
+    ...clean,
     invitationId,
     rsvpKey,
     phoneKey,
-    ...clean,
     source: "guest",
     __typename: "Rsvp",
     createdAt: typeof earlier?.createdAt === "string" ? earlier.createdAt : now,

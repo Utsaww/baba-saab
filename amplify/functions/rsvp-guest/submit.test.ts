@@ -1,10 +1,13 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import { RsvpError, submit } from "./submit";
 
 const tables = { invitation: "Inv", slug: "Slug", rsvp: "Rsvp", limit: "Limit" };
 const NOW = Date.parse("2026-10-24T10:00:00Z");
 const HOUR = Math.floor(NOW / 3600000);
-const IP = "a".repeat(64);
+const IP = "203.0.113.7";
+const SALT = "test-salt";
+const IP_HASH = createHash("sha256").update(IP + SALT).digest("hex");
 
 const live = {
   couple: { bride: { name: { en: "Meera" } }, groom: { name: { en: "Arjun" } } },
@@ -69,7 +72,7 @@ function fakeDb(inv: Record<string, unknown> | null = published) {
   return db;
 }
 const go = (db: any, args: Record<string, unknown> = {}, now = NOW) =>
-  submit(db, tables, { slug: "a-b", reply, ipHash: IP, ...args }, now);
+  submit(db, tables, { slug: "a-b", reply, clientIp: IP, ...args }, now, SALT);
 
 describe("submit", () => {
   it("saves a valid reply with its key and source, then counts it as new on the invitation", async () => {
@@ -207,8 +210,42 @@ describe("submit", () => {
   it.each([["not json"], [null], [[1, 2]]])("refuses a reply that isn't an object (%j)", async (r) => {
     await expect(go(fakeDb(), { reply: r })).rejects.toMatchObject({ name: "Invalid" });
   });
-  it.each([[""], ["short"], [undefined], ["g".repeat(64)]])("refuses a malformed ipHash %j", async (ipHash) => {
-    await expect(go(fakeDb(), { ipHash })).rejects.toMatchObject({ name: "Invalid" });
+  it.each([[""], ["   "], [undefined], [5], ["x".repeat(65)]])("refuses a malformed clientIp %j", async (clientIp) => {
+    const db = fakeDb();
+    await expect(go(db, { clientIp })).rejects.toMatchObject({ name: "Invalid" });
+    expect(db.calls).toEqual([]);
+  });
+  it("hashes the client IP with the salt and never stores or sends the raw IP", async () => {
+    const db = fakeDb();
+    await go(db);
+    expect(db.limits.has(`ip#${IP_HASH}#${HOUR}`)).toBe(true);
+    expect(JSON.stringify(db.calls)).not.toContain(IP);
+    // A different salt gives a different key for the same IP.
+    const other = fakeDb();
+    await submit(other, tables, { slug: "a-b", reply, clientIp: IP }, NOW, "other-salt");
+    expect(other.limits.has(`ip#${IP_HASH}#${HOUR}`)).toBe(false);
+  });
+  it("refuses to run without a salt", async () => {
+    const db = fakeDb();
+    await expect(submit(db, tables, { slug: "a-b", reply, clientIp: IP }, NOW, "")).rejects.toThrow();
+    expect(db.calls).toEqual([]);
+  });
+  it("overrides server-owned fields a hostile reply tries to set", async () => {
+    const db = fakeDb();
+    const hostile = { ...reply, invitationId: "other", rsvpKey: "x", phoneKey: "1", source: "staff", __typename: "X", createdAt: "1999", updatedAt: "1999" };
+    await expect(go(db, { reply: hostile })).resolves.toMatchObject({ ok: true });
+    const { Item } = db.calls.find((c) => c.name === "PutCommand").input;
+    expect(Item).toMatchObject({
+      invitationId: "inv-1",
+      rsvpKey: "919811122233#rahul sharma",
+      phoneKey: "919811122233",
+      source: "guest",
+      __typename: "Rsvp",
+      createdAt: new Date(NOW).toISOString(),
+      updatedAt: new Date(NOW).toISOString(),
+    });
+    expect(JSON.stringify(Item)).not.toMatch(/"other"|"staff"|"X"|"1999"/);
+    expect([...db.rsvps.keys()]).toEqual(["inv-1|919811122233#rahul sharma"]);
   });
 
   it("allows 5 replies an hour from one phone and refuses the 6th", async () => {
@@ -236,7 +273,7 @@ describe("submit", () => {
     const db = fakeDb();
     await go(db);
     const ups = db.calls.filter((c) => c.name === "UpdateCommand" && c.input.TableName === "Limit").map((c) => c.input);
-    expect(ups.map((u) => u.Key.key)).toEqual([`phone#919811122233#${HOUR}`, `ip#${IP}#${HOUR}`]);
+    expect(ups.map((u) => u.Key.key)).toEqual([`phone#919811122233#${HOUR}`, `ip#${IP_HASH}#${HOUR}`]);
     for (const u of ups) {
       expect(u.UpdateExpression).toContain("ADD #count :one");
       expect(u.UpdateExpression).toContain("expiresAt = if_not_exists(expiresAt, :exp)");

@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { generateServerClientUsingReqRes } from "@aws-amplify/adapter-nextjs/data";
 import { outputs, runWithAmplifyServerContext } from "@/AdminModule/auth/amplifyServer";
 import { parseAwsJson } from "@/AdminModule/invitations/content";
@@ -24,10 +23,12 @@ function shapeOk(reply) {
 const respond = (body) => Response.json(body, { headers: { "Cache-Control": "no-store" } });
 const fail = (reason) => respond({ ok: false, reason });
 
-function ipHashOf(request) {
+// The guest's network address, for the per-network rate limit. rsvp-guest salts and hashes it with a per-deploy
+// secret before using it; the raw address is never stored.
+function clientIpOf(request) {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip")?.trim() || "unknown";
-  return createHash("sha256").update(ip + (process.env.RSVP_IP_SALT ?? "baba-saab-rsvp")).digest("hex");
+  return ip.slice(0, 64);
 }
 
 export async function POST(request) {
@@ -45,7 +46,7 @@ export async function POST(request) {
 
     const { data, errors } = await runWithAmplifyServerContext({
       nextServerContext: null,
-      operation: (ctx) => client.mutations.submitRsvp(ctx, { slug, reply: JSON.stringify(reply), ipHash: ipHashOf(request) }),
+      operation: (ctx) => client.mutations.submitRsvp(ctx, { slug, reply: JSON.stringify(reply), clientIp: clientIpOf(request) }),
     });
     if (errors?.length) return fail(REASONS[errors[0].errorType] ?? "error");
     const result = parseAwsJson(data);

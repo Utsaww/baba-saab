@@ -14,12 +14,17 @@ const tables = {
   limit: process.env.RSVP_LIMIT_TABLE ?? "",
 };
 
+// Salts the guest's network address before it becomes a rate-limit key. Set per deploy in backend.ts; without it the
+// hashes would be reversible, so refuse to start at all.
+const ipSalt = process.env.RSVP_IP_SALT ?? "";
+if (!ipSalt) throw new Error("rsvp-guest: RSVP_IP_SALT is not set");
+
 export const handler = async (event: Event) => {
   const a = event.arguments ?? {};
   try {
     switch (event.fieldName) {
       case "submitRsvp":
-        return await submit(db, tables, { slug: a.slug, reply: a.reply, ipHash: a.ipHash }, Date.now());
+        return await submit(db, tables, { slug: a.slug, reply: a.reply, clientIp: a.clientIp }, Date.now(), ipSalt);
       case "familyRsvps":
         return await family(db, tables, { slug: a.slug, token: a.token });
       default:

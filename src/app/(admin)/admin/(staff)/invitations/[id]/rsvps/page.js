@@ -2,9 +2,7 @@ import { notFound } from "next/navigation";
 import { requireStaff } from "@/AdminModule/auth/server";
 import { getInvitation } from "@/AdminModule/invitations/data";
 import { listRsvps, regenerateFamilyTokenRecord } from "@/AdminModule/rsvps/data";
-import {
-  listRsvpsAction, markRsvpsSeenAction, newFamilyLinkAction, removeRsvpAction, saveRsvpAction,
-} from "@/AdminModule/rsvps/actions";
+import { markRsvpsSeenAction, newFamilyLinkAction, removeRsvpAction, saveRsvpAction } from "@/AdminModule/rsvps/actions";
 import RsvpPage from "@/AdminModule/rsvps/RsvpPage";
 import { indexFields } from "@/InvitationModule/lib/indexFields";
 
@@ -23,10 +21,8 @@ export default async function RsvpsPage({ params }) {
   // The family link is made the first time staff open this page (like the preview link for older invitations).
   // The record call, not the action: an action would revalidate during render.
   if (!familyToken) {
-    const { data } = await regenerateFamilyTokenRecord(invitation.id).catch((err) => {
-      console.error("regenerateFamilyToken failed", err);
-      return { data: null };
-    });
+    const { data, errors } = await regenerateFamilyTokenRecord(invitation.id).catch((err) => ({ data: null, errors: [err] }));
+    if (errors?.length) console.error("regenerateFamilyToken failed", errors);
     familyToken = data?.familyToken ?? null;
   }
 
@@ -49,7 +45,7 @@ export default async function RsvpsPage({ params }) {
         familyToken,
       }}
       initialRows={rows}
-      actions={{ listRsvpsAction, saveRsvpAction, removeRsvpAction, newFamilyLinkAction, markRsvpsSeenAction }}
+      actions={{ saveRsvpAction, removeRsvpAction, newFamilyLinkAction, markRsvpsSeenAction }}
     />
   );
 }

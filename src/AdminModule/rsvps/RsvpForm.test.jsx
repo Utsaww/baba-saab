@@ -17,6 +17,8 @@ describe("RsvpForm", () => {
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByLabelText("Name")).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByText("Enter the guest's name")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Fix the highlighted fields");
+    expect(screen.getByLabelText("Name")).toHaveFocus();
   });
 
   it("saves without a phone, trimming fields and leaving guest count empty", async () => {
@@ -37,6 +39,7 @@ describe("RsvpForm", () => {
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByText("Enter a phone number, or leave it empty")).toBeInTheDocument();
     expect(screen.getByText("Enter a number from 1 to 20, or leave it empty")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Phone/)).toHaveFocus();
   });
 
   it("drops the guest count for Not coming", async () => {

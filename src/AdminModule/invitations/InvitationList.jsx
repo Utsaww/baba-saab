@@ -185,7 +185,7 @@ export default function InvitationList({ rows: initialRows, templateNames, now, 
               <Link
                 href={`/admin/invitations/${row.id}/rsvps`}
                 aria-label={`RSVPs: ${row.coupleNames}${row.rsvpNewCount > 0 ? `, ${row.rsvpNewCount} new` : ""}`}
-                className="mr-2 inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border border-stone-300 px-4 text-sm hover:bg-stone-100"
+                className="mx-2 inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border border-stone-300 px-4 text-sm hover:bg-stone-100"
               >
                 RSVPs
                 {row.rsvpNewCount > 0 ? <span className="rounded-full bg-blue-100 px-2 text-xs text-blue-900">{`${row.rsvpNewCount} new`}</span> : null}

@@ -9,7 +9,7 @@ vi.mock("@/AdminModule/invitations/data", () => inv);
 const rsvpData = vi.hoisted(() => ({ listRsvps: vi.fn(), regenerateFamilyTokenRecord: vi.fn() }));
 vi.mock("@/AdminModule/rsvps/data", () => rsvpData);
 vi.mock("@/AdminModule/rsvps/actions", () => ({
-  listRsvpsAction: vi.fn(), saveRsvpAction: vi.fn(), removeRsvpAction: vi.fn(), newFamilyLinkAction: vi.fn(), markRsvpsSeenAction: vi.fn(),
+  saveRsvpAction: vi.fn(), removeRsvpAction: vi.fn(), newFamilyLinkAction: vi.fn(), markRsvpsSeenAction: vi.fn(),
 }));
 vi.mock("@/AdminModule/rsvps/RsvpPage", () => ({ default: () => null }));
 
@@ -31,9 +31,11 @@ beforeEach(() => {
 });
 
 describe("RSVP page route", () => {
-  it("checks staff first and passes the invitation, plain rows and the five actions", async () => {
+  it("checks staff first and passes the invitation, plain rows and the four actions the page uses", async () => {
     const el = await RsvpsPage({ params: { id: "inv-1" } });
-    expect(auth.requireStaff).toHaveBeenCalled();
+    const staffAt = auth.requireStaff.mock.invocationCallOrder[0];
+    expect(staffAt).toBeLessThan(inv.getInvitation.mock.invocationCallOrder[0]);
+    expect(staffAt).toBeLessThan(rsvpData.listRsvps.mock.invocationCallOrder[0]);
     expect(inv.getInvitation).toHaveBeenCalledWith("inv-1");
     expect(el.props.invitation).toMatchObject({ id: "inv-1", slug: "priya-rahul", familyToken: "fam", language: "hi", events: invitation.content.events });
     expect(typeof el.props.invitation.title).toBe("string");
@@ -51,6 +53,14 @@ describe("RSVP page route", () => {
     const el = await RsvpsPage({ params: { id: "inv-1" } });
     expect(rsvpData.regenerateFamilyTokenRecord).toHaveBeenCalledWith("inv-1");
     expect(el.props.invitation.familyToken).toBe("new");
+  });
+
+  it("logs a token mutation that answers with errors", async () => {
+    inv.getInvitation.mockResolvedValue({ ...structuredClone(invitation), familyToken: null });
+    rsvpData.regenerateFamilyTokenRecord.mockResolvedValue({ data: null, errors: [{ message: "denied" }] });
+    const el = await RsvpsPage({ params: { id: "inv-1" } });
+    expect(el.props.invitation.familyToken).toBeNull();
+    expect(console.error).toHaveBeenCalledWith("regenerateFamilyToken failed", [{ message: "denied" }]);
   });
 
   it("still renders when the token or the replies can't be loaded", async () => {

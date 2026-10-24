@@ -49,6 +49,16 @@ export default function RsvpPage({ invitation, initialRows, actions }) {
   const [rowPending, setRowPending] = useState({});
   const [rowErrors, setRowErrors] = useState({});
   const [done, setDone] = useState("");
+  // Focus goes back to the button that opened the form (or Add reply when that row is gone) once it closes.
+  const addRef = useRef(null);
+  const openerRef = useRef(null);
+  const restoreFocus = useRef(false);
+  useEffect(() => {
+    if (form || !restoreFocus.current) return;
+    restoreFocus.current = false;
+    const opener = openerRef.current;
+    (opener?.isConnected ? opener : addRef.current)?.focus();
+  }, [form]);
 
   // Opening the page marks its replies as seen (clears the "N new" badge). Once, even under Strict Mode.
   const marked = useRef(false);
@@ -65,10 +75,15 @@ export default function RsvpPage({ invitation, initialRows, actions }) {
   const shown = useMemo(() => filterRows(rows, { q, eventId, attending }), [rows, q, eventId, attending]);
   const eventName = (e) => textFor(e.name, lang) || "Untitled event";
 
-  const openForm = (row) => {
+  const openForm = (row, opener) => {
+    openerRef.current = opener ?? null;
     setForm({ row });
     setFormError("");
     setDone("");
+  };
+  const closeForm = () => {
+    restoreFocus.current = true;
+    setForm(null);
   };
 
   const save = async (values) => {
@@ -96,7 +111,7 @@ export default function RsvpPage({ invitation, initialRows, actions }) {
           };
           return [saved, ...all.filter((x) => x.rsvpKey !== previousKey && x.rsvpKey !== r.rsvpKey)];
         });
-        setForm(null);
+        closeForm();
         setDone(`Saved: ${values.name}`);
       } else setFormError(r?.message ?? OFFLINE_MESSAGE);
     } catch {
@@ -174,7 +189,7 @@ export default function RsvpPage({ invitation, initialRows, actions }) {
           </section>
 
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => openForm(null)} className={`${button} bg-stone-900 text-white`}>
+            <button ref={addRef} type="button" onClick={(e) => openForm(null, e.currentTarget)} className={`${button} bg-stone-900 text-white`}>
               Add reply
             </button>
             <button
@@ -197,7 +212,7 @@ export default function RsvpPage({ invitation, initialRows, actions }) {
               pending={formPending}
               error={formError}
               onSave={save}
-              onCancel={() => setForm(null)}
+              onCancel={closeForm}
             />
           ) : null}
 

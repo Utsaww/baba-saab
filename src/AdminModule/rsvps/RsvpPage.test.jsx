@@ -31,10 +31,18 @@ const renderPage = (actions = makeActions(), props = {}) => {
   return actions;
 };
 
+// Wide screens show a table; phones show cards with the same rows (both are in the DOM, CSS picks one).
+const inTable = () => within(screen.getByRole("table"));
 const bodyRows = () => within(screen.getByRole("table")).getAllByRole("row").slice(1);
 const names = () => bodyRows().map((r) => within(r).getAllByRole("cell")[0].textContent.replace("!", "").trim());
 
-afterEach(() => vi.restoreAllMocks());
+beforeEach(() => {
+  Element.prototype.scrollIntoView = vi.fn();
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  delete Element.prototype.scrollIntoView;
+});
 
 describe("RsvpPage", () => {
   it("marks replies as seen when the page opens", async () => {
@@ -57,8 +65,8 @@ describe("RsvpPage", () => {
   it("lists replies newest first with the same-family marker on shared phones", () => {
     renderPage();
     expect(names()).toEqual(["Ravi", "Meena", "Asha", "Kamal"]);
-    expect(screen.getByRole("img", { name: familyNote(["Ravi"]) })).toHaveAttribute("title", familyNote(["Ravi"]));
-    expect(screen.getByRole("img", { name: familyNote(["Asha"]) })).toBeInTheDocument();
+    expect(inTable().getByRole("img", { name: familyNote(["Ravi"]) })).toHaveAttribute("title", familyNote(["Ravi"]));
+    expect(inTable().getByRole("img", { name: familyNote(["Asha"]) })).toBeInTheDocument();
     expect(within(bodyRows()[1]).queryByRole("img")).toBeNull();
     expect(within(bodyRows()[3]).queryByRole("img")).toBeNull();
     expect(within(bodyRows()[2]).getByText("Haldi")).toBeInTheDocument();
@@ -99,7 +107,7 @@ describe("RsvpPage", () => {
 
   it("edits a reply with its previous key and shows a save error", async () => {
     const actions = renderPage(makeActions({ saveRsvpAction: vi.fn(async () => ({ ok: false, message: "Another reply already uses this name and phone — edit that one instead." })) }));
-    await userEvent.click(screen.getByRole("button", { name: "Edit: Meena" }));
+    await userEvent.click(inTable().getByRole("button", { name: "Edit: Meena" }));
     const form = screen.getByRole("form", { name: "Edit reply" });
     expect(within(form).getByLabelText("Name")).toHaveValue("Meena");
     await userEvent.click(within(form).getByRole("radio", { name: "Coming" }));
@@ -113,7 +121,7 @@ describe("RsvpPage", () => {
 
   it("replaces the edited row under its new key", async () => {
     const actions = renderPage(makeActions({ saveRsvpAction: vi.fn(async () => ({ ok: true, rsvpKey: "919811111111#meena devi" })) }));
-    await userEvent.click(screen.getByRole("button", { name: "Edit: Meena" }));
+    await userEvent.click(inTable().getByRole("button", { name: "Edit: Meena" }));
     const name = screen.getByLabelText("Name");
     await userEvent.clear(name);
     await userEvent.type(name, "Meena Devi");
@@ -126,7 +134,7 @@ describe("RsvpPage", () => {
 
   it("shows the offline message when a save never answers", async () => {
     renderPage(makeActions({ saveRsvpAction: vi.fn(async () => { throw new Error("net"); }) }));
-    await userEvent.click(screen.getByRole("button", { name: "Edit: Meena" }));
+    await userEvent.click(inTable().getByRole("button", { name: "Edit: Meena" }));
     await userEvent.click(screen.getByRole("button", { name: "Save reply" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(OFFLINE_MESSAGE);
   });
@@ -134,10 +142,10 @@ describe("RsvpPage", () => {
   it("removes a reply only after confirming", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
     const actions = renderPage();
-    await userEvent.click(screen.getByRole("button", { name: "Remove: Kamal" }));
+    await userEvent.click(inTable().getByRole("button", { name: "Remove: Kamal" }));
     expect(confirm).toHaveBeenCalledWith("Remove the reply from Kamal?");
     expect(actions.removeRsvpAction).not.toHaveBeenCalled();
-    await userEvent.click(screen.getByRole("button", { name: "Remove: Kamal" }));
+    await userEvent.click(inTable().getByRole("button", { name: "Remove: Kamal" }));
     await waitFor(() => expect(actions.removeRsvpAction).toHaveBeenCalledWith("inv-1", "staff#1"));
     await waitFor(() => expect(names()).not.toContain("Kamal"));
   });
@@ -145,8 +153,8 @@ describe("RsvpPage", () => {
   it("shows a per-row error when removing fails", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     renderPage(makeActions({ removeRsvpAction: vi.fn(async () => ({ ok: false, message: "Nope" })) }));
-    await userEvent.click(screen.getByRole("button", { name: "Remove: Kamal" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Nope");
+    await userEvent.click(inTable().getByRole("button", { name: "Remove: Kamal" }));
+    expect(await inTable().findByRole("alert")).toHaveTextContent("Nope");
     expect(names()).toContain("Kamal");
   });
 
@@ -208,5 +216,68 @@ describe("RsvpPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "New family link" }));
     expect(actions.newFamilyLinkAction).toHaveBeenCalledWith("inv-1");
     expect(await screen.findByText("http://localhost:3000/rsvps/priya-rahul?k=fam2")).toBeInTheDocument();
+  });
+
+  describe("phone layout", () => {
+    it("shows each reply as a card with its key facts and Edit / Remove", () => {
+      renderPage();
+      const cards = within(screen.getByRole("list", { name: "Replies" })).getAllByRole("listitem");
+      expect(cards).toHaveLength(4);
+      const asha = cards[2];
+      expect(within(asha).getByRole("heading", { name: /Asha/ })).toBeInTheDocument();
+      expect(within(asha).getByText("Coming")).toBeInTheDocument();
+      expect(within(asha).getByText("3 people")).toBeInTheDocument();
+      expect(within(asha).getByText("Haldi")).toBeInTheDocument();
+      expect(within(asha).getByRole("img", { name: familyNote(["Ravi"]) })).toBeInTheDocument();
+      expect(within(asha).getByRole("button", { name: "Edit: Asha" })).toBeInTheDocument();
+      expect(within(asha).getByRole("button", { name: "Remove: Asha" })).toBeInTheDocument();
+    });
+
+    it("edits from a card", async () => {
+      const actions = renderPage();
+      const cards = within(screen.getByRole("list", { name: "Replies" })).getAllByRole("listitem");
+      await userEvent.click(within(cards[1]).getByRole("button", { name: "Edit: Meena" }));
+      expect(screen.getByRole("form", { name: "Edit reply" })).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Save reply" }));
+      await waitFor(() => expect(actions.saveRsvpAction).toHaveBeenCalled());
+    });
+  });
+
+  describe("focus", () => {
+    it("scrolls the form into view and focuses its first field when it opens", async () => {
+      renderPage();
+      await userEvent.click(inTable().getByRole("button", { name: "Edit: Meena" }));
+      const form = screen.getByRole("form", { name: "Edit reply" });
+      expect(within(form).getByLabelText("Name")).toHaveFocus();
+      expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ block: "start" }));
+      expect(Element.prototype.scrollIntoView.mock.contexts.at(-1)).toBe(form);
+    });
+
+    it("returns focus to the opening button after Cancel and after Save", async () => {
+      renderPage(makeActions({ saveRsvpAction: vi.fn(async () => ({ ok: true, rsvpKey: "staff#1" })) }));
+      const edit = inTable().getByRole("button", { name: "Edit: Kamal" });
+      await userEvent.click(edit);
+      await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      expect(edit).toHaveFocus();
+      await userEvent.click(edit);
+      await userEvent.click(screen.getByRole("button", { name: "Save reply" }));
+      await waitFor(() => expect(screen.queryByRole("form")).toBeNull());
+      expect(inTable().getByRole("button", { name: "Edit: Kamal" })).toHaveFocus();
+      const add = screen.getByRole("button", { name: "Add reply" });
+      await userEvent.click(add);
+      await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      expect(add).toHaveFocus();
+    });
+
+    it("focuses Add reply when the edited row is gone after saving", async () => {
+      renderPage(makeActions({ saveRsvpAction: vi.fn(async () => ({ ok: true, rsvpKey: "919811111111#meena devi" })) }));
+      await userEvent.click(inTable().getByRole("button", { name: "Edit: Meena" }));
+      const name = screen.getByLabelText("Name");
+      await userEvent.clear(name);
+      await userEvent.type(name, "Meena Devi");
+      await userEvent.click(screen.getByRole("button", { name: "Save reply" }));
+      await waitFor(() => expect(screen.queryByRole("form")).toBeNull());
+      expect(screen.getByRole("button", { name: "Add reply" })).toHaveFocus();
+    });
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { textFor } from "@/InvitationModule/lib/i18n";
 import { whatsappDigits } from "@/InvitationModule/lib/rsvp";
 
@@ -43,6 +43,15 @@ export default function RsvpForm({ label = "Add reply", initial, events = [], la
     message: initial?.message ?? "",
   }));
   const [errors, setErrors] = useState({});
+  const formRef = useRef(null);
+  const fields = { name: useRef(null), phone: useRef(null), guestCount: useRef(null) };
+
+  // Opened from a row far down the list (often on a phone): bring the form into view and start at its first field.
+  useEffect(() => {
+    formRef.current?.scrollIntoView?.({ block: "start" });
+    fields.name.current?.focus({ preventScroll: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const set = (key) => (e) => setV((old) => ({ ...old, [key]: e.target.value }));
   const lang = language === "hi" ? "hi" : "en";
 
@@ -51,7 +60,11 @@ export default function RsvpForm({ label = "Add reply", initial, events = [], la
     if (pending) return;
     const found = validate(v);
     setErrors(found);
-    if (Object.keys(found).length) return;
+    const firstInvalid = ["name", "phone", "guestCount"].find((key) => found[key]);
+    if (firstInvalid) {
+      fields[firstInvalid].current?.focus();
+      return;
+    }
     onSave({
       name: v.name.trim(),
       phone: v.phone.trim(),
@@ -72,21 +85,21 @@ export default function RsvpForm({ label = "Add reply", initial, events = [], la
   const errorProps = (key) => (errors[key] ? { "aria-invalid": "true", "aria-describedby": `${id}-${key}-error` } : {});
 
   return (
-    <form aria-label={label} onSubmit={submit} noValidate className="space-y-4 rounded-xl border border-stone-200 bg-white p-4">
+    <form ref={formRef} aria-label={label} onSubmit={submit} noValidate className="space-y-4 rounded-xl border border-stone-200 bg-white p-4">
       <h2 className="text-lg font-semibold">{label}</h2>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor={`${id}-name`} className="text-sm font-medium">
             Name
           </label>
-          <input id={`${id}-name`} value={v.name} onChange={set("name")} maxLength={100} className={input} {...errorProps("name")} />
+          <input ref={fields.name} id={`${id}-name`} value={v.name} onChange={set("name")} maxLength={100} className={input} {...errorProps("name")} />
           {fieldError("name")}
         </div>
         <div>
           <label htmlFor={`${id}-phone`} className="text-sm font-medium">
             Phone (optional)
           </label>
-          <input id={`${id}-phone`} type="tel" value={v.phone} onChange={set("phone")} maxLength={20} className={input} {...errorProps("phone")} />
+          <input ref={fields.phone} id={`${id}-phone`} type="tel" value={v.phone} onChange={set("phone")} maxLength={20} className={input} {...errorProps("phone")} />
           {fieldError("phone")}
         </div>
       </div>
@@ -108,7 +121,7 @@ export default function RsvpForm({ label = "Add reply", initial, events = [], la
           <label htmlFor={`${id}-count`} className="text-sm font-medium">
             People (optional)
           </label>
-          <input id={`${id}-count`} type="number" inputMode="numeric" min={1} max={20} value={v.guestCount} onChange={set("guestCount")} className={input} {...errorProps("guestCount")} />
+          <input ref={fields.guestCount} id={`${id}-count`} type="number" inputMode="numeric" min={1} max={20} value={v.guestCount} onChange={set("guestCount")} className={input} {...errorProps("guestCount")} />
           {fieldError("guestCount")}
         </div>
       ) : null}
@@ -158,6 +171,11 @@ export default function RsvpForm({ label = "Add reply", initial, events = [], la
         </div>
       </div>
 
+      {Object.keys(errors).length ? (
+        <p role="alert" className="text-sm text-red-700">
+          Fix the highlighted fields before saving.
+        </p>
+      ) : null}
       {error ? (
         <p role="alert" className="text-sm text-red-700">
           {error}

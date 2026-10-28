@@ -16,6 +16,7 @@ import { formatDate, formatDots, formatTime } from "../../lib/datetime";
 import { countdownTarget } from "../../lib/countdown";
 import { mediaUrl } from "../../lib/media";
 import { isRsvpClosed, isWhatsappNumber, rsvpMessage, whatsappRsvpUrl } from "../../lib/rsvp";
+import { postRsvp } from "../../lib/rsvpClient";
 import { couplePair, coupleTitle } from "../../lib/names";
 
 const dateLang = (lang) => (lang === "hi" ? "hi" : "en");
@@ -205,6 +206,11 @@ function Rsvp({ inv, lang, s, ctx }) {
     const url = whatsappRsvpUrl(inv, reply, lang);
     return url ? { url, message: rsvpMessage(inv, reply, lang) } : null;
   };
+  // Live replies are saved for the family's RSVP list before WhatsApp opens; previews save nothing.
+  const save =
+    ctx.mode === "live" && ctx.slug
+      ? (reply, opts) => postRsvp(ctx.slug, reply, opts)
+      : undefined;
   // Decided after mount: cached server HTML must not depend on the clock, or hydration fails after the deadline.
   const [closed, setClosed] = useState(false);
   useEffect(() => setClosed(isRsvpClosed(inv.rsvp)), [inv.rsvp]);
@@ -225,6 +231,7 @@ function Rsvp({ inv, lang, s, ctx }) {
         // One remembered reply per live invitation; previews never touch the device.
         storageKey={!preview && ctx.slug ? `rsvp:${ctx.slug}` : undefined}
         compose={compose}
+        save={save}
         s={s}
       />
     </Section>

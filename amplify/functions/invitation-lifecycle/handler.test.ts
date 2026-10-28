@@ -35,7 +35,10 @@ describe("invitation-lifecycle handler", () => {
     await expect(handler(scheduled as any)).resolves.toEqual({ offline: 0, erased: 0, failed: 0 });
     expect(runLifecycle).toHaveBeenCalledWith(
       { db: expect.anything(), s3: expect.anything() },
-      expect.objectContaining({ tables: expect.any(Object), bucket: expect.any(String) }),
+      expect.objectContaining({
+        tables: { invitation: expect.any(String), slug: expect.any(String), rsvp: expect.any(String) },
+        bucket: expect.any(String),
+      }),
       expect.any(Date),
     );
   });

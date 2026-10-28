@@ -3,7 +3,7 @@ import { cookieDataClient } from "@/AdminModule/dataClient";
 import { indexFields } from "@/InvitationModule/lib/indexFields";
 import { parseAwsJson, parseContent } from "./content";
 
-const LIST_FIELDS = ["id", "status", "templateId", "mainDate", "coupleNames", "searchText", "updatedAt", "updatedBy", "musicTrackId", "slug", "version", "liveVersion", "offlineOn", "purgeAt", "offlineAt", "deletedAt", "statusBeforeDelete"];
+const LIST_FIELDS = ["id", "status", "templateId", "mainDate", "coupleNames", "searchText", "updatedAt", "updatedBy", "musicTrackId", "slug", "version", "liveVersion", "offlineOn", "purgeAt", "offlineAt", "deletedAt", "statusBeforeDelete", "rsvpNewCount"];
 
 function failIfErrors(errors) {
   if (errors?.length) throw new Error(errors.map((e) => e.message).join("; "));
@@ -34,6 +34,8 @@ export async function getInvitation(id) {
     status: data.status,
     slug: data.slug ?? null,
     previewToken: data.previewToken ?? null,
+    familyToken: data.familyToken ?? null,
+    rsvpNewCount: data.rsvpNewCount ?? 0,
     liveVersion: data.liveVersion ?? null,
     publishedAt: data.publishedAt ?? null,
     liveUpdatedAt: data.liveUpdatedAt ?? null,

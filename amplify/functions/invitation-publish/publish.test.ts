@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { publish, regenerateToken, setSlug, updateLive, PublishError } from "./publish";
+import { markRsvpsSeen, publish, regenerateFamilyToken, regenerateToken, setSlug, updateLive, PublishError } from "./publish";
 
 const NOW = "2026-10-14T10:00:00.000Z";
 const tables = { invitation: "Inv", slug: "Slug" };
@@ -131,6 +131,50 @@ describe("regenerateToken", () => {
     const upd = db.calls.find((c) => c.constructor.name === "UpdateCommand").input;
     expect(upd.ExpressionAttributeValues[":t"]).toBe(previewToken);
     expect(upd.ConditionExpression).toBe("attribute_exists(id)");
+  });
+});
+
+describe("regenerateFamilyToken", () => {
+  it("stores and returns a fresh 22-char family token", async () => {
+    const db = fakeDb(draft);
+    const { familyToken } = await regenerateFamilyToken(db as any, tables, { id: "inv-1" });
+    expect(familyToken).toMatch(/^[A-Za-z0-9_-]{22}$/);
+    const upd = db.calls.find((c) => c.constructor.name === "UpdateCommand").input;
+    expect(upd).toEqual({
+      TableName: "Inv",
+      Key: { id: "inv-1" },
+      UpdateExpression: "SET familyToken = :t",
+      ConditionExpression: "attribute_exists(id)",
+      ExpressionAttributeValues: { ":t": familyToken },
+    });
+  });
+  it("gives a different token each time", async () => {
+    const a = await regenerateFamilyToken(fakeDb(draft) as any, tables, { id: "inv-1" });
+    const b = await regenerateFamilyToken(fakeDb(draft) as any, tables, { id: "inv-1" });
+    expect(a.familyToken).not.toBe(b.familyToken);
+  });
+  it("reports a missing invitation", async () => {
+    const db = fakeDb(draft, { failTransact: -1 });
+    await expect(regenerateFamilyToken(db as any, tables, { id: "gone" })).rejects.toMatchObject({ name: "NotFound" });
+  });
+});
+
+describe("markRsvpsSeen", () => {
+  it("resets the new-reply count", async () => {
+    const db = fakeDb(draft);
+    await expect(markRsvpsSeen(db as any, tables, { id: "inv-1" })).resolves.toEqual({ ok: true });
+    const upd = db.calls.find((c) => c.constructor.name === "UpdateCommand").input;
+    expect(upd).toEqual({
+      TableName: "Inv",
+      Key: { id: "inv-1" },
+      UpdateExpression: "SET rsvpNewCount = :zero",
+      ConditionExpression: "attribute_exists(id)",
+      ExpressionAttributeValues: { ":zero": 0 },
+    });
+  });
+  it("reports a missing invitation", async () => {
+    const db = fakeDb(draft, { failTransact: -1 });
+    await expect(markRsvpsSeen(db as any, tables, { id: "gone" })).rejects.toMatchObject({ name: "NotFound" });
   });
 });
 

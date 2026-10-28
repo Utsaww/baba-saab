@@ -5,7 +5,7 @@ import { addDays, asContent, defaultOfflineOn, isEraseDue, isOfflineDue, OFFLINE
 import { claimDueForErase, purgeAtFrom } from "./transitions";
 
 type Clients = { db: Pick<DynamoDBDocumentClient, "send">; s3: Pick<S3Client, "send"> };
-type Config = { tables: { invitation: string; slug: string }; bucket: string };
+type Config = { tables: { invitation: string; slug: string; rsvp: string }; bucket: string };
 type Row = {
   id: string;
   status?: string;

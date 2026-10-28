@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import RsvpForm from "./RsvpForm";
 
@@ -184,6 +184,179 @@ describe("<RsvpForm>", () => {
   it("renders nothing on a live page without a family number", () => {
     const { container } = render(<RsvpForm {...base} contactPhone={undefined} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  describe("live pages that save the reply", () => {
+    let win;
+    beforeEach(() => {
+      win = { location: "", close: vi.fn(), opener: {} };
+      open.mockImplementation(() => win);
+    });
+    const SAVED = "Your reply is saved. Send it on WhatsApp to let the family know personally.";
+    const FAILED = "We couldn't save your reply — your WhatsApp message still reaches the family.";
+
+    it("opens a blank window synchronously, saves once, then points the window at WhatsApp", async () => {
+      let release;
+      const save = vi.fn(() => new Promise((resolve) => (release = resolve)));
+      render(<RsvpForm {...base} save={save} />);
+      await fillAndSend();
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(open.mock.calls[0][0]).toBe("");
+      expect(win.location).toBe("");
+      await act(async () => release({ ok: true, updated: false }));
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(save).toHaveBeenCalledWith(expect.objectContaining({ name: "Sharma Parivar", phone: "9876543210", attending: "yes", guestCount: 3, eventIds: ["sangeet"] }), { timeoutMs: 8000 });
+      expect(win.location).toBe(URL_FOR);
+      expect(win.opener).toBeNull();
+      expect(screen.getByText(SAVED)).toBeInTheDocument();
+      expect(screen.getByRole("textbox", { name: "Your RSVP message" })).toBeInTheDocument();
+    });
+
+    it("retries once on a server error, then says it couldn't save and still opens WhatsApp", async () => {
+      const save = vi.fn().mockResolvedValue({ ok: false, reason: "error" });
+      render(<RsvpForm {...base} save={save} />);
+      await fillAndSend();
+      expect(save).toHaveBeenCalledTimes(2);
+      expect(screen.getByText(FAILED)).toBeInTheDocument();
+      expect(win.location).toBe(URL_FOR);
+    });
+
+    it("saves on the retry when the first attempt fails", async () => {
+      const save = vi.fn().mockRejectedValueOnce(new Error("offline")).mockResolvedValue({ ok: true });
+      render(<RsvpForm {...base} save={save} />);
+      await fillAndSend();
+      expect(save).toHaveBeenCalledTimes(2);
+      expect(screen.getByText(SAVED)).toBeInTheDocument();
+    });
+
+    it("does not retry when rate limited, and still opens WhatsApp", async () => {
+      const save = vi.fn().mockResolvedValue({ ok: false, reason: "rate" });
+      render(<RsvpForm {...base} save={save} />);
+      await fillAndSend();
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(FAILED)).toBeInTheDocument();
+      expect(win.location).toBe(URL_FOR);
+    });
+
+    it("shows the closed notice and never opens WhatsApp when replies have closed", async () => {
+      const save = vi.fn().mockResolvedValue({ ok: false, reason: "closed" });
+      render(<RsvpForm {...base} save={save} closedOnText="Saturday, 31 October 2026" />);
+      await fillAndSend();
+      expect(screen.getByRole("status")).toHaveTextContent("RSVPs closed on Saturday, 31 October 2026");
+      expect(win.location).toBe("");
+      expect(win.close).toHaveBeenCalled();
+      expect(screen.queryByRole("button", { name: "Send RSVP on WhatsApp" })).not.toBeInTheDocument();
+    });
+
+    it("falls back to the copy panel when the pop-up is blocked", async () => {
+      open.mockImplementation(() => null);
+      const save = vi.fn().mockResolvedValue({ ok: true });
+      render(<RsvpForm {...base} save={save} />);
+      await fillAndSend();
+      expect(screen.getByText(SAVED)).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Open WhatsApp" })).toHaveAttribute("href", URL_FOR);
+    });
+
+    it("ignores a second tap while the save is in flight", async () => {
+      let release;
+      const save = vi.fn(() => new Promise((resolve) => (release = resolve)));
+      render(<RsvpForm {...base} save={save} />);
+      await userEvent.type(screen.getByLabelText("Name"), "Sharma Parivar");
+      await userEvent.type(screen.getByLabelText("Phone"), "9876543210");
+      await userEvent.click(screen.getByLabelText("Joyfully accept"));
+      const form = screen.getByRole("button", { name: "Send RSVP on WhatsApp" }).closest("form");
+      await act(async () => {
+        fireEvent.submit(form);
+        fireEvent.submit(form);
+      });
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(open).toHaveBeenCalledTimes(1);
+      await act(async () => release({ ok: true }));
+      expect(win.location).toBe(URL_FOR);
+    });
+
+    it("tells the guest it is saving, in a live region that stays mounted", async () => {
+      let release;
+      const save = vi.fn(() => new Promise((resolve) => (release = resolve)));
+      render(<RsvpForm {...base} save={save} />);
+      const region = screen.getByRole("status");
+      expect(region).toHaveAttribute("aria-live", "polite");
+      expect(region).toBeEmptyDOMElement();
+      await fillAndSend();
+      expect(screen.getByRole("status")).toBe(region);
+      expect(region).toHaveTextContent("Saving…");
+      await act(async () => release({ ok: true }));
+      expect(screen.getByRole("status")).toBe(region);
+      expect(region).toHaveTextContent(SAVED);
+      expect(region).not.toHaveTextContent("Saving…");
+    });
+
+    it("says it is saving in Hindi", async () => {
+      const save = vi.fn(() => new Promise(() => {}));
+      render(<RsvpForm {...base} lang="hi" save={save} />);
+      await userEvent.type(screen.getByLabelText("नाम"), "Sharma");
+      await userEvent.type(screen.getByLabelText("फ़ोन"), "9876543210");
+      await userEvent.click(screen.getByLabelText("अभी तय नहीं"));
+      await userEvent.click(screen.getByRole("button", { name: "व्हाट्सऐप पर उत्तर भेजें" }));
+      expect(screen.getByRole("status")).toHaveTextContent("सहेज रहे हैं…");
+    });
+
+    it("moves focus to the closed notice when replies have closed", async () => {
+      const save = vi.fn().mockResolvedValue({ ok: false, reason: "closed" });
+      render(<RsvpForm {...base} save={save} closedOnText="Saturday, 31 October 2026" />);
+      await fillAndSend();
+      expect(document.activeElement).toBe(screen.getByRole("status"));
+    });
+
+    it("gives the retry only the time left in the overall budget", async () => {
+      let now = 1000;
+      vi.spyOn(Date, "now").mockImplementation(() => now);
+      const save = vi.fn(async () => {
+        now += 7000;
+        return { ok: false, reason: "error" };
+      });
+      render(<RsvpForm {...base} save={save} />);
+      await fillAndSend();
+      expect(save).toHaveBeenCalledTimes(2);
+      expect(save.mock.calls[0][1]).toEqual({ timeoutMs: 8000 });
+      expect(save.mock.calls[1][1].timeoutMs).toBeLessThanOrEqual(5000);
+      expect(save.mock.calls[1][1].timeoutMs).toBeGreaterThan(0);
+    });
+
+    it("does not retry when the first attempt used up the budget", async () => {
+      let now = 1000;
+      vi.spyOn(Date, "now").mockImplementation(() => now);
+      const save = vi.fn(async () => {
+        now += 11800;
+        return { ok: false, reason: "error" };
+      });
+      render(<RsvpForm {...base} save={save} />);
+      await fillAndSend();
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(FAILED)).toBeInTheDocument();
+    });
+
+    it("a preview page has no save to call, so it opens WhatsApp directly and never shows saved copy", async () => {
+      open.mockImplementation(() => null);
+      render(<RsvpForm {...base} preview />);
+      await fillAndSend();
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(open).toHaveBeenCalledWith(URL_FOR, "_blank", "noopener,noreferrer");
+      expect(screen.queryByText(SAVED)).not.toBeInTheDocument();
+    });
+
+    it("says nothing about saving when no save is wired", async () => {
+      render(<RsvpForm {...base} />);
+      await fillAndSend();
+      expect(screen.queryByText(SAVED)).not.toBeInTheDocument();
+      expect(screen.queryByText(FAILED)).not.toBeInTheDocument();
+    });
+  });
+
+  it("limits the name to 100 characters and the message to 1000", () => {
+    render(<RsvpForm {...base} />);
+    expect(screen.getByLabelText("Name")).toHaveAttribute("maxlength", "100");
+    expect(screen.getByLabelText("Message for the couple")).toHaveAttribute("maxlength", "1000");
   });
 
   it("writes everything in Hindi for a Hindi invitation", async () => {

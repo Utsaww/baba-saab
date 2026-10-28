@@ -2,6 +2,7 @@ import { a, defineData, type ClientSchema } from "@aws-amplify/backend";
 import { invitationPublish } from "../functions/invitation-publish/resource";
 import { invitationLifecycle } from "../functions/invitation-lifecycle/resource";
 import { invitationPublic } from "../functions/invitation-public/resource";
+import { rsvpGuest } from "../functions/rsvp-guest/resource";
 import { staffAdmin } from "../functions/staff-admin/resource";
 
 const schema = a.schema({
@@ -58,6 +59,9 @@ const schema = a.schema({
       deletedAt: a.datetime(),
       statusBeforeDelete: a.string(),
       purgeAt: a.datetime(),
+      // RSVPs: the secret in the family's private list link, and replies since staff last opened the RSVP page.
+      familyToken: a.string(),
+      rsvpNewCount: a.integer(),
     })
     // No generated hard delete (staff were never allowed it): invitations are removed only through
     // softDeleteInvitation and the erase in invitation-lifecycle.
@@ -175,6 +179,62 @@ const schema = a.schema({
     .returns(a.ref("PublicInvitation"))
     .authorization((allow) => [allow.guest()])
     .handler(a.handler.function(invitationPublic)),
+
+  // One row per guest reply. rsvpKey = "<phone digits>#<lower-cased name>" for guest replies (same phone and
+  // name overwrites), or "staff#<uuid>" for a reply staff added without a phone. Guests never read or write this
+  // model directly: they go through submitRsvp, and families through familyRsvps with the secret token.
+  Rsvp: a
+    .model({
+      invitationId: a.string().required(),
+      rsvpKey: a.string().required(),
+      phoneKey: a.string(),
+      name: a.string().required(),
+      phone: a.string(),
+      attending: a.string().required(),
+      guestCount: a.integer(),
+      eventIds: a.string().array(),
+      meal: a.string(),
+      message: a.string(),
+      source: a.string().required(),
+    })
+    .identifier(["invitationId", "rsvpKey"])
+    .authorization((allow) => [allow.group("admin")]),
+
+  // Rate-limit counters written only by rsvp-guest; each expires by itself an hour after it starts (TTL on expiresAt,
+  // set in backend.ts). Staff can read them when looking into a complaint.
+  RsvpLimit: a
+    .model({ key: a.string().required(), count: a.integer().required(), expiresAt: a.integer().required() })
+    .identifier(["key"])
+    .authorization((allow) => [allow.group("admin").to(["read"])]),
+
+  // Guests (no login) can call these two and nothing else about RSVPs. Each enforces its own rules.
+  submitRsvp: a
+    .mutation()
+    .arguments({ slug: a.string().required(), reply: a.json().required(), clientIp: a.string().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(rsvpGuest)),
+
+  familyRsvps: a
+    .query()
+    .arguments({ slug: a.string().required(), token: a.string().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(rsvpGuest)),
+
+  regenerateFamilyToken: a
+    .mutation()
+    .arguments({ id: a.id().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationPublish)),
+
+  markRsvpsSeen: a
+    .mutation()
+    .arguments({ id: a.id().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationPublish)),
 
   MusicTrack: a
     .model({

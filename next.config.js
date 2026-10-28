@@ -45,6 +45,18 @@ const nextConfig = {
       "/api/og/invitation-preview": ["./src/InvitationModule/og/fonts/**"],
     },
   },
+  async headers() {
+    // The family page shows phone numbers behind a secret link: keep the link out of Referer headers and out of caches.
+    return [
+      {
+        source: "/rsvps/:path*",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "no-store" },
+        ],
+      },
+    ];
+  },
   webpack(config) {
     // The staff guide in docs/ is bundled into /admin/help as a string.
     config.module.rules.push({ test: /\.md$/, type: "asset/source" });

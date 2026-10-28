@@ -11,11 +11,13 @@ const rows = [
   { id: "b", status: "draft", templateId: "floral", mainDate: null, coupleNames: "Untitled invitation", searchText: "", updatedAt: "2026-10-08T11:58:00.000Z", updatedBy: "amit@example.com" },
 ];
 const templateNames = { royal: "Royal Rajasthani", floral: "Floral Pastel" };
+// The row links that open the editor (each row also has an RSVPs link).
+const editorLinks = () => screen.queryAllByRole("link").filter((l) => l.getAttribute("href")?.endsWith("/edit"));
 
 describe("InvitationList", () => {
   it("lists invitations newest edit first, linking to the editor", () => {
     render(<InvitationList rows={rows} templateNames={templateNames} now={now} />);
-    const links = screen.getAllByRole("link");
+    const links = editorLinks();
     expect(links.map((l) => l.getAttribute("href"))).toEqual(["/admin/invitations/b/edit", "/admin/invitations/a/edit"]);
     expect(within(links[1]).getByText("Royal Rajasthani")).toBeInTheDocument();
     expect(within(links[1]).getByText("Edited 3 h ago by neha@example.com")).toBeInTheDocument();
@@ -25,7 +27,7 @@ describe("InvitationList", () => {
   it("searches by name", async () => {
     render(<InvitationList rows={rows} templateNames={templateNames} now={now} />);
     await userEvent.type(screen.getByRole("searchbox", { name: "Search invitations" }), "priya");
-    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(editorLinks()).toHaveLength(1);
     await userEvent.type(screen.getByRole("searchbox", { name: "Search invitations" }), "zzz");
     expect(screen.getByText("No invitations match your search.")).toBeInTheDocument();
   });
@@ -33,7 +35,7 @@ describe("InvitationList", () => {
   it("filters by status", async () => {
     render(<InvitationList rows={rows} templateNames={templateNames} now={now} />);
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Status" }), "published");
-    expect(screen.queryAllByRole("link")).toHaveLength(0);
+    expect(editorLinks()).toHaveLength(0);
   });
 
   it("shows whether guests see the latest version, with an Open link for published invitations", () => {
@@ -60,7 +62,7 @@ describe("InvitationList", () => {
     const row = (id, extra) => ({ ...rows[0], id, coupleNames: `Couple ${id}`, ...extra });
     const item = (name) => screen.getByText(name).closest("li");
     const filter = () => screen.getByRole("combobox", { name: "Status" });
-    const names = () => screen.queryAllByRole("link", { name: /Couple/ }).map((l) => within(l).getByText(/^Couple/).textContent);
+    const names = () => editorLinks().map((l) => within(l).getByText(/^Couple/).textContent);
 
     it("badges offline and deleted invitations, with the erase date for deleted ones", async () => {
       const list = [
@@ -296,5 +298,24 @@ describe("InvitationList", () => {
     render(<InvitationList rows={[]} templateNames={templateNames} now={now} />);
     expect(screen.getByText("No invitations yet.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "New invitation" })).toHaveAttribute("href", "/admin/invitations/new");
+  });
+
+  describe("RSVPs", () => {
+    it("links every row to its RSVP page", () => {
+      render(<InvitationList rows={rows} templateNames={templateNames} now={now} />);
+      const li = screen.getByText("Priya & Rahul").closest("li");
+      const link = within(li).getByRole("link", { name: "RSVPs: Priya & Rahul" });
+      expect(link).toHaveAttribute("href", "/admin/invitations/a/rsvps");
+      expect(within(li).queryByText(/new$/)).toBeNull();
+    });
+
+    it("shows N new when replies arrived since staff last looked", () => {
+      const list = [{ ...rows[0], rsvpNewCount: 3 }, { ...rows[1], rsvpNewCount: 0 }];
+      render(<InvitationList rows={list} templateNames={templateNames} now={now} />);
+      const link = screen.getByRole("link", { name: "RSVPs: Priya & Rahul, 3 new" });
+      expect(within(link).getByText("3 new")).toBeInTheDocument();
+      const other = screen.getByText("Untitled invitation").closest("li");
+      expect(within(other).queryByText(/new$/)).toBeNull();
+    });
   });
 });

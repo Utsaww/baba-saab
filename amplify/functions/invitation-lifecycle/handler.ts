@@ -11,7 +11,11 @@ type ScheduledEvent = { fieldName?: undefined };
 
 const db = DynamoDBDocumentClient.from(new DynamoDBClient());
 const s3 = new S3Client();
-const tables = { invitation: process.env.INVITATION_TABLE ?? "", slug: process.env.INVITATION_SLUG_TABLE ?? "" };
+const tables = {
+  invitation: process.env.INVITATION_TABLE ?? "",
+  slug: process.env.INVITATION_SLUG_TABLE ?? "",
+  rsvp: process.env.RSVP_TABLE ?? "",
+};
 const cfg = { tables, bucket: process.env.INVITATION_MEDIA_BUCKET ?? "" };
 
 export const handler = async (event: AppSyncEvent | ScheduledEvent) => {

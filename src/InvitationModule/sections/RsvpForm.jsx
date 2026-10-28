@@ -35,6 +35,27 @@ function saveReply(key, values) {
   }
 }
 
+// One try, plus one more after a server or network error. Rate limits and closed replies won't change on a retry.
+// Each attempt gets 8s and the whole thing about 12s, so a slow connection never holds the guest on a blank tab for long.
+const ATTEMPT_MS = 8000;
+const BUDGET_MS = 12000;
+const MIN_RETRY_MS = 1000;
+async function attemptSave(save, reply) {
+  let result = { ok: false, reason: "error" };
+  const started = Date.now();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const left = BUDGET_MS - (Date.now() - started);
+    if (attempt > 0 && left < MIN_RETRY_MS) break;
+    try {
+      result = (await save(reply, { timeoutMs: Math.min(ATTEMPT_MS, left) })) ?? result;
+    } catch {
+      result = { ok: false, reason: "error" };
+    }
+    if (result.ok || result.reason !== "error") break;
+  }
+  return result;
+}
+
 // Guests reply on WhatsApp: the form composes a message to the family's number and opens WhatsApp.
 // Nothing is sent to Baba Saab. A fallback panel always follows, in case WhatsApp didn't open.
 export default function RsvpForm({
@@ -49,6 +70,7 @@ export default function RsvpForm({
   preview = false,
   storageKey,
   compose,
+  save,
   s = {},
 }) {
   const [values, setValues] = useState(EMPTY);
@@ -57,7 +79,12 @@ export default function RsvpForm({
   const [sent, setSent] = useState(null); // { url, message } of the last reply
   const [copied, setCopied] = useState(false);
   const [unsendable, setUnsendable] = useState(false); // the family's number can't be used
+  const [saveState, setSaveState] = useState(null); // "saved" | "failed" once a live reply has been sent
+  const [saving, setSaving] = useState(false);
+  const [closedNow, setClosedNow] = useState(false); // the server says replies have closed
   const messageBox = useRef(null);
+  const busy = useRef(false); // true from the tap until the save settles
+  const closedNotice = useRef(null);
 
   // Read after mount so the server HTML never depends on this device.
   useEffect(() => {
@@ -71,9 +98,14 @@ export default function RsvpForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
-  if (closed) {
+  // The notice replaces the form, so focus would otherwise fall to the page.
+  useEffect(() => {
+    if (closedNow) closedNotice.current?.focus();
+  }, [closedNow]);
+
+  if (closed || closedNow) {
     return (
-      <p className={s.rsvpClosed} role="status">
+      <p className={s.rsvpClosed} role="status" ref={closedNotice} tabIndex={-1}>
         <T v={UI.rsvpClosed} lang={lang} /> {closedOnText}.{" "}
         {contactPhone && (
           <>
@@ -96,8 +128,9 @@ export default function RsvpForm({
   const fieldError = (field) =>
     errors[field] ? <T as="span" v={UI.errors[errors[field]]} lang={lang} className={s.fieldError} /> : null;
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
+    if (busy.current) return;
     const found = validateRsvpInput(values, { askGuestCount });
     setErrors(found);
     if (Object.keys(found).length) return;
@@ -116,9 +149,46 @@ export default function RsvpForm({
     if (!composed) return;
     if (storageKey) saveReply(storageKey, values);
     setCopied(false);
+    if (!save) {
+      setSent(composed);
+      // Called straight from the tap, so pop-up blockers allow it.
+      window.open(composed.url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    busy.current = true;
+    // Pop-up blockers only allow windows opened straight from the tap, not after the save has awaited.
+    // So open a blank one now and point it at WhatsApp once the save has settled.
+    const win = window.open("", "_blank");
+    if (win) {
+      try {
+        win.opener = null;
+      } catch {
+        // Some browsers refuse; the blank window is still ours to navigate.
+      }
+    }
+    setSaving(true);
+    setSaveState(null);
+    const result = await attemptSave(save, reply);
+    busy.current = false;
+    setSaving(false);
+    if (result.reason === "closed") {
+      try {
+        win?.close();
+      } catch {
+        // Nothing more to do with it.
+      }
+      setClosedNow(true);
+      return;
+    }
+    setSaveState(result.ok ? "saved" : "failed");
     setSent(composed);
-    // Called straight from the tap, so pop-up blockers allow it.
-    window.open(composed.url, "_blank", "noopener,noreferrer");
+    if (win) {
+      try {
+        win.location = composed.url;
+      } catch {
+        // The panel below still offers the link.
+      }
+    }
   }
 
   async function copy() {
@@ -142,6 +212,12 @@ export default function RsvpForm({
 
   return (
     <>
+      <div role="status" aria-live="polite">
+        {saving && <T as="p" v={UI.rsvpSaving} lang={lang} className={s.rsvpNote} />}
+        {!saving && saveState && (
+          <T as="p" v={saveState === "saved" ? UI.rsvpSaved : UI.rsvpSaveFailed} lang={lang} className={s.rsvpNote} />
+        )}
+      </div>
       <form className={s.rsvpForm} onSubmit={submit} noValidate>
         {preview && <T as="p" v={UI.rsvpPreviewNote} lang={lang} className={s.rsvpNote} />}
         {remembered && <T as="p" v={UI.rsvpRemembered} lang={lang} className={s.rsvpNote} />}
@@ -152,7 +228,7 @@ export default function RsvpForm({
         )}
         <label className={s.field}>
           <T v={UI.name} lang={lang} />
-          <input name="name" value={values.name} onChange={set("name")} autoComplete="name" />
+          <input name="name" maxLength={100} value={values.name} onChange={set("name")} autoComplete="name" />
           {fieldError("name")}
         </label>
         <label className={s.field}>
@@ -205,7 +281,7 @@ export default function RsvpForm({
         )}
         <label className={s.field}>
           <T v={UI.message} lang={lang} />
-          <textarea name="message" rows={3} value={values.message} onChange={set("message")} />
+          <textarea name="message" rows={3} maxLength={1000} value={values.message} onChange={set("message")} />
         </label>
         <div aria-hidden="true" style={HONEYPOT_STYLE}>
           <label>
@@ -217,7 +293,7 @@ export default function RsvpForm({
           <T as="p" v={UI.rsvpBadNumber} lang={lang} className={s.fieldError} role="alert" />
         )}
         {contactPhone ? (
-          <button type="submit" className={s.button}>
+          <button type="submit" className={s.button} disabled={saving}>
             <T v={UI.submit} lang={lang} />
           </button>
         ) : (

@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { defineBackend } from "@aws-amplify/backend";
 import { AnyPrincipal, Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { auth } from "./auth/resource";
@@ -5,6 +6,7 @@ import { data } from "./data/resource";
 import { invitationLifecycle } from "./functions/invitation-lifecycle/resource";
 import { invitationPublic } from "./functions/invitation-public/resource";
 import { invitationPublish } from "./functions/invitation-publish/resource";
+import { rsvpGuest } from "./functions/rsvp-guest/resource";
 import { staffAdmin } from "./functions/staff-admin/resource";
 import { storage } from "./storage/resource";
 
@@ -16,6 +18,7 @@ const backend = defineBackend({
   invitationPublish,
   invitationPublic,
   invitationLifecycle,
+  rsvpGuest,
 });
 
 // Staff accounts are created only by the owner (admin:create, /admin/staff); nobody can sign themselves up.
@@ -79,3 +82,60 @@ bucket.grantDelete(lifecycleFn, "invitations/*");
 backend.invitationLifecycle.addEnvironment("INVITATION_MEDIA_BUCKET", bucket.bucketName);
 backend.invitationLifecycle.addEnvironment("INVITATION_TABLE", tables["Invitation"].tableName);
 backend.invitationLifecycle.addEnvironment("INVITATION_SLUG_TABLE", tables["InvitationSlug"].tableName);
+// Erasing an invitation erases its RSVPs too (before the record).
+tables["Rsvp"].grantReadWriteData(lifecycleFn);
+backend.invitationLifecycle.addEnvironment("RSVP_TABLE", tables["Rsvp"].tableName);
+
+// rsvp-guest is reachable without any login, so its role lists exactly the calls its code makes — no table-wide
+// grantReadData (that includes Scan, which would expose every invitation's tokens and drafts) and no delete or
+// batch writes. If the code ever needs another call, add it here on purpose.
+const rsvpGuestFn = backend.rsvpGuest.resources.lambda;
+rsvpGuestFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "ReadInvitationAndLinkName",
+    effect: Effect.ALLOW,
+    actions: ["dynamodb:GetItem"],
+    resources: [tables["Invitation"].tableArn, tables["InvitationSlug"].tableArn],
+  }),
+);
+// Replies: look up an earlier reply (GetItem), save one (PutItem), list them for the family page (Query).
+rsvpGuestFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "ReadWriteReplies",
+    effect: Effect.ALLOW,
+    actions: ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:Query"],
+    resources: [tables["Rsvp"].tableArn],
+  }),
+);
+// Rate limits: one atomic conditional UpdateItem per counter; nothing reads them back.
+rsvpGuestFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "CountRateLimits",
+    effect: Effect.ALLOW,
+    actions: ["dynamodb:UpdateItem"],
+    resources: [tables["RsvpLimit"].tableArn],
+  }),
+);
+// The one write it needs on Invitation: bumping the "N new replies" count, and nothing else on that table.
+rsvpGuestFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "BumpRsvpNewCountOnly",
+    effect: Effect.ALLOW,
+    actions: ["dynamodb:UpdateItem"],
+    resources: [tables["Invitation"].tableArn],
+    conditions: { "ForAllValues:StringEquals": { "dynamodb:Attributes": ["id", "rsvpNewCount"] } },
+  }),
+);
+// Salt for hashing guests' network addresses into rate-limit keys. A fresh random value at every synth, so it
+// rotates on each deploy; that only resets the current hourly windows. Never committed, never logged.
+backend.rsvpGuest.addEnvironment("RSVP_IP_SALT", randomBytes(32).toString("hex"));
+backend.rsvpGuest.addEnvironment("INVITATION_TABLE", tables["Invitation"].tableName);
+backend.rsvpGuest.addEnvironment("INVITATION_SLUG_TABLE", tables["InvitationSlug"].tableName);
+backend.rsvpGuest.addEnvironment("RSVP_TABLE", tables["Rsvp"].tableName);
+backend.rsvpGuest.addEnvironment("RSVP_LIMIT_TABLE", tables["RsvpLimit"].tableName);
+
+// Rate-limit counters delete themselves once their hour is over (DynamoDB TTL on expiresAt, epoch seconds).
+backend.data.resources.cfnResources.amplifyDynamoDbTables["RsvpLimit"].timeToLiveAttribute = {
+  attributeName: "expiresAt",
+  enabled: true,
+};

@@ -7,7 +7,7 @@ import ScratchReveal from "../../sections/reveals/ScratchReveal";
 import Emblem from "../../sections/Emblem";
 import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
-import { formatDots } from "../../lib/datetime";
+import { formatDotsRange } from "../../lib/datetime";
 import { plainText } from "../../lib/i18n";
 import { couplePair } from "../../lib/names";
 import { mergeStyles } from "../../lib/styles";
@@ -32,7 +32,7 @@ function Opening({ inv, lang, open }) {
         hint={plainText(UI.revealNow, lang)}
         onReveal={() => setTimeout(open, REVEAL_PAUSE_MS)}
       >
-        <p className={s.scratchDate}>{formatDots(inv.mainDate)}</p>
+        <p className={s.scratchDate}>{formatDotsRange(inv.mainDate, inv.mainDateEnd)}</p>
       </ScratchReveal>
     </div>
   );

@@ -6,7 +6,7 @@ import { CoverBase } from "../base/BaseSections";
 import ScrollReveal from "../../sections/reveals/ScrollReveal";
 import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
-import { formatDots } from "../../lib/datetime";
+import { formatDotsRange } from "../../lib/datetime";
 import { couplePair } from "../../lib/names";
 import { mergeStyles } from "../../lib/styles";
 
@@ -34,7 +34,7 @@ function Opening({ inv, lang, open }) {
         <span className={s.openingNames}>
           <T v={first.name} lang={lang} /> &amp; <T v={second.name} lang={lang} />
         </span>
-        <span className={s.coverDate}>{formatDots(inv.mainDate)}</span>
+        <span className={s.coverDate}>{formatDotsRange(inv.mainDate, inv.mainDateEnd)}</span>
         <T as="span" v={UI.scrollToOpen} lang={lang} className={s.scrollHint} />
       </ScrollReveal>
     </div>

@@ -1,4 +1,4 @@
-import { formatDate } from "@/InvitationModule/lib/datetime";
+import { formatDateRange } from "@/InvitationModule/lib/datetime";
 import { mediaUrl } from "@/InvitationModule/lib/media";
 import { coupleTitle } from "@/InvitationModule/lib/names";
 import { getPalette, getTemplate } from "@/InvitationModule/templates/registry";
@@ -13,7 +13,7 @@ export function cardModel(invitation) {
     // Devanagari subset has no Latin glyphs (&, digits), so hi cards fall back to the Latin face per glyph.
     fontFamily: lang === "hi" ? "Devanagari, Display" : "Display",
     names: coupleTitle(invitation, lang),
-    date: formatDate(invitation.mainDate, lang),
+    date: formatDateRange(invitation.mainDate, invitation.mainDateEnd, lang),
     coverUrl: coverKey ? mediaUrl(coverKey) : null,
     colors: { bg: vars["--bg"], text: vars["--text"], accent: vars["--primary"] },
   };

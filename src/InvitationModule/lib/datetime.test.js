@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dateParts, dateRangeParts, endDateError, formatDateRange, validEndDate, formatDate, formatDots, formatTime, istInstant } from "./datetime";
+import { dateParts, dateRangeParts, endDateError, formatDateRange, validEndDate, formatDate, formatDots, formatDotsRange, formatTime, istInstant } from "./datetime";
 
 describe("dateParts", () => {
   it("splits a date into a short month, the day and the year in English", () => {
@@ -116,5 +116,16 @@ describe("formatDateRange", () => {
   it("falls back to the single date for a missing or invalid end", () => {
     expect(formatDateRange("2026-12-11", undefined, "en")).toBe(formatDate("2026-12-11", "en"));
     expect(formatDateRange("2026-12-11", "2026-12-30", "en")).toBe(formatDate("2026-12-11", "en"));
+  });
+});
+
+describe("formatDotsRange", () => {
+  it("is formatDots for one day or an invalid end", () => {
+    for (const end of [undefined, "2026-12-11", "2026-12-25"]) expect(formatDotsRange("2026-12-11", end)).toBe("11 · 12 · 2026");
+  });
+  it("shares the month and year when it can", () => {
+    expect(formatDotsRange("2026-12-11", "2026-12-12")).toBe("11–12 · 12 · 2026");
+    expect(formatDotsRange("2026-11-30", "2026-12-01")).toBe("30 · 11 – 01 · 12 · 2026");
+    expect(formatDotsRange("2026-12-31", "2027-01-01")).toBe("31 · 12 · 2026 – 01 · 01 · 2027");
   });
 });

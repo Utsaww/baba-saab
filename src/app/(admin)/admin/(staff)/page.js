@@ -1,6 +1,7 @@
 import Link from "next/link";
 import GuideBanner from "@/AdminModule/GuideBanner";
 import { requireStaff } from "@/AdminModule/auth/server";
+import { TEMPLATE_IDS } from "@/InvitationModule/schema/invitation";
 
 export const metadata = { title: "Dashboard · Baba Saab Admin" };
 
@@ -8,7 +9,7 @@ export default async function Dashboard() {
   const session = await requireStaff();
   const cards = [
     { href: "/admin/invitations", title: "Invitations", text: "Create invitations and continue drafts." },
-    { href: "/admin/templates", title: "Templates", text: "Browse the 4 designs and show them to customers." },
+    { href: "/admin/templates", title: "Templates", text: `Browse the ${TEMPLATE_IDS.length} designs and show them to customers.` },
     ...(session.isOwner ? [{ href: "/admin/staff", title: "Staff", text: "Invite or remove people who can sign in here." }] : []),
     { href: "/admin/help", title: "Help", text: "The staff guide: how everything here works." },
   ];

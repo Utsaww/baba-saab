@@ -8,7 +8,7 @@ import EnvelopeReveal from "../../sections/reveals/EnvelopeReveal";
 import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
 import { plainText } from "../../lib/i18n";
-import { formatDots } from "../../lib/datetime";
+import { formatDotsRange } from "../../lib/datetime";
 import { coupleTitle, monogram } from "../../lib/names";
 import { visibleSections } from "../../lib/sections";
 import { mergeStyles } from "../../lib/styles";
@@ -51,7 +51,7 @@ function Opening({ inv, lang, open }) {
           <span className={s.letterNames} lang={cardLang === "hi" ? "hi" : undefined} data-length={nameLength(title)}>
             {title}
           </span>
-          <span className={s.letterDate}>{formatDots(inv.mainDate)}</span>
+          <span className={s.letterDate}>{formatDotsRange(inv.mainDate, inv.mainDateEnd)}</span>
         </span>
         <span className={s.pocket} aria-hidden="true">
           <Emboss className={s.emboss} seed={11} />

@@ -5,7 +5,7 @@ import TemplateFrame from "../base/TemplateFrame";
 import TapReveal from "../../sections/reveals/TapReveal";
 import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
-import { formatDots } from "../../lib/datetime";
+import { formatDotsRange } from "../../lib/datetime";
 import { monogram } from "../../lib/names";
 import { mergeStyles } from "../../lib/styles";
 
@@ -16,7 +16,7 @@ function Opening({ inv, lang, open }) {
     <div className={s.openingInner}>
       <TapReveal className={s.tapOpen} onReveal={open}>
         <span className={s.monogram}>{monogram(inv)}</span>
-        <span className={s.coverDate}>{formatDots(inv.mainDate)}</span>
+        <span className={s.coverDate}>{formatDotsRange(inv.mainDate, inv.mainDateEnd)}</span>
         <T as="span" v={UI.tapToOpen} lang={lang} className={s.tapHint} />
       </TapReveal>
     </div>

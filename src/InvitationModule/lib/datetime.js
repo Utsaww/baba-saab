@@ -103,3 +103,13 @@ export function formatDateRange(start, end, lang = "en") {
   const right = [b.weekday, b.day, b.month, b.year].join(" ");
   return `${left} ${DASH} ${right}`;
 }
+
+// formatDots for a range: "11–12 · 12 · 2026", writing the month and year once when shared.
+export function formatDotsRange(start, end) {
+  if (!validEndDate(start, end)) return formatDots(start);
+  const [y1, m1, d1] = start.split("-");
+  const [y2, m2, d2] = end.split("-");
+  if (y1 !== y2) return `${formatDots(start)} ${DASH} ${formatDots(end)}`;
+  if (m1 !== m2) return `${d1} · ${m1} ${DASH} ${d2} · ${m2} · ${y1}`;
+  return `${d1}${DASH}${d2} · ${m1} · ${y1}`;
+}

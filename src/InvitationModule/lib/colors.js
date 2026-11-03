@@ -51,6 +51,15 @@ function base(bg) {
   return { text, light, surface };
 }
 
+// The usual red, pulled toward the text colour until it reads on both bg and surface (text itself always does).
+function readableError(red, text, bg, surface) {
+  for (let t = 0; t < 1; t += 0.05) {
+    const candidate = mix(red, text, t);
+    if (contrastRatio(candidate, bg) >= BODY && contrastRatio(candidate, surface) >= BODY) return candidate;
+  }
+  return text;
+}
+
 export function customPaletteVars({ bg, accent }) {
   const { text, light, surface } = base(bg);
   let muted = text;
@@ -69,7 +78,7 @@ export function customPaletteVars({ bg, accent }) {
     "--primary": accent,
     "--accent": accent,
     "--on-primary": readableOn(accent, DARK, "#ffffff"),
-    "--error": light ? "#b42318" : "#ff8a80",
+    "--error": readableError(light ? "#b42318" : "#ff8a80", text, bg, surface),
   };
 }
 
@@ -101,14 +110,16 @@ function fromHsl([h, s, l]) {
   return toHex([r, g, b].map((v) => (v + m) * 255));
 }
 
-/** The nearest accent that passes: same hue and saturation, darker on a light background, lighter on a dark one. */
+/** The nearest accent that passes: same hue and saturation, lightness moved the least distance either way. */
 export function suggestAccent({ bg, accent }) {
   const [h, s, l] = toHsl(accent);
-  const step = base(bg).light ? -0.01 : 0.01;
-  // Ends at black or white at worst, which always passes because body text already does.
-  for (let next = l; next >= 0 && next <= 1; next += step) {
-    const candidate = fromHsl([h, s, next]);
-    if (accentPasses({ bg, accent: candidate })) return candidate;
+  // Black or white is the worst case on the text's side, and always passes because body text already does.
+  for (let d = 0; d <= 1; d += 0.01) {
+    for (const next of [l - d, l + d]) {
+      if (next < 0 || next > 1) continue;
+      const candidate = fromHsl([h, s, next]);
+      if (accentPasses({ bg, accent: candidate })) return candidate;
+    }
   }
-  return step < 0 ? "#000000" : "#ffffff";
+  return base(bg).light ? "#000000" : "#ffffff";
 }

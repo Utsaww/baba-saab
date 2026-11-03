@@ -75,3 +75,16 @@ describe("previewInvitation end date", () => {
     expect(invitation.mainDateEnd).toBe("2027-02-15");
   });
 });
+
+describe("previewInvitation custom colours", () => {
+  it("doesn't throw on a half-set pair, and shows the first palette", () => {
+    const draft = { templateId: "royal", theme: { palette: "custom", colors: { bg: "#7b1e3a" } } };
+    const { invitation } = previewInvitation(draft, royal);
+    expect(invitation.templateId).toBe("royal");
+    expect(invitation.theme.colors).toBeUndefined();
+  });
+  it("doesn't throw on the sample fallback either", () => {
+    const draft = { templateId: "royal", theme: { palette: "custom", colors: { bg: "#7b1e3a" } }, hosts: { families: "not a list" } };
+    expect(() => previewInvitation(draft, royal)).not.toThrow();
+  });
+});

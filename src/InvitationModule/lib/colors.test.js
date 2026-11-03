@@ -31,7 +31,7 @@ describe("customPaletteVars", () => {
         expect(v["--bg"]).toBe(bg);
         expect(v["--primary"]).toBe(accent);
         expect(v["--accent"]).toBe(accent);
-        for (const fg of ["--text", "--muted"]) {
+        for (const fg of ["--text", "--muted", "--error"]) {
           for (const on of ["--bg", "--surface"]) expect(contrastRatio(v[fg], v[on]), `${fg} on ${on}`).toBeGreaterThanOrEqual(4.5);
         }
         expect(contrastRatio(v["--on-primary"], v["--primary"])).toBeGreaterThanOrEqual(4.5);
@@ -40,7 +40,7 @@ describe("customPaletteVars", () => {
     }
   }
 
-  it("uses the light error red on dark backgrounds and the dark one on light", () => {
+  it("keeps the usual error reds where they read", () => {
     expect(customPaletteVars({ bg: "#fff8e7", accent: "#7b1e3a" })["--error"]).toBe("#b42318");
     expect(customPaletteVars({ bg: "#0b1d3a", accent: "#d4af37" })["--error"]).toBe("#ff8a80");
   });
@@ -50,6 +50,10 @@ describe("accentPasses / suggestAccent", () => {
   it("rejects a pale gold on cream and accepts maroon on cream", () => {
     expect(accentPasses({ bg: "#fff8e7", accent: "#f3e5ab" })).toBe(false);
     expect(accentPasses({ bg: "#fff8e7", accent: "#7b1e3a" })).toBe(true);
+  });
+
+  it("never makes an accent worse when a passing one is the same distance either way", () => {
+    expect(suggestAccent({ bg: "#fff8e7", accent: "#7b1e3a" })).toBe("#7b1e3a");
   });
 
   for (const [bg, accent] of [

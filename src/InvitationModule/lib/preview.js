@@ -1,4 +1,5 @@
 import { invitationSchema } from "../schema/invitation";
+import { isHex } from "./colors";
 import { hasText } from "./i18n";
 
 const hasValue = (s) => typeof s === "string" && s !== "";
@@ -25,7 +26,8 @@ export function previewInvitation(draft, template) {
       palette: d.theme?.palette ?? sample.theme.palette,
       sectionOrder: d.theme?.sectionOrder,
       hidden: d.theme?.hidden,
-      colors: d.theme?.colors,
+      // A half-set pair would fail the schema; the preview then shows the first palette.
+      colors: isHex(d.theme?.colors?.bg) && isHex(d.theme?.colors?.accent) ? d.theme.colors : undefined,
     },
     couple: {
       order: d.couple?.order,

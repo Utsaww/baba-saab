@@ -1,3 +1,4 @@
+import { customPaletteVars, isHex } from "../lib/colors";
 import RoyalTemplate from "./royal";
 import { royalFontVars, royalPalettes } from "./royal/palettes";
 import { royalSample } from "./royal/sample";
@@ -14,6 +15,9 @@ import VelvetTemplate from "./velvet";
 import { velvetFontVars, velvetPalettes } from "./velvet/palettes";
 import { velvetSample } from "./velvet/sample";
 
+// Rewordable lines (custom.text) each template shows; the shared sections give most of them.
+const SHARED_TEXT = ["weddingOf", "together", "saveTheDate", "countdown", "begun", "venue", "travel", "schedule", "gallery", "film", "rsvp", "rsvpBy", "closing"];
+
 export const TEMPLATES = [
   {
     id: "royal",
@@ -23,6 +27,8 @@ export const TEMPLATES = [
     palettes: royalPalettes,
     fontVars: royalFontVars,
     sample: royalSample,
+    customColours: true,
+    textKeys: [...SHARED_TEXT, "scratchHint"],
   },
   {
     id: "floral",
@@ -32,6 +38,8 @@ export const TEMPLATES = [
     palettes: floralPalettes,
     fontVars: floralFontVars,
     sample: floralSample,
+    customColours: true,
+    textKeys: [...SHARED_TEXT, "scrollToOpen"],
   },
   {
     id: "temple",
@@ -41,6 +49,7 @@ export const TEMPLATES = [
     palettes: templePalettes,
     fontVars: templeFontVars,
     sample: templeSample,
+    textKeys: ["weddingOf", "saveTheDate", "countdown", "begun", "venue", "travel", "schedule", "gallery", "film", "rsvp", "rsvpBy", "blessing", "foreverUs", "warmRegards", "scrollCue", "tapToOpen"],
     // Shown inside the template's cover, so not repeated as their own sections.
     coverSections: TEMPLE_COVER_SECTIONS,
   },
@@ -52,6 +61,8 @@ export const TEMPLATES = [
     palettes: minimalPalettes,
     fontVars: minimalFontVars,
     sample: minimalSample,
+    customColours: true,
+    textKeys: [...SHARED_TEXT, "tapToOpen"],
   },
   {
     id: "velvet",
@@ -61,6 +72,7 @@ export const TEMPLATES = [
     palettes: velvetPalettes,
     fontVars: velvetFontVars,
     sample: velvetSample,
+    textKeys: [...SHARED_TEXT, "sendRsvp", "tapToOpen"],
   },
 ];
 
@@ -72,6 +84,13 @@ export function getPalette(template, paletteId) {
   return template.palettes.find((p) => p.id === paletteId) ?? template.palettes[0];
 }
 
-export function themeStyle(template, paletteId) {
-  return { ...template.fontVars, ...getPalette(template, paletteId).vars };
+/** Colour variables for an invitation: derived from its custom colours when chosen and allowed, else the named palette. */
+export function paletteVars(template, invitation) {
+  const { palette, colors } = invitation.theme ?? {};
+  if (palette === "custom" && template.customColours && isHex(colors?.bg) && isHex(colors?.accent)) return customPaletteVars(colors);
+  return getPalette(template, palette).vars;
+}
+
+export function themeStyle(template, invitation) {
+  return { ...template.fontVars, ...paletteVars(template, invitation) };
 }

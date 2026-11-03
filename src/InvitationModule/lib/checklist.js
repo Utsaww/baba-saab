@@ -1,4 +1,5 @@
 import { invitationSchema } from "../schema/invitation";
+import { accentPasses, CUSTOM_COLOUR_TEMPLATES, isHex } from "./colors";
 import { endDateError } from "./datetime";
 import { textFor } from "./i18n";
 import { isWhatsappNumber, whatsappRsvpOn } from "./rsvp";
@@ -22,13 +23,15 @@ const STEP_FOR_FIELD = {
   events: 4,
   media: 5,
   theme: 6,
-  rsvp: 7,
-  showCredit: 7,
+  custom: 7,
+  rsvp: 8,
+  showCredit: 8,
 };
 
 export function stepForPath(path) {
-  if (path[0] === "theme" && path[1] === "palette") return 1;
-  return STEP_FOR_FIELD[path[0]] ?? 8;
+  if (path[0] === "theme" && (path[1] === "palette" || path[1] === "colors")) return 1;
+  if (path[0] === "custom" && path[1] === "dateStyle") return 3; // the date style is picked beside the date
+  return STEP_FOR_FIELD[path[0]] ?? 9;
 }
 
 const filled = (s) => typeof s === "string" && s.trim() !== "";
@@ -45,6 +48,11 @@ export function publishChecklist(draft) {
     }
   };
 
+  const colors = draft.theme?.colors;
+  if (draft.theme?.palette === "custom" && CUSTOM_COLOUR_TEMPLATES.includes(draft.templateId)) {
+    if (!isHex(colors?.bg) || !isHex(colors?.accent)) add("colors", "Choose the custom background and accent colours", 1);
+    else if (!accentPasses(colors)) add("accent", "Pick a stronger accent colour", 1);
+  }
   needText("bride", "the bride's name", draft.couple?.bride?.name, 2);
   needText("groom", "the groom's name", draft.couple?.groom?.name, 2);
   if (!draft.mainDate) add("mainDate", "Add the wedding date", 3);

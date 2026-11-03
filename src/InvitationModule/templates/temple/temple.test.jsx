@@ -12,6 +12,7 @@ import { templeSample } from "./sample";
 import own from "./temple.module.scss";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { contrastRatio as contrast } from "../../lib/colors";
 
 // The stylesheet source, for stacking and animation rules jsdom cannot evaluate.
 const scss = readFileSync(resolve(__dirname, "temple.module.scss"), "utf8");
@@ -25,19 +26,6 @@ function rule(selector) {
     if (scss[i] === "}" && --depth === 0) return scss.slice(at, i + 1);
   }
   return "";
-}
-
-// WCAG 2 relative luminance and contrast ratio for #rrggbb colours.
-function luminance(hex) {
-  const n = parseInt(hex.slice(1), 16);
-  return [n >> 16, (n >> 8) & 255, n & 255]
-    .map((c) => c / 255)
-    .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
-    .reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0);
-}
-function contrast(a, b) {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (hi + 0.05) / (lo + 0.05);
 }
 
 const build = (overrides = {}) =>

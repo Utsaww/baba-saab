@@ -228,7 +228,7 @@ export default function EditorShell({
   // A draft without a link name gets one from the couple's names the first time Review opens.
   const claimed = useRef(false);
   useEffect(() => {
-    if (step !== 8 || live.status !== "draft" || live.slug || claimed.current || !actionsRef.current.setSlugAction) return;
+    if (step !== 9 || live.status !== "draft" || live.slug || claimed.current || !actionsRef.current.setSlugAction) return;
     claimed.current = true;
     (async () => {
       let r = await call("setSlugAction", { id: invitation.id, slug: generateSlug(content) });
@@ -377,8 +377,8 @@ export default function EditorShell({
         </p>
       ) : null}
       {erasing && readOnly ? <EraseDialog slug={live.slug} pending={publishPending} onConfirm={onErase} onCancel={() => setErasing(false)} /> : null}
-      {step !== 8 ? <PublishErrorNote error={publishError} onGoToStep={goTo} className="mt-4" /> : null}
-      {liveStatus === "changes" && step !== 8 && !readOnly ? <ChangesNote pending={publishPending} onUpdateLive={onUpdateLive} /> : null}
+      {step !== 9 ? <PublishErrorNote error={publishError} onGoToStep={goTo} className="mt-4" /> : null}
+      {liveStatus === "changes" && step !== 9 && !readOnly ? <ChangesNote pending={publishPending} onUpdateLive={onUpdateLive} /> : null}
 
       <div className="mt-6 flex flex-col gap-6 lg:flex-row">
         <aside className="lg:w-60 lg:shrink-0">

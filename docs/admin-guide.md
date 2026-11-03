@@ -14,7 +14,7 @@ This guide grows as new parts of the invitation system go live. Everything descr
 | **Staff** | *Owner only.* Invite people to the admin area and remove them. |
 | **Help** | This guide. |
 
-Guests can RSVP on WhatsApp: their reply is saved, then opens WhatsApp to the family's number. You and the family can see every reply on the **RSVPs** page. Turn it on in **Editor step 7: Settings**.
+Guests can RSVP on WhatsApp: their reply is saved, then opens WhatsApp to the family's number. You and the family can see every reply on the **RSVPs** page. Turn it on in **Editor step 8: Settings**.
 
 ## Signing in
 
@@ -106,13 +106,19 @@ The editor has three parts: the **steps** on the left, the **form** in the middl
 
 Change the design, colour palette or language at any time. Nothing you've typed is lost. If you switch from **Both** to English, the Hindi text is kept, and it comes back if you switch to **Both** again.
 
+**Custom colours (Royal Rajasthani, Floral Pastel and Modern Minimal):** choose **Custom** after the ready-made palettes, then set the **Background** and **Accent**. Type a colour code such as `#7B1E3A`, or click the colour square next to it to pick one. The first time you choose Custom, the fields start from the palette you had. Text colours are worked out for you so they stay readable. The preview updates as you type. A half-typed code shows "Use a colour code like #7B1E3A", and the preview keeps the last complete colour.
+
+- If the accent is too pale or too dark to read on the background, a warning appears. Click **Use suggested colour** to get the nearest colour that works. Until the accent is fixed, the invitation can't be published or updated live: the step 9 checklist says "Pick a stronger accent colour". Your draft still saves.
+- Temple Classic and Velvet Envelope don't offer custom colours. If you switch to one of them, it uses its own palette. Your custom colours are kept, and come back if you switch back and choose **Custom** again.
+- The WhatsApp preview card uses the custom colours too.
+
 ## Editor step 2: Couple & families
 
 - **Bride and groom:** names, and the parents line, for example "D/o Smt. Sunita & Shri Rajesh Sharma".
-- **Who is named first?** Choose **Bride first** or **Groom first**. Usually the bride's family lists the bride first, and the groom's family lists the groom first. The choice decides the order of the names, photos and parents lines everywhere on the invitation, in WhatsApp share text and preview cards, and in newly generated link names. Links that already exist never change. On a live invitation, click **Update live invitation** (step 8) to send the new order to guests.
+- **Who is named first?** Choose **Bride first** or **Groom first**. Usually the bride's family lists the bride first, and the groom's family lists the groom first. The choice decides the order of the names, photos and parents lines everywhere on the invitation, in WhatsApp share text and preview cards, and in newly generated link names. Links that already exist never change. On a live invitation, click **Update live invitation** (step 9) to send the new order to guests.
 - **Blessing at the top:** the symbol (Shri Ganesh, Om or none) and a shloka. Pick one of the ready-made shlokas, or choose **Our own text** and type the family's own.
 - **Families:** add each family's name for the closing message. **Closing line** is the sign-off, for example "With love and blessings from the Sharma and Mehra families".
-- **Family contact phone:** shown to guests in the closing message at the end of the invitation. Search on the Invitations page also finds invitations by this number. **If guests reply on WhatsApp (step 7), this must be the family's WhatsApp number**, because every RSVP is sent there. The invitation can't be published without it while RSVPs are on.
+- **Family contact phone:** shown to guests in the closing message at the end of the invitation. Search on the Invitations page also finds invitations by this number. **If guests reply on WhatsApp (step 8), this must be the family's WhatsApp number**, because every RSVP is sent there. The invitation can't be published without it while RSVPs are on.
 
 For a **Both** invitation, each field has an English box and a Hindi box.
 
@@ -120,13 +126,14 @@ For a **Both** invitation, each field has an English box and a Hindi box.
 
 - **Main wedding date:** drives the countdown and the save-the-date.
 - **Ends on (for multi-day weddings):** optional. Pick the last day if the wedding runs over more than one day (up to 7 days after the main date); leave it empty for a single-day wedding. Every design then shows both days: the short date reads, for example, **11–12 · 12 · 2026** (Temple Classic's cards read **11–12 Dec 2026**), and the full date reads “Friday 11 – Saturday 12 December 2026”, including on the WhatsApp share card. The countdown still counts down to the main date.
+- **How the date is written:** choose Classic (**11–12 · 12 · 2026**), Ordinal (**11th & 12th Dec 2026**), Day and month (**11 & 12 December 2026**) or With weekday. The buttons show your own dates. It changes the short date on the cover, the save-the-date, the WhatsApp share message and the share card; Temple Classic's three date cards stay as they are.
 - **Venue name and address.**
-- **Google Maps link:** open the venue in Google Maps, tap **Share**, copy the link and paste it. It must start with `https://`.
+- **Google Maps link:** open the venue in Google Maps, tap **Share**, copy the link and paste it. It must start with `https://`. Untick **Show "Open in Google Maps"** to hide the venue's map button on the invitation.
 - **Travel notes:** nearest airport and railway station, weather tips. Put one point per line.
 
 ## Editor step 4: Events
 
-Add each function guests are invited to. The quick buttons (**+ Haldi**, **+ Mehendi**, **+ Sangeet**, **+ Vivah**, **+ Reception**) fill in the name in English and Hindi. Use **+ Other event** for anything else. Give every event a date and time. Add a different venue, dress code or description only where it applies. Use **Move up** and **Move down** to change the order.
+Add each function guests are invited to. The quick buttons (**+ Haldi**, **+ Mehendi**, **+ Sangeet**, **+ Vivah**, **+ Reception**) fill in the name in English and Hindi. Use **+ Other event** for anything else. Give every event a date and time. Add a different venue, dress code or description only where it applies. Use **Move up** and **Move down** to change the order. Each event also has **Show "Open in Google Maps"** and **Show calendar buttons**; untick either to hide those buttons for that event only.
 
 ## Editor step 5: Photos, film & music
 
@@ -146,7 +153,15 @@ Removing a cover or couple photo asks you to confirm first, because it can't be 
 
 Choose which parts of the invitation guests see, and in what order. Untick **Show** to hide a section, and use the arrows to move it. The cover always comes first. A section with nothing filled in is hidden automatically, so you only need to hide sections you've filled in but don't want shown.
 
-## Editor step 7: Settings
+## Editor step 7: Wording & style
+
+Change the wording and look of the invitation. Everything here is optional; leave it alone and the template's own wording and styling are used.
+
+- **Wording** lists the fixed lines this design shows, such as "Together with their families", the section headings and the "Tap to open" hint, grouped as Opening, Cover & couple, Section headings and Closing. Under each box is the template's own wording. Type a new line to replace it (up to 160 characters). Clear the box to go back to the template's line. For a bilingual invitation, a line left blank in one language keeps the template's line in that language. **Reset wording** puts every line back. Form labels, buttons, messages and the Baba Saab credit can't be changed. If you switch design, lines the new design doesn't show are kept but not used.
+- **Text size & style** changes four parts of the text: **Couple's names** (on the opening, the cover, the couple section and the closing), **Parents' names**, **Opening line** (the line above the couple, such as "The wedding of" or Temple Classic's blessing) and **Section headings**. For each, pick a size (**Smaller**, **Normal**, **Larger** or **Largest**, measured against the design's own size) and switch on **Bold** or **Italic**. The **Opening line** size and style also apply to the matching small line in the closing ("With best compliments from"). Long names wrap onto the next line on phones instead of running off the screen. Script fonts can look heavy in bold or italic; check the preview. **Reset styles** puts all four back to the design's own look.
+- **Countdown** lets you swap the days-and-hours countdown for a message of your own (up to 200 characters), such as "See you in Jaipur!". Choose **Message** and type it. The section shows no heading unless you also set the **Countdown heading** under Wording. If the message is empty, the normal countdown shows. To hide the section completely, switch it off in step 6 (Sections).
+
+## Editor step 8: Settings
 
 - **Take offline on** appears here once the invitation is live. It is the date the invitation goes offline by itself. See **After the wedding** below.
 - **Guests reply on WhatsApp** adds an RSVP form to the invitation. When a guest sends it, WhatsApp opens with their reply already typed, addressed to the family contact number from step 2. The reply is also saved, so you and the family can see it on the **RSVPs** page (see **RSVPs page and family link** below). When it's on, you can also set:
@@ -157,7 +172,7 @@ Choose which parts of the invitation guests see, and in what order. Untick **Sho
 
 See **RSVPs on WhatsApp** below for what guests see.
 
-## Editor step 8: Review
+## Editor step 9: Review
 
 This step lists everything still needed before the invitation can be published, such as a missing date or an event without a time. Click **Go to step N** to fix each one. If guests reply on WhatsApp, it also asks for the family's WhatsApp number (step 2). When the list is clear it says **Everything needed is filled in.** The rest of the step is where you choose the link name, share the customer preview link and publish. Each part is explained below.
 
@@ -207,7 +222,7 @@ After publishing, click **Download QR code**. It saves a file named like `riya-a
 
 ### RSVPs on WhatsApp
 
-When **Guests reply on WhatsApp** is on in step 7, the invitation has an RSVP form: name, phone, whether they're coming, how many (if asked), which functions, meal (if asked) and a message.
+When **Guests reply on WhatsApp** is on in step 8, the invitation has an RSVP form: name, phone, whether they're coming, how many (if asked), which functions, meal (if asked) and a message.
 
 - **Sending:** the guest taps **Send RSVP on WhatsApp**. WhatsApp opens with their reply typed out, addressed to the family's number. The guest just presses send in WhatsApp. Replies arrive in the family's WhatsApp, in the invitation's language (English for a **Both** invitation).
 - **If WhatsApp doesn't open** (for example on a computer without WhatsApp), the reply is shown with **Copy message** and **Open WhatsApp** buttons, and the family's number to send it to.
@@ -244,7 +259,7 @@ Click **Download CSV** for a file of every reply. It opens in Excel.
 
 At the bottom of the page, **Family link** gives the family a private, read-only page with the same totals, search, red **!** marks and CSV download, but no way to edit.
 
-- It needs a saved link name first (editor step 8). Until then the page says so.
+- It needs a saved link name first (editor step 9). Until then the page says so.
 - Use **Copy** or **Send on WhatsApp**.
 - **The family link shows guests' phone numbers, so share it only with the family.** Anyone who has the link can see them.
 - If the link went to the wrong person, click **New family link** and confirm. The old link stops working straight away and you get a fresh one to send.
@@ -258,8 +273,8 @@ RSVPs are erased together with their invitation (see **Permanent erase** below).
 Every live invitation goes offline by itself some time after the wedding, so old links don't stay up forever.
 
 - **Default:** 7 days after the last event, in India time. It is set when you publish. If you publish after that day has already passed, it is set to tomorrow instead, so the invitation doesn't go offline the same night.
-- **Invitations published before this feature:** the daily job gives each one a date the first night it runs: 7 days after its last event, and never earlier than the next day. Check step 7 if a customer needs a different date.
-- **Changing it:** open the invitation's step 7 (**Settings**), change **Take offline on** and click **Save date**. Today or any later date is allowed; today means it goes offline at the next daily run. If it falls before the last event, a note says so, but you can still save it.
+- **Invitations published before this feature:** the daily job gives each one a date the first night it runs: 7 days after its last event, and never earlier than the next day. Check step 8 if a customer needs a different date.
+- **Changing it:** open the invitation's step 8 (**Settings**), change **Take offline on** and click **Save date**. Today or any later date is allowed; today means it goes offline at the next daily run. If it falls before the last event, a note says so, but you can still save it.
 - The daily job runs around 3 am India time and takes offline everything whose date has arrived.
 - The invitations list warns you when invitations are due to go offline in the next 7 days.
 

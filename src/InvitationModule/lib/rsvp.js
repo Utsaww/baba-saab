@@ -47,7 +47,7 @@ export function isWhatsappNumber(phone) {
   return digits.length >= 11 && digits.length <= 15;
 }
 
-// Guests reply on WhatsApp only when staff opted in to it in step 7. Content switched on before
+// Guests reply on WhatsApp only when staff opted in to it in step 8. Content switched on before
 // WhatsApp replies existed (`enabled` without `channel`) stays hidden until staff turn it on again.
 export function whatsappRsvpOn(rsvp) {
   return Boolean(rsvp?.enabled && rsvp?.channel === "whatsapp");

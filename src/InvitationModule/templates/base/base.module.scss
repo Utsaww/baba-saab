@@ -16,27 +16,47 @@
   inset: 0;
   z-index: 50;
   display: grid;
-  place-items: center;
+  justify-items: center;
   padding: 24px;
+  // Large text can make the opening taller than a phone: scroll it, centred only while it fits.
+  overflow-y: auto;
+  overflow-x: hidden;
   background: var(--bg);
   color: var(--text);
   transition: opacity 0.7s ease, transform 0.7s ease;
 }
 .openingClosing { opacity: 0; transform: scale(1.04); pointer-events: none; }
-.openingInner { width: 100%; max-width: 420px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.openingInner { margin-block: auto; width: 100%; max-width: 420px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; }
 .openingEmblem { width: 96px; height: 96px; color: var(--primary); }
-.openingNames { font-family: var(--font-display), serif; font-size: clamp(28px, 8vw, 40px); line-height: 1.2; overflow-wrap: anywhere; }
+.openingNames {
+  font-family: var(--font-display), serif;
+  font-size: clamp(calc(28px * var(--names-scale, 1)), calc(8vw * var(--names-scale, 1)), calc(40px * var(--names-scale, 1)));
+  font-weight: var(--names-weight, 400);
+  font-style: var(--names-style, normal);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
 .openingHint { color: var(--muted); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; }
 .linkButton { background: none; border: 0; color: var(--primary); text-decoration: underline; font: inherit; font-size: 15px; cursor: pointer; min-height: 44px; padding: 8px 12px; }
 
 .cover { position: relative; min-height: 92vh; display: grid; place-items: center; text-align: center; padding: 48px 0; }
 .coverImage { position: absolute; inset: 0; opacity: 0.22; img { object-fit: cover; } }
 .coverContent { position: relative; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.eyebrow { color: var(--muted); font-size: 14px; letter-spacing: 0.18em; text-transform: uppercase; }
+// The line above the couple ("intro" text style); the closing line shares the class.
+.eyebrow {
+  color: var(--muted);
+  font-size: calc(14px * var(--intro-scale, 1));
+  font-weight: var(--intro-weight, 400);
+  font-style: var(--intro-style, normal);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
 .coverNames {
   font-family: var(--font-display), serif;
-  font-weight: 400;
-  font-size: clamp(40px, 12vw, 72px);
+  font-weight: var(--names-weight, 400);
+  font-style: var(--names-style, normal);
+  font-size: clamp(calc(40px * var(--names-scale, 1)), calc(12vw * var(--names-scale, 1)), calc(72px * var(--names-scale, 1)));
   line-height: 1.1;
   display: flex;
   flex-direction: column;
@@ -45,16 +65,38 @@
 }
 .amp { font-size: 0.6em; color: var(--primary); margin: 4px 0; }
 .coverDate { font-size: 20px; letter-spacing: 0.3em; color: var(--primary); }
+// A Hindi date style ("11 दिसंबर 2026"): wide letter-spacing breaks the joining line of Devanagari.
+.coverDate, .bigDate, .scratchDate, .letterDate { &[lang="hi"] { letter-spacing: 0; } }
 
 .section { padding: 48px 0; text-align: center; border-top: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); }
-.sectionTitle { font-family: var(--font-display), serif; font-weight: 400; font-size: clamp(26px, 7vw, 36px); color: var(--primary); margin-bottom: 24px; }
+.sectionTitle {
+  font-family: var(--font-display), serif;
+  font-weight: var(--headings-weight, 400);
+  font-style: var(--headings-style, normal);
+  font-size: clamp(calc(26px * var(--headings-scale, 1)), calc(7vw * var(--headings-scale, 1)), calc(36px * var(--headings-scale, 1)));
+  color: var(--primary);
+  margin-bottom: 24px;
+  overflow-wrap: anywhere;
+}
 .emblem { width: 120px; height: 120px; margin: 0 auto 16px; color: var(--primary); }
 .invocationText { white-space: pre-line; font-size: 18px; }
 .couple { display: grid; gap: 32px; margin-top: 16px; }
 .person { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .personPhoto { position: relative; width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); img { object-fit: cover; } }
-.personName { font-family: var(--font-display), serif; font-weight: 400; font-size: 32px; overflow-wrap: anywhere; }
-.parents { color: var(--muted); font-size: 15px; }
+.personName {
+  font-family: var(--font-display), serif;
+  font-weight: var(--names-weight, 400);
+  font-style: var(--names-style, normal);
+  font-size: calc(32px * var(--names-scale, 1));
+  overflow-wrap: anywhere;
+}
+.parents {
+  color: var(--muted);
+  font-size: calc(15px * var(--parents-scale, 1));
+  font-weight: var(--parents-weight, 400);
+  font-style: var(--parents-style, normal);
+  overflow-wrap: anywhere;
+}
 .bigDate { font-family: var(--font-display), serif; font-size: clamp(32px, 10vw, 52px); color: var(--primary); letter-spacing: 0.08em; }
 .longDate { color: var(--muted); }
 
@@ -69,6 +111,7 @@
 }
 .countNum { font-family: var(--font-display), serif; font-size: 30px; color: var(--primary); font-variant-numeric: tabular-nums; }
 .countLabel { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.countdownMessage { font-family: var(--font-display), serif; font-size: 26px; color: var(--primary); overflow-wrap: anywhere; white-space: pre-line; }
 .countDone { font-size: 20px; color: var(--primary); }
 
 .venueName { font-family: var(--font-display), serif; font-weight: 400; font-size: 26px; }

@@ -1,4 +1,4 @@
-export const STEP_COUNT = 8;
+export const STEP_COUNT = 9;
 
 export function stepNumber(raw) {
   const n = Number(raw);

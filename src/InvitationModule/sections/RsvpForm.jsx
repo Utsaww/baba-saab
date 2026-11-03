@@ -66,6 +66,7 @@ export default function RsvpForm({
   closed,
   closedOnText,
   deadlineText,
+  rsvpBy = UI.rsvpBy,
   contactPhone,
   preview = false,
   storageKey,
@@ -223,7 +224,7 @@ export default function RsvpForm({
         {remembered && <T as="p" v={UI.rsvpRemembered} lang={lang} className={s.rsvpNote} />}
         {deadlineText && (
           <p className={s.rsvpDeadline}>
-            <T v={UI.rsvpBy} lang={lang} /> {deadlineText}
+            <T v={rsvpBy} lang={lang} /> {deadlineText}
           </p>
         )}
         <label className={s.field}>

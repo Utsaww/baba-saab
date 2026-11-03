@@ -14,8 +14,9 @@ import {
 
 // next/font only accepts literal option objects, so each call spells its options out.
 // preload:false — a font file downloads only when a template's CSS actually uses it.
+// Cormorant 700 is for the Bold text style: velvet's small caps are already 600.
 const cinzel = Cinzel_Decorative({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-cinzel", display: "swap", preload: false });
-const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-cormorant", display: "swap", preload: false });
+const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-cormorant", display: "swap", preload: false });
 const greatVibes = Great_Vibes({ subsets: ["latin"], weight: "400", variable: "--font-greatvibes", display: "swap", preload: false });
 const lora = Lora({ subsets: ["latin"], variable: "--font-lora", display: "swap", preload: false });
 const marcellus = Marcellus({ subsets: ["latin"], weight: "400", variable: "--font-marcellus", display: "swap", preload: false });

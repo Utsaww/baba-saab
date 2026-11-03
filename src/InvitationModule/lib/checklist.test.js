@@ -28,7 +28,12 @@ describe("stepForPath", () => {
     expect(stepForPath(["events", 0, "date"])).toBe(4);
     expect(stepForPath(["media", "film"])).toBe(5);
     expect(stepForPath(["theme", "hidden"])).toBe(6);
-    expect(stepForPath(["rsvp", "deadline"])).toBe(7);
+    expect(stepForPath(["custom", "text"])).toBe(7);
+    expect(stepForPath(["custom", "dateStyle"])).toBe(3);
+    expect(stepForPath(["rsvp", "deadline"])).toBe(8);
+    expect(stepForPath(["rsvp"])).toBe(8);
+    expect(stepForPath(["theme", "colors", "accent"])).toBe(1);
+    expect(stepForPath(["slug"])).toBe(9);
   });
 });
 
@@ -107,5 +112,23 @@ describe("publishChecklist end date", () => {
         { id: "mainDateEnd", message: "Fix the end date: pick a date 1–7 days after the wedding date", step: 3 },
       ]);
     }
+  });
+});
+
+describe("publishChecklist custom colours", () => {
+  const custom = (colors, templateId = "royal") => ({ ...complete(), templateId, theme: { palette: "custom", colors } });
+  it("passes custom colours with a readable accent", () => {
+    expect(publishChecklist(custom({ bg: "#fff8e7", accent: "#7b1e3a" }))).toEqual([]);
+  });
+  it("asks for both colours when one is missing or invalid, linking to step 1", () => {
+    for (const colors of [undefined, { bg: "#fff8e7" }, { bg: "#fff8e7", accent: "#12" }]) {
+      expect(publishChecklist(custom(colors))).toEqual([{ id: "colors", message: "Choose the custom background and accent colours", step: 1 }]);
+    }
+  });
+  it("blocks a weak accent, linking to step 1", () => {
+    expect(publishChecklist(custom({ bg: "#fff8e7", accent: "#f3e5ab" }))).toEqual([{ id: "accent", message: "Pick a stronger accent colour", step: 1 }]);
+  });
+  it("ignores custom colours on templates without them", () => {
+    expect(publishChecklist(custom({ bg: "#fff8e7", accent: "#f3e5ab" }, "temple"))).toEqual([]);
   });
 });

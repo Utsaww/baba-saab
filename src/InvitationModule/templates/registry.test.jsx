@@ -24,7 +24,7 @@ describe("registry lookups", () => {
   });
   it("builds a style object with palette and font variables", () => {
     const royal = getTemplate("royal");
-    const style = themeStyle(royal, royal.palettes[1].id);
+    const style = themeStyle(royal, { theme: { palette: royal.palettes[1].id } });
     expect(style["--bg"]).toBe(royal.palettes[1].vars["--bg"]);
     expect(style["--font-display"]).toBeDefined();
   });

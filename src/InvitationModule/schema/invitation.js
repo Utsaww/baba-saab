@@ -1,7 +1,10 @@
 import { z } from "zod";
+import { EDITABLE_TEXT_KEYS } from "../lib/ui-strings";
+import { SIZE_SCALE, TEXT_STYLE_ELEMENTS } from "../lib/customise";
 
 export const GALLERY_MAX = 12;
 export const TEMPLATE_IDS = ["royal", "floral", "temple", "minimal", "velvet"];
+export const DATE_STYLES = ["classic", "ordinal", "dayMonth", "weekday"];
 export const LANGUAGES = ["en", "hi", "both"];
 export const STATUSES = ["draft", "published", "offline", "deleted"];
 // The cover always renders first and cannot be hidden, so it is not a section id.
@@ -22,6 +25,8 @@ export const SECTION_IDS = [
 const localised = z
   .object({ en: z.string().trim().optional(), hi: z.string().trim().optional() })
   .default({});
+// Short staff-written lines; no default, so drafts keep only what was typed.
+const localisedPlain = z.object({ en: z.string().trim().max(160).optional(), hi: z.string().trim().max(160).optional() });
 // Rejects calendar-impossible dates such as 2026-02-31, which would otherwise roll over or show NaN.
 const isRealDate = (s) => {
   const [y, m, d] = s.split("-").map(Number);
@@ -33,6 +38,7 @@ const isoDate = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
   .refine(isRealDate, "Enter a real date");
 const time24 = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:mm (24-hour)");
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a colour code like #7B1E3A");
 const url = z.string().url().refine((s) => s.startsWith("https://"), "Use a link starting with https://");
 
 const person = z.object({
@@ -49,6 +55,8 @@ const event = z.object({
   venueName: localised.optional(),
   address: localised.optional(),
   mapsUrl: url.optional(),
+  hideMap: z.boolean().optional(),
+  hideCalendar: z.boolean().optional(),
   dressCode: localised.optional(),
   description: localised.optional(),
 });
@@ -61,6 +69,8 @@ export const invitationSchema = z.object({
     palette: z.string().min(1),
     sectionOrder: z.array(z.enum(SECTION_IDS)).default(SECTION_IDS),
     hidden: z.array(z.enum(SECTION_IDS)).default([]),
+    // Used when palette is "custom" on a template with customColours; kept when switching to one without.
+    colors: z.object({ bg: hexColor, accent: hexColor }).optional(),
   }),
   status: z.enum(STATUSES).default("draft"),
   language: z.enum(LANGUAGES).default("en"),
@@ -91,6 +101,7 @@ export const invitationSchema = z.object({
     name: localised,
     address: localised,
     mapsUrl: url.optional(),
+    hideMap: z.boolean().optional(),
     travelNotes: localised.optional(),
   }),
   events: z.array(event).default([]),
@@ -120,6 +131,24 @@ export const invitationSchema = z.object({
     })
     .default({}),
   showCredit: z.boolean().default(true),
+  custom: z
+    .object({
+      dateStyle: z.enum(DATE_STYLES).optional(),
+      text: z.record(z.enum(EDITABLE_TEXT_KEYS), localisedPlain).optional(),
+      countdown: z
+        .object({
+          mode: z.enum(["countdown", "message"]).optional(),
+          message: z.object({ en: z.string().trim().max(200).optional(), hi: z.string().trim().max(200).optional() }).optional(),
+        })
+        .optional(),
+      styles: z
+        .record(
+          z.enum(TEXT_STYLE_ELEMENTS),
+          z.object({ size: z.enum(Object.keys(SIZE_SCALE)).optional(), bold: z.boolean().optional(), italic: z.boolean().optional() }),
+        )
+        .optional(),
+    })
+    .optional(),
 });
 
 export function parseInvitation(data) {

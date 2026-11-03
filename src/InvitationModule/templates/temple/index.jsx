@@ -14,7 +14,8 @@ import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
 import { plainText } from "../../lib/i18n";
 import { invocationText } from "../../lib/invocations";
-import { dateParts, dateRangeParts, formatDateRange, formatDots } from "../../lib/datetime";
+import { shortDate, uiText } from "../../lib/customise";
+import { dateParts, dateRangeParts, formatDateRange } from "../../lib/datetime";
 import { couplePair, coupleTitle, monogram } from "../../lib/names";
 import { mediaUrl } from "../../lib/media";
 import { visibleSections } from "../../lib/sections";
@@ -45,9 +46,10 @@ function Opening({ inv, lang, open }) {
   const markOpened = useContext(OpenedContext);
   const [bursting, setBursting] = useState(false);
   const mono = monogram(inv);
+  const ui = uiText(inv);
   return (
     <div className={s.openingInner}>
-      <T as="p" v={UI.weddingOf} lang={lang} className={s.openingEyebrow} />
+      <T as="p" v={ui.weddingOf} lang={lang} className={s.openingEyebrow} />
       <p className={s.openingNames}>
         {lang === "both" ? (
           <>
@@ -77,7 +79,7 @@ function Opening({ inv, lang, open }) {
             <span className={s.letterMono}>{mono}</span>
             <span className={s.letterRule} aria-hidden="true" />
             {/* No date here: the scratch cards reveal it. */}
-            <T v={UI.saveTheDate} lang={lang} className={s.letterLine} />
+            <T v={ui.saveTheDate} lang={lang} className={s.letterLine} />
           </span>
           <span className={s.envLeft} aria-hidden="true" />
           <span className={s.envRight} aria-hidden="true" />
@@ -93,7 +95,7 @@ function Opening({ inv, lang, open }) {
           <Sparkles active={bursting} className={s.sparkles} />
         </EnvelopeReveal>
       </div>
-      <T as="p" v={UI.tapToOpen} lang={lang} className={s.tapHint} />
+      <T as="p" v={ui.tapToOpen} lang={lang} className={s.tapHint} />
     </div>
   );
 }
@@ -120,6 +122,7 @@ function Hero({ inv, lang }) {
   const withInvocation = shown.includes("invocation");
   const withParents = shown.includes("couple");
   const [first, second] = couplePair(inv);
+  const ui = uiText(inv);
   // Hiding "the couple" in step 6 drops the portraits and parents lines; the names always show.
   const strip = (p) => (withParents ? p : { ...p, parentsLine: undefined, photoKey: undefined });
   return (
@@ -137,14 +140,14 @@ function Hero({ inv, lang }) {
           </>
         )}
         <span className={s.heroOrnament} aria-hidden="true" />
-        <T as="p" v={UI.blessing} lang={lang} className={s.blessing} />
+        <T as="p" v={ui.blessing} lang={lang} className={s.blessing} />
         <h1 className={s.heroNames}>
           <Person person={strip(first)} lang={lang} />
           <span className={s.heroAmp}>&amp;</span>
           <Person person={strip(second)} lang={lang} />
         </h1>
         <div className={s.scrollCue} aria-hidden="true">
-          <T v={UI.scrollCue} lang={lang} />
+          <T v={ui.scrollCue} lang={lang} />
           <span className={s.scrollChevron} />
         </div>
       </div>
@@ -174,7 +177,7 @@ function SaveTheDate({ inv, lang }) {
   const parts = range && { month: range.month, day: range.date, year: range.year };
   const longDate = formatDateRange(inv.mainDate, inv.mainDateEnd, dateLang(lang));
   return (
-    <TempleSection id="saveTheDate" title={UI.saveTheDate} lang={lang}>
+    <TempleSection id="saveTheDate" title={uiText(inv).saveTheDate} lang={lang}>
       {parts && <ScratchDate parts={parts} lang={lang} revealed={gate.revealed} onReveal={gate.reveal} cardRefs={gate.cardRefs} />}
       {!gate.open && (
         <div className={s.lockNote}>
@@ -201,8 +204,9 @@ function SaveTheDate({ inv, lang }) {
 }
 
 function GallerySection({ inv, lang, s: styles }) {
+  const ui = uiText(inv);
   return (
-    <TempleSection id="gallery" title={UI.gallery} eyebrow={UI.foreverUs} lang={lang}>
+    <TempleSection id="gallery" title={ui.gallery} eyebrow={ui.foreverUs} lang={lang}>
       <Gallery items={inv.media.gallery} lang={lang} s={styles} />
     </TempleSection>
   );
@@ -217,7 +221,7 @@ function Closing({ inv, lang, s: styles }) {
       <T as="p" v={hosts.closingLine} lang={lang} className={s.closingLine} />
       {hosts.families.length > 0 && (
         <>
-          <T as="p" v={UI.warmRegards} lang={lang} className={s.sectionEyebrow} />
+          <T as="p" v={uiText(inv).warmRegards} lang={lang} className={s.sectionEyebrow} />
           <ul className={s.families}>
             {hosts.families.map((family, i) => (
               <T key={i} as="li" v={family} lang={lang} />
@@ -233,7 +237,7 @@ function Closing({ inv, lang, s: styles }) {
           {hosts.contactPhone}
         </a>
       )}
-      <WhatsAppShare message={`${coupleTitle(inv)} · ${formatDots(inv.mainDate)}`} lang={lang} s={styles} />
+      <WhatsAppShare message={`${coupleTitle(inv)} · ${shortDate(inv, lang)}`} lang={lang} s={styles} />
     </TempleSection>
   );
 }

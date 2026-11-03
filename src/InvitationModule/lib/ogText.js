@@ -1,4 +1,4 @@
-import { formatDateRange } from "./datetime";
+import { cardDate } from "./customise";
 import { textFor } from "./i18n";
 import { couplePair } from "./names";
 
@@ -14,5 +14,5 @@ export function ogTitle(inv) {
 
 export function ogDescription(inv) {
   const l = lang(inv);
-  return [formatDateRange(inv.mainDate, inv.mainDateEnd, l), textFor(inv.venue?.name, l)].filter(Boolean).join(" · ");
+  return [cardDate(inv, l), textFor(inv.venue?.name, l)].filter(Boolean).join(" · ");
 }

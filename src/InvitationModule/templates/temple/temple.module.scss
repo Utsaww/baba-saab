@@ -469,6 +469,7 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   color: var(--primary-deep);
 }
 .countLabel { @include label(10px, 0.16em); color: var(--muted); }
+.countdownMessage { font-family: var(--font-script), cursive; font-size: 38px; line-height: 1.2; color: var(--primary); overflow-wrap: anywhere; }
 .countDone { font-family: var(--font-script), cursive; font-size: 44px; color: var(--primary); }
 
 // ---------- Venue and travel ----------

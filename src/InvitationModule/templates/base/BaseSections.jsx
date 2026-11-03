@@ -107,6 +107,15 @@ function SaveTheDate({ inv, lang, s }) {
 
 function CountdownSection({ inv, lang, s }) {
   const ui = uiText(inv);
+  const { mode, message } = inv.custom?.countdown ?? {};
+  if (mode === "message" && (message?.en || message?.hi)) {
+    // No heading unless staff set one: the template's "Countdown" would sit over a message that isn't one.
+    return (
+      <Section id="countdown" s={s} title={inv.custom.text?.countdown ? ui.countdown : undefined} lang={lang}>
+        <T as="p" v={message} lang={lang} className={s.countdownMessage} />
+      </Section>
+    );
+  }
   return (
     <Section id="countdown" s={s} title={ui.countdown} lang={lang}>
       <Countdown target={countdownTarget(inv)} begun={ui.begun} lang={lang} s={s} />

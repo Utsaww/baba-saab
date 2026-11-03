@@ -251,6 +251,7 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   color: var(--accent);
 }
 .countLabel { @include smallCaps(10px, 0.16em); color: var(--muted); }
+.countdownMessage { font-family: var(--font-display), cursive; font-size: 30px; line-height: 1.25; color: var(--accent); overflow-wrap: anywhere; }
 .countDone { font-family: var(--font-display), cursive; font-size: 34px; color: var(--accent); }
 
 .venueName {

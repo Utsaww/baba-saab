@@ -1,7 +1,7 @@
 "use client";
 
 import { UI } from "@/InvitationModule/lib/ui-strings";
-import { Group, LocalisedInput } from "../fields";
+import { ChipGroup, Group, LocalisedInput } from "../fields";
 
 const smallButton = "min-h-[44px] rounded-full border border-stone-300 px-4 text-sm hover:bg-stone-100";
 
@@ -43,9 +43,15 @@ function cleaned(value) {
   return Object.keys(kept).length ? kept : undefined;
 }
 
-export default function WordingStep({ content, update, language, templates }) {
+const COUNTDOWN_MODES = [
+  { id: "countdown", label: "Countdown" },
+  { id: "message", label: "Message" },
+];
+
+export default function WordingStep({ content, update, language, templates, onGoToStep }) {
   const keys = templates.find((t) => t.id === content.templateId)?.textKeys ?? [];
   const text = content.custom?.text;
+  const countdown = content.custom?.countdown;
   return (
     <div className="space-y-4">
       <p className="text-sm text-stone-600">
@@ -74,6 +80,25 @@ export default function WordingStep({ content, update, language, templates }) {
         <button type="button" onClick={() => update(["custom", "text"], undefined)} className={smallButton}>
           Reset wording
         </button>
+      </Group>
+      <Group title="Countdown">
+        <ChipGroup
+          legend="Show"
+          options={COUNTDOWN_MODES}
+          value={countdown?.mode ?? "countdown"}
+          onChange={(mode) => update(["custom", "countdown", "mode"], mode)}
+          hint="Message replaces the days-and-hours countdown with a line of your own."
+        />
+        {countdown?.mode === "message" && (
+          <LocalisedInput label="Message" value={countdown.message} language={language} onChange={(v) => update(["custom", "countdown", "message"], cleaned(v))} />
+        )}
+        <p className="text-sm text-stone-600">
+          To hide the countdown completely, switch it off in{" "}
+          <button type="button" onClick={() => onGoToStep(6)} className="underline">
+            step 6 (Sections)
+          </button>
+          .
+        </p>
       </Group>
     </div>
   );

@@ -131,6 +131,12 @@ export const invitationSchema = z.object({
     .object({
       dateStyle: z.enum(DATE_STYLES).optional(),
       text: z.record(z.enum(EDITABLE_TEXT_KEYS), localisedPlain).optional(),
+      countdown: z
+        .object({
+          mode: z.enum(["countdown", "message"]).optional(),
+          message: z.object({ en: z.string().trim().max(200).optional(), hi: z.string().trim().max(200).optional() }).optional(),
+        })
+        .optional(),
     })
     .optional(),
 });

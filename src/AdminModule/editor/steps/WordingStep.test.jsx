@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
 import WordingStep from "./WordingStep";
 import { renderStep } from "../test-utils";
@@ -38,5 +38,20 @@ describe("WordingStep", () => {
     const { latest } = renderStep(WordingStep, start("royal", { dateStyle: "ordinal", text: { together: { en: "Hi" } } }));
     fireEvent.click(screen.getByRole("button", { name: "Reset wording" }));
     expect(latest().custom).toEqual({ dateStyle: "ordinal" });
+  });
+
+  it("switches the countdown to a message and writes it", () => {
+    const { latest } = renderStep(WordingStep, start());
+    expect(screen.queryByLabelText("Message")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Message" }));
+    fireEvent.change(screen.getByLabelText("Message"), { target: { value: "See you in Jaipur!" } });
+    expect(latest().custom.countdown).toEqual({ mode: "message", message: { en: "See you in Jaipur!" } });
+  });
+
+  it("links to the Sections step to hide the countdown", () => {
+    const onGoToStep = vi.fn();
+    renderStep(WordingStep, start(), { onGoToStep });
+    fireEvent.click(screen.getByRole("button", { name: /step 6/ }));
+    expect(onGoToStep).toHaveBeenCalledWith(6);
   });
 });

@@ -12,7 +12,7 @@ import WhatsAppShare from "../../sections/WhatsAppShare";
 import { UI } from "../../lib/ui-strings";
 import { hasText, plainText } from "../../lib/i18n";
 import { invocationText } from "../../lib/invocations";
-import { shortDate } from "../../lib/customise";
+import { shortDate, uiText } from "../../lib/customise";
 import { formatDate, formatDateRange, formatTime } from "../../lib/datetime";
 import { countdownTarget } from "../../lib/countdown";
 import { mediaUrl } from "../../lib/media";
@@ -37,6 +37,7 @@ function Section({ id, s, title, lang, children }) {
 
 export function CoverBase({ inv, lang, s }) {
   const [first, second] = couplePair(inv);
+  const ui = uiText(inv);
   return (
     <header className={s.cover}>
       {inv.media.coverKey && (
@@ -45,7 +46,7 @@ export function CoverBase({ inv, lang, s }) {
         </div>
       )}
       <div className={s.coverContent}>
-        <T as="p" v={UI.weddingOf} lang={lang} className={s.eyebrow} />
+        <T as="p" v={ui.weddingOf} lang={lang} className={s.eyebrow} />
         <h1 className={s.coverNames}>
           <T v={first.name} lang={lang} className={s.name} />
           <span className={s.amp}>&amp;</span>
@@ -67,9 +68,10 @@ function Invocation({ inv, lang, s }) {
 }
 
 function Couple({ inv, lang, s }) {
+  const ui = uiText(inv);
   return (
     <Section id="couple" s={s}>
-      <T as="p" v={UI.together} lang={lang} className={s.eyebrow} />
+      <T as="p" v={ui.together} lang={lang} className={s.eyebrow} />
       <div className={s.couple}>
         {couplePair(inv).map((person, i) => (
           <div key={i} className={s.person}>
@@ -89,7 +91,7 @@ function Couple({ inv, lang, s }) {
 
 function SaveTheDate({ inv, lang, s }) {
   return (
-    <Section id="saveTheDate" s={s} title={UI.saveTheDate} lang={lang}>
+    <Section id="saveTheDate" s={s} title={uiText(inv).saveTheDate} lang={lang}>
       <p className={s.bigDate}>{shortDate(inv, lang)}</p>
       <p className={s.longDate} lang={lang === "hi" ? "hi" : undefined}>
         {formatDateRange(inv.mainDate, inv.mainDateEnd, dateLang(lang))}
@@ -104,9 +106,10 @@ function SaveTheDate({ inv, lang, s }) {
 }
 
 function CountdownSection({ inv, lang, s }) {
+  const ui = uiText(inv);
   return (
-    <Section id="countdown" s={s} title={UI.countdown} lang={lang}>
-      <Countdown target={countdownTarget(inv)} lang={lang} s={s} />
+    <Section id="countdown" s={s} title={ui.countdown} lang={lang}>
+      <Countdown target={countdownTarget(inv)} begun={ui.begun} lang={lang} s={s} />
     </Section>
   );
 }
@@ -114,7 +117,7 @@ function CountdownSection({ inv, lang, s }) {
 function Venue({ inv, lang, s }) {
   const { venue } = inv;
   return (
-    <Section id="venue" s={s} title={UI.venue} lang={lang}>
+    <Section id="venue" s={s} title={uiText(inv).venue} lang={lang}>
       <T as="h3" v={venue.name} lang={lang} className={s.venueName} />
       <T as="p" v={venue.address} lang={lang} className={s.address} />
       {venue.mapsUrl && !venue.hideMap && (
@@ -128,7 +131,7 @@ function Venue({ inv, lang, s }) {
 
 function Travel({ inv, lang, s }) {
   return (
-    <Section id="travel" s={s} title={UI.travel} lang={lang}>
+    <Section id="travel" s={s} title={uiText(inv).travel} lang={lang}>
       <T as="p" v={inv.venue.travelNotes} lang={lang} className={s.travelNotes} />
     </Section>
   );
@@ -137,7 +140,7 @@ function Travel({ inv, lang, s }) {
 function Schedule({ inv, lang, s }) {
   const title = coupleTitle(inv);
   return (
-    <Section id="schedule" s={s} title={UI.schedule} lang={lang}>
+    <Section id="schedule" s={s} title={uiText(inv).schedule} lang={lang}>
       <ol className={s.events}>
         {inv.events.map((ev) => {
           const venueName = hasText(ev.venueName) ? ev.venueName : inv.venue.name;
@@ -187,7 +190,7 @@ function Schedule({ inv, lang, s }) {
 
 function GallerySection({ inv, lang, s }) {
   return (
-    <Section id="gallery" s={s} title={UI.gallery} lang={lang}>
+    <Section id="gallery" s={s} title={uiText(inv).gallery} lang={lang}>
       <Gallery items={inv.media.gallery} lang={lang} s={s} />
     </Section>
   );
@@ -195,7 +198,7 @@ function GallerySection({ inv, lang, s }) {
 
 function FilmSection({ inv, lang, s }) {
   return (
-    <Section id="film" s={s} title={UI.film} lang={lang}>
+    <Section id="film" s={s} title={uiText(inv).film} lang={lang}>
       <Film film={inv.media.film} title={plainText(UI.film, lang)} s={s} />
     </Section>
   );
@@ -219,8 +222,9 @@ function Rsvp({ inv, lang, s, ctx }) {
   useEffect(() => setClosed(isRsvpClosed(inv.rsvp)), [inv.rsvp]);
   // Nowhere to reply to on a live page (publishing requires a valid number, so this is an old copy): no section.
   if (!preview && !isWhatsappNumber(inv.hosts.contactPhone)) return null;
+  const ui = uiText(inv);
   return (
-    <Section id="rsvp" s={s} title={UI.rsvp} lang={lang}>
+    <Section id="rsvp" s={s} title={ui.rsvp} lang={lang}>
       <RsvpForm
         lang={lang}
         events={inv.events}
@@ -229,6 +233,7 @@ function Rsvp({ inv, lang, s, ctx }) {
         closed={closed}
         closedOnText={deadline}
         deadlineText={deadline}
+        rsvpBy={ui.rsvpBy}
         contactPhone={inv.hosts.contactPhone}
         preview={preview}
         // One remembered reply per live invitation; previews never touch the device.
@@ -245,7 +250,7 @@ function Closing({ inv, lang, s }) {
   const { hosts } = inv;
   return (
     <Section id="closing" s={s}>
-      <T as="p" v={UI.closing} lang={lang} className={s.eyebrow} />
+      <T as="p" v={uiText(inv).closing} lang={lang} className={s.eyebrow} />
       <T as="p" v={hosts.closingLine} lang={lang} className={s.closingLine} />
       {hosts.families.length > 0 && (
         <ul className={s.families}>

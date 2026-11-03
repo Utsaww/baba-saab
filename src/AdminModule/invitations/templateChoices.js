@@ -6,6 +6,7 @@ export function templateChoices() {
     id: t.id,
     name: t.name,
     description: t.description,
+    textKeys: t.textKeys,
     palettes: t.palettes.map((p) => ({ id: p.id, name: p.name, bg: p.vars["--bg"], primary: p.vars["--primary"] })),
   }));
 }

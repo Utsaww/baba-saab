@@ -5,8 +5,7 @@ import TemplateFrame from "../base/TemplateFrame";
 import { CoverBase } from "../base/BaseSections";
 import ScrollReveal from "../../sections/reveals/ScrollReveal";
 import T from "../../sections/Text";
-import { UI } from "../../lib/ui-strings";
-import { shortDate } from "../../lib/customise";
+import { shortDate, uiText } from "../../lib/customise";
 import { couplePair } from "../../lib/names";
 import { mergeStyles } from "../../lib/styles";
 
@@ -27,15 +26,16 @@ function FloralCorner({ className }) {
 
 function Opening({ inv, lang, open }) {
   const [first, second] = couplePair(inv);
+  const ui = uiText(inv);
   return (
     <div className={s.openingInner}>
       <ScrollReveal className={s.scrollOpen} onReveal={open}>
-        <T as="span" v={UI.weddingOf} lang={lang} className={s.eyebrow} />
+        <T as="span" v={ui.weddingOf} lang={lang} className={s.eyebrow} />
         <span className={s.openingNames}>
           <T v={first.name} lang={lang} /> &amp; <T v={second.name} lang={lang} />
         </span>
         <span className={s.coverDate}>{shortDate(inv, lang)}</span>
-        <T as="span" v={UI.scrollToOpen} lang={lang} className={s.scrollHint} />
+        <T as="span" v={ui.scrollToOpen} lang={lang} className={s.scrollHint} />
       </ScrollReveal>
     </div>
   );

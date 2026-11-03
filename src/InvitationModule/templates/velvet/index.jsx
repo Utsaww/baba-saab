@@ -8,7 +8,7 @@ import EnvelopeReveal from "../../sections/reveals/EnvelopeReveal";
 import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
 import { plainText } from "../../lib/i18n";
-import { shortDate } from "../../lib/customise";
+import { shortDate, uiText } from "../../lib/customise";
 import { coupleTitle, monogram } from "../../lib/names";
 import { visibleSections } from "../../lib/sections";
 import { mergeStyles } from "../../lib/styles";
@@ -33,9 +33,10 @@ function Opening({ inv, lang, open }) {
   const markOpened = useContext(OpenedContext);
   const cardLang = lang === "hi" ? "hi" : "en";
   const title = coupleTitle(inv, cardLang);
+  const ui = uiText(inv);
   return (
     <div className={s.openingInner}>
-      <T as="p" v={UI.weddingOf} lang={lang} className={s.openingEyebrow} />
+      <T as="p" v={ui.weddingOf} lang={lang} className={s.openingEyebrow} />
       <EnvelopeReveal
         className={s.envelope}
         label={plainText(UI.tapToOpen, lang)}
@@ -65,7 +66,7 @@ function Opening({ inv, lang, open }) {
           {monogram(inv)}
         </span>
       </EnvelopeReveal>
-      <T as="p" v={UI.tapToOpen} lang={lang} className={s.tapHint} />
+      <T as="p" v={ui.tapToOpen} lang={lang} className={s.tapHint} />
     </div>
   );
 }
@@ -97,7 +98,7 @@ function Venue(props) {
       {visibleSections(inv).includes("rsvp") && (
         <div className={s.venueRsvp}>
           <a className={s.rsvpPill} href="#rsvp">
-            <T v={UI.sendRsvp} lang={lang} />
+            <T v={uiText(inv).sendRsvp} lang={lang} />
           </a>
         </div>
       )}

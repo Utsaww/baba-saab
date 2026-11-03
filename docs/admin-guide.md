@@ -151,6 +151,8 @@ Choose which parts of the invitation guests see, and in what order. Untick **Sho
 
 Change the wording and look of the invitation. Everything here is optional; leave it alone and the template's own wording and styling are used.
 
+- **Wording** lists the fixed lines this design shows, such as "Together with their families", the section headings and the "Tap to open" hint, grouped as Opening, Cover & couple, Section headings and Closing. Under each box is the template's own wording. Type a new line to replace it (up to 160 characters). Clear the box to go back to the template's line. For a bilingual invitation, a line left blank in one language keeps the template's line in that language. **Reset wording** puts every line back. Form labels, buttons, messages and the Baba Saab credit can't be changed. If you switch design, lines the new design doesn't show are kept but not used.
+
 ## Editor step 8: Settings
 
 - **Take offline on** appears here once the invitation is live. It is the date the invitation goes offline by itself. See **After the wedding** below.

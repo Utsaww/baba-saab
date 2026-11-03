@@ -135,4 +135,13 @@ describe("cleanDraft end date", () => {
     expect(draft.mainDateEnd).toBeUndefined();
     expect(errors.mainDateEnd).toBeUndefined();
   });
+
+  it("keeps valid wording overrides and drops unknown or too-long lines", () => {
+    const text = { together: { en: "Hi", hi: "नमस्ते" }, submit: { en: "x" }, venue: { en: "x".repeat(161) } };
+    const { draft, errors } = cleanDraft({ ...base(), custom: { text } });
+    expect(draft.custom.text.together).toEqual({ en: "Hi", hi: "नमस्ते" });
+    expect(draft.custom.text.submit).toBeUndefined();
+    expect(draft.custom.text.venue?.en).toBeUndefined();
+    expect(Object.keys(errors).sort()).toEqual(["custom.text.submit", "custom.text.venue.en"]);
+  });
 });

@@ -105,3 +105,28 @@ export const UI = {
     count: { en: "Enter a number from 1 to 20", hi: "1 से 20 के बीच संख्या दर्ज करें" },
   },
 };
+
+// Lines staff may reword per invitation (custom.text). Form labels, messages and the credit stay fixed.
+export const EDITABLE_TEXT_KEYS = [
+  "weddingOf",
+  "together",
+  "saveTheDate",
+  "countdown",
+  "begun",
+  "venue",
+  "travel",
+  "schedule",
+  "gallery",
+  "film",
+  "rsvp",
+  "sendRsvp",
+  "rsvpBy",
+  "closing",
+  "blessing",
+  "foreverUs",
+  "warmRegards",
+  "scrollCue",
+  "tapToOpen",
+  "scrollToOpen",
+  "scratchHint",
+];

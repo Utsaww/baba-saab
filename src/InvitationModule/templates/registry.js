@@ -14,6 +14,9 @@ import VelvetTemplate from "./velvet";
 import { velvetFontVars, velvetPalettes } from "./velvet/palettes";
 import { velvetSample } from "./velvet/sample";
 
+// Rewordable lines (custom.text) each template shows; the shared sections give most of them.
+const SHARED_TEXT = ["weddingOf", "together", "saveTheDate", "countdown", "begun", "venue", "travel", "schedule", "gallery", "film", "rsvp", "rsvpBy", "closing"];
+
 export const TEMPLATES = [
   {
     id: "royal",
@@ -23,6 +26,7 @@ export const TEMPLATES = [
     palettes: royalPalettes,
     fontVars: royalFontVars,
     sample: royalSample,
+    textKeys: [...SHARED_TEXT, "scratchHint"],
   },
   {
     id: "floral",
@@ -32,6 +36,7 @@ export const TEMPLATES = [
     palettes: floralPalettes,
     fontVars: floralFontVars,
     sample: floralSample,
+    textKeys: [...SHARED_TEXT, "scrollToOpen"],
   },
   {
     id: "temple",
@@ -41,6 +46,7 @@ export const TEMPLATES = [
     palettes: templePalettes,
     fontVars: templeFontVars,
     sample: templeSample,
+    textKeys: ["weddingOf", "saveTheDate", "countdown", "begun", "venue", "travel", "schedule", "gallery", "film", "rsvp", "rsvpBy", "blessing", "foreverUs", "warmRegards", "scrollCue", "tapToOpen"],
     // Shown inside the template's cover, so not repeated as their own sections.
     coverSections: TEMPLE_COVER_SECTIONS,
   },
@@ -52,6 +58,7 @@ export const TEMPLATES = [
     palettes: minimalPalettes,
     fontVars: minimalFontVars,
     sample: minimalSample,
+    textKeys: [...SHARED_TEXT, "tapToOpen"],
   },
   {
     id: "velvet",
@@ -61,6 +68,7 @@ export const TEMPLATES = [
     palettes: velvetPalettes,
     fontVars: velvetFontVars,
     sample: velvetSample,
+    textKeys: [...SHARED_TEXT, "sendRsvp", "tapToOpen"],
   },
 ];
 

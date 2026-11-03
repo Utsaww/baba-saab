@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EDITABLE_TEXT_KEYS } from "../lib/ui-strings";
 
 export const GALLERY_MAX = 12;
 export const TEMPLATE_IDS = ["royal", "floral", "temple", "minimal", "velvet"];
@@ -23,6 +24,8 @@ export const SECTION_IDS = [
 const localised = z
   .object({ en: z.string().trim().optional(), hi: z.string().trim().optional() })
   .default({});
+// Short staff-written lines; no default, so drafts keep only what was typed.
+const localisedPlain = z.object({ en: z.string().trim().max(160).optional(), hi: z.string().trim().max(160).optional() });
 // Rejects calendar-impossible dates such as 2026-02-31, which would otherwise roll over or show NaN.
 const isRealDate = (s) => {
   const [y, m, d] = s.split("-").map(Number);
@@ -124,7 +127,12 @@ export const invitationSchema = z.object({
     })
     .default({}),
   showCredit: z.boolean().default(true),
-  custom: z.object({ dateStyle: z.enum(DATE_STYLES).optional() }).optional(),
+  custom: z
+    .object({
+      dateStyle: z.enum(DATE_STYLES).optional(),
+      text: z.record(z.enum(EDITABLE_TEXT_KEYS), localisedPlain).optional(),
+    })
+    .optional(),
 });
 
 export function parseInvitation(data) {

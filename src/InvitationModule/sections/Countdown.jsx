@@ -6,7 +6,8 @@ import T from "./Text";
 
 const UNITS = ["days", "hours", "minutes", "seconds"];
 
-export default function Countdown({ target, lang, s = {} }) {
+// `begun` is the invitation's own wording for the line shown once the day has come.
+export default function Countdown({ target, lang, begun = UI.begun, s = {} }) {
   // null until mounted so server and client HTML match.
   const [now, setNow] = useState(null);
 
@@ -17,7 +18,7 @@ export default function Countdown({ target, lang, s = {} }) {
   }, []);
 
   const left = now === null ? null : timeLeft(target, now);
-  if (left?.done) return <T as="p" v={UI.begun} lang={lang} className={s.countDone} />;
+  if (left?.done) return <T as="p" v={begun} lang={lang} className={s.countDone} />;
 
   return (
     <div className={s.countdown} role="timer" aria-live="off">

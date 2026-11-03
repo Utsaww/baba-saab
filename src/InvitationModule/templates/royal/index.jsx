@@ -7,7 +7,7 @@ import ScratchReveal from "../../sections/reveals/ScratchReveal";
 import Emblem from "../../sections/Emblem";
 import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
-import { shortDate } from "../../lib/customise";
+import { shortDate, uiText } from "../../lib/customise";
 import { plainText } from "../../lib/i18n";
 import { couplePair } from "../../lib/names";
 import { mergeStyles } from "../../lib/styles";
@@ -24,7 +24,7 @@ function Opening({ inv, lang, open }) {
       <p className={s.openingNames}>
         <T v={first.name} lang={lang} /> <span className={s.amp}>&amp;</span> <T v={second.name} lang={lang} />
       </p>
-      <T as="p" v={UI.scratchHint} lang={lang} className={s.openingHint} />
+      <T as="p" v={uiText(inv).scratchHint} lang={lang} className={s.openingHint} />
       <ScratchReveal
         className={s.scratch}
         surfaceClassName={s.scratchSurface}

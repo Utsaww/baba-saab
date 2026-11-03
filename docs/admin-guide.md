@@ -14,7 +14,7 @@ This guide grows as new parts of the invitation system go live. Everything descr
 | **Staff** | *Owner only.* Invite people to the admin area and remove them. |
 | **Help** | This guide. |
 
-Guests can RSVP on WhatsApp: their reply is saved, then opens WhatsApp to the family's number. You and the family can see every reply on the **RSVPs** page. Turn it on in **Editor step 7: Settings**.
+Guests can RSVP on WhatsApp: their reply is saved, then opens WhatsApp to the family's number. You and the family can see every reply on the **RSVPs** page. Turn it on in **Editor step 8: Settings**.
 
 ## Signing in
 
@@ -109,10 +109,10 @@ Change the design, colour palette or language at any time. Nothing you've typed 
 ## Editor step 2: Couple & families
 
 - **Bride and groom:** names, and the parents line, for example "D/o Smt. Sunita & Shri Rajesh Sharma".
-- **Who is named first?** Choose **Bride first** or **Groom first**. Usually the bride's family lists the bride first, and the groom's family lists the groom first. The choice decides the order of the names, photos and parents lines everywhere on the invitation, in WhatsApp share text and preview cards, and in newly generated link names. Links that already exist never change. On a live invitation, click **Update live invitation** (step 8) to send the new order to guests.
+- **Who is named first?** Choose **Bride first** or **Groom first**. Usually the bride's family lists the bride first, and the groom's family lists the groom first. The choice decides the order of the names, photos and parents lines everywhere on the invitation, in WhatsApp share text and preview cards, and in newly generated link names. Links that already exist never change. On a live invitation, click **Update live invitation** (step 9) to send the new order to guests.
 - **Blessing at the top:** the symbol (Shri Ganesh, Om or none) and a shloka. Pick one of the ready-made shlokas, or choose **Our own text** and type the family's own.
 - **Families:** add each family's name for the closing message. **Closing line** is the sign-off, for example "With love and blessings from the Sharma and Mehra families".
-- **Family contact phone:** shown to guests in the closing message at the end of the invitation. Search on the Invitations page also finds invitations by this number. **If guests reply on WhatsApp (step 7), this must be the family's WhatsApp number**, because every RSVP is sent there. The invitation can't be published without it while RSVPs are on.
+- **Family contact phone:** shown to guests in the closing message at the end of the invitation. Search on the Invitations page also finds invitations by this number. **If guests reply on WhatsApp (step 8), this must be the family's WhatsApp number**, because every RSVP is sent there. The invitation can't be published without it while RSVPs are on.
 
 For a **Both** invitation, each field has an English box and a Hindi box.
 
@@ -147,7 +147,11 @@ Removing a cover or couple photo asks you to confirm first, because it can't be 
 
 Choose which parts of the invitation guests see, and in what order. Untick **Show** to hide a section, and use the arrows to move it. The cover always comes first. A section with nothing filled in is hidden automatically, so you only need to hide sections you've filled in but don't want shown.
 
-## Editor step 7: Settings
+## Editor step 7: Wording & style
+
+Change the wording and look of the invitation. Everything here is optional; leave it alone and the template's own wording and styling are used.
+
+## Editor step 8: Settings
 
 - **Take offline on** appears here once the invitation is live. It is the date the invitation goes offline by itself. See **After the wedding** below.
 - **Guests reply on WhatsApp** adds an RSVP form to the invitation. When a guest sends it, WhatsApp opens with their reply already typed, addressed to the family contact number from step 2. The reply is also saved, so you and the family can see it on the **RSVPs** page (see **RSVPs page and family link** below). When it's on, you can also set:
@@ -158,7 +162,7 @@ Choose which parts of the invitation guests see, and in what order. Untick **Sho
 
 See **RSVPs on WhatsApp** below for what guests see.
 
-## Editor step 8: Review
+## Editor step 9: Review
 
 This step lists everything still needed before the invitation can be published, such as a missing date or an event without a time. Click **Go to step N** to fix each one. If guests reply on WhatsApp, it also asks for the family's WhatsApp number (step 2). When the list is clear it says **Everything needed is filled in.** The rest of the step is where you choose the link name, share the customer preview link and publish. Each part is explained below.
 
@@ -208,7 +212,7 @@ After publishing, click **Download QR code**. It saves a file named like `riya-a
 
 ### RSVPs on WhatsApp
 
-When **Guests reply on WhatsApp** is on in step 7, the invitation has an RSVP form: name, phone, whether they're coming, how many (if asked), which functions, meal (if asked) and a message.
+When **Guests reply on WhatsApp** is on in step 8, the invitation has an RSVP form: name, phone, whether they're coming, how many (if asked), which functions, meal (if asked) and a message.
 
 - **Sending:** the guest taps **Send RSVP on WhatsApp**. WhatsApp opens with their reply typed out, addressed to the family's number. The guest just presses send in WhatsApp. Replies arrive in the family's WhatsApp, in the invitation's language (English for a **Both** invitation).
 - **If WhatsApp doesn't open** (for example on a computer without WhatsApp), the reply is shown with **Copy message** and **Open WhatsApp** buttons, and the family's number to send it to.
@@ -245,7 +249,7 @@ Click **Download CSV** for a file of every reply. It opens in Excel.
 
 At the bottom of the page, **Family link** gives the family a private, read-only page with the same totals, search, red **!** marks and CSV download, but no way to edit.
 
-- It needs a saved link name first (editor step 8). Until then the page says so.
+- It needs a saved link name first (editor step 9). Until then the page says so.
 - Use **Copy** or **Send on WhatsApp**.
 - **The family link shows guests' phone numbers, so share it only with the family.** Anyone who has the link can see them.
 - If the link went to the wrong person, click **New family link** and confirm. The old link stops working straight away and you get a fresh one to send.
@@ -259,8 +263,8 @@ RSVPs are erased together with their invitation (see **Permanent erase** below).
 Every live invitation goes offline by itself some time after the wedding, so old links don't stay up forever.
 
 - **Default:** 7 days after the last event, in India time. It is set when you publish. If you publish after that day has already passed, it is set to tomorrow instead, so the invitation doesn't go offline the same night.
-- **Invitations published before this feature:** the daily job gives each one a date the first night it runs: 7 days after its last event, and never earlier than the next day. Check step 7 if a customer needs a different date.
-- **Changing it:** open the invitation's step 7 (**Settings**), change **Take offline on** and click **Save date**. Today or any later date is allowed; today means it goes offline at the next daily run. If it falls before the last event, a note says so, but you can still save it.
+- **Invitations published before this feature:** the daily job gives each one a date the first night it runs: 7 days after its last event, and never earlier than the next day. Check step 8 if a customer needs a different date.
+- **Changing it:** open the invitation's step 8 (**Settings**), change **Take offline on** and click **Save date**. Today or any later date is allowed; today means it goes offline at the next daily run. If it falls before the last event, a note says so, but you can still save it.
 - The daily job runs around 3 am India time and takes offline everything whose date has arrived.
 - The invitations list warns you when invitations are due to go offline in the next 7 days.
 

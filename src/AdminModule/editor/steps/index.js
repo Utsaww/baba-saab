@@ -9,6 +9,7 @@ import VenueStep from "./VenueStep";
 import EventsStep from "./EventsStep";
 import MediaStep from "./MediaStep";
 import SectionsStep from "./SectionsStep";
+import WordingStep from "./WordingStep";
 import RsvpStep from "./RsvpStep";
 import ReviewStep from "./ReviewStep";
 
@@ -19,8 +20,9 @@ export const STEPS = [
   { number: 4, title: "Events", Component: EventsStep },
   { number: 5, title: "Photos, film & music", Component: MediaStep },
   { number: 6, title: "Sections", Component: SectionsStep },
-  { number: 7, title: "Settings", Component: RsvpStep },
-  { number: 8, title: "Review", Component: ReviewStep },
+  { number: 7, title: "Wording & style", Component: WordingStep },
+  { number: 8, title: "Settings", Component: RsvpStep },
+  { number: 9, title: "Review", Component: ReviewStep },
 ];
 
 /** Must match the "## Editor step N: Title" headings in docs/admin-guide.md. */
@@ -41,9 +43,12 @@ export function stepHasContent(number, content) {
     case 6:
       return (content.theme?.hidden ?? []).length > 0 || (content.theme?.sectionOrder ?? []).length > 0;
     case 7:
+      // dateStyle is set in step 3, so it doesn't count here.
+      return Boolean(content.custom && Object.keys(content.custom).some((k) => k !== "dateStyle"));
+    case 8:
       // The offline date isn't content; RSVP on WhatsApp and the credit switch are.
       return whatsappRsvpOn(content.rsvp) || content.showCredit === false;
-    case 8:
+    case 9:
       return publishChecklist(cleanDraft(content).draft ?? {}).length === 0;
     default:
       return false;

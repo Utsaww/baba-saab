@@ -20,7 +20,7 @@ export default function FamilyLinkPanel({ slug, token, onNewLink }) {
   if (!slug) {
     return (
       <section aria-label="Family link" className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-700">
-        Save a link name in the editor (step 8) to get the family link.
+        Save a link name in the editor (step 9) to get the family link.
       </section>
     );
   }

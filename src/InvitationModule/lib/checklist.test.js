@@ -28,7 +28,11 @@ describe("stepForPath", () => {
     expect(stepForPath(["events", 0, "date"])).toBe(4);
     expect(stepForPath(["media", "film"])).toBe(5);
     expect(stepForPath(["theme", "hidden"])).toBe(6);
-    expect(stepForPath(["rsvp", "deadline"])).toBe(7);
+    expect(stepForPath(["custom", "text"])).toBe(7);
+    expect(stepForPath(["rsvp", "deadline"])).toBe(8);
+    expect(stepForPath(["rsvp"])).toBe(8);
+    expect(stepForPath(["theme", "colors", "accent"])).toBe(1);
+    expect(stepForPath(["slug"])).toBe(9);
   });
 });
 

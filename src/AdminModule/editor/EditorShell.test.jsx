@@ -44,9 +44,9 @@ describe("EditorShell", () => {
     expect(screen.getByRole("heading", { name: "2. Couple & families" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Next/ }));
     expect(screen.getByRole("heading", { name: "3. Date, venue & travel" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /8\. Review/ }));
-    expect(screen.getByRole("heading", { name: "8. Review" })).toBeInTheDocument();
-    expect(window.location.search).toContain("step=8");
+    fireEvent.click(screen.getByRole("button", { name: /9. Review/ }));
+    expect(screen.getByRole("heading", { name: "9. Review" })).toBeInTheDocument();
+    expect(window.location.search).toContain("step=9");
   });
 
   it("auto-saves edits with the invitation id and version", async () => {
@@ -245,7 +245,7 @@ describe("EditorShell publishing", () => {
   const settle = async () => {
     for (let i = 0; i < 5; i += 1) await act(async () => {});
   };
-  const goToReview = () => fireEvent.click(screen.getByRole("button", { name: /8\. Review/ }));
+  const goToReview = () => fireEvent.click(screen.getByRole("button", { name: /9. Review/ }));
   let storage;
 
   beforeEach(async () => {
@@ -290,7 +290,7 @@ describe("EditorShell publishing", () => {
   });
 
   it("shows a conflict when someone else saved before publishing", async () => {
-    renderEditor({ initialStep: 8, publishActions: { publishAction: vi.fn(async () => ({ ok: false, conflict: true })) } });
+    renderEditor({ initialStep: 9, publishActions: { publishAction: vi.fn(async () => ({ ok: false, conflict: true })) } });
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
     await settle();
@@ -313,7 +313,7 @@ describe("EditorShell publishing", () => {
       message: "Some details are still missing.",
       missing: [{ message: "Add the venue name", step: 3 }, { message: "Add the groom's name", step: 2 }],
     }));
-    renderEditor({ initialStep: 8, publishActions: { publishAction } });
+    renderEditor({ initialStep: 9, publishActions: { publishAction } });
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
     await settle();
@@ -328,7 +328,7 @@ describe("EditorShell publishing", () => {
 
   it("shows the new link name in the preview link when publishing fails after saving it", async () => {
     const publishAction = vi.fn(async () => ({ ok: false, message: "Couldn't publish. Check your connection and try again.", slug: "priya-rahul" }));
-    renderEditor({ initialStep: 8, publishActions: { publishAction } });
+    renderEditor({ initialStep: 9, publishActions: { publishAction } });
     fireEvent.change(screen.getByLabelText("Link name"), { target: { value: "priya-rahul" } });
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
@@ -358,7 +358,7 @@ describe("EditorShell publishing", () => {
 
   it("keeps the files of a copy whose publish outcome is unknown", async () => {
     const publishAction = vi.fn(async () => ({ ok: false, message: "Couldn't publish. Check your connection and try again." }));
-    renderEditor({ invitation: { content: withCover }, initialStep: 8, publishActions: { publishAction } });
+    renderEditor({ invitation: { content: withCover }, initialStep: 9, publishActions: { publishAction } });
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
     await settle();
@@ -418,7 +418,7 @@ describe("EditorShell publishing", () => {
   it("does not delete a file the copy being published uses when a save finishes during the request", async () => {
     let finish;
     const publishAction = vi.fn(() => new Promise((resolve) => (finish = resolve)));
-    renderEditor({ invitation: { content: withCover }, initialStep: 8, publishActions: { publishAction } });
+    renderEditor({ invitation: { content: withCover }, initialStep: 9, publishActions: { publishAction } });
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
     await settle();
@@ -449,7 +449,7 @@ describe("EditorShell publishing", () => {
   });
 
   it("says the server couldn't be reached when an action call fails", async () => {
-    renderEditor({ initialStep: 8, publishActions: { publishAction: vi.fn(async () => Promise.reject(new TypeError("Failed to fetch"))) } });
+    renderEditor({ initialStep: 9, publishActions: { publishAction: vi.fn(async () => Promise.reject(new TypeError("Failed to fetch"))) } });
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
     await settle();
@@ -463,7 +463,7 @@ describe("EditorShell publishing", () => {
       .fn()
       .mockResolvedValueOnce({ ok: false, message: "That link name was just taken — try another." })
       .mockImplementationOnce(async ({ slug }) => ({ ok: true, slug }));
-    renderEditor({ invitation: { slug: null }, initialStep: 8, publishActions: { setSlugAction } });
+    renderEditor({ invitation: { slug: null }, initialStep: 9, publishActions: { setSlugAction } });
     await settle();
     expect(setSlugAction).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -539,7 +539,7 @@ describe("EditorShell lifecycle", () => {
   });
 
   it("hides the publish actions of a deleted invitation", () => {
-    renderEditor({ invitation: deleted, initialStep: 8 });
+    renderEditor({ invitation: deleted, initialStep: 9 });
     expect(screen.queryByRole("button", { name: "Publish" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "New preview link" })).not.toBeInTheDocument();
     expect(screen.getByText("Restore this invitation to publish or share it.")).toBeInTheDocument();
@@ -602,8 +602,8 @@ describe("EditorShell lifecycle", () => {
     expect(banner()).not.toBeInTheDocument();
   });
 
-  it("saves the take-offline date from step 7", async () => {
-    const { lifecycleActions } = renderEditor({ invitation: published, initialStep: 7 });
+  it("saves the take-offline date from step 8", async () => {
+    const { lifecycleActions } = renderEditor({ invitation: published, initialStep: 8 });
     const field = screen.getByLabelText("Take offline on");
     expect(field).toHaveValue("2027-02-21");
     expect(screen.queryByRole("checkbox", { name: /Ask guests to RSVP/ })).not.toBeInTheDocument();
@@ -613,23 +613,23 @@ describe("EditorShell lifecycle", () => {
     expect(lifecycleActions.setOfflineOnAction).toHaveBeenCalledWith({ id: "inv-test", expectedVersion: 5, offlineOn: "2027-03-01" });
   });
 
-  it("warns in step 7 when the take-offline date is before the last event", () => {
-    renderEditor({ invitation: { ...published, offlineOn: "2027-02-10" }, initialStep: 7 });
+  it("warns in step 8 when the take-offline date is before the last event", () => {
+    renderEditor({ invitation: { ...published, offlineOn: "2027-02-10" }, initialStep: 8 });
     expect(screen.getByText("This is before the last event (Sunday, 14 February 2027)")).toBeInTheDocument();
   });
 
   it("shows no take-offline date for drafts", () => {
-    renderEditor({ initialStep: 7 });
+    renderEditor({ initialStep: 8 });
     expect(screen.queryByLabelText("Take offline on")).not.toBeInTheDocument();
   });
 
   it("fills in the take-offline date the server chose on publishing", async () => {
-    renderEditor({ initialStep: 8 });
+    renderEditor({ initialStep: 9 });
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Publish" })));
     await settle();
     confirm.mockRestore();
-    fireEvent.click(screen.getByRole("button", { name: /7\./ }));
+    fireEvent.click(screen.getByRole("button", { name: /8./ }));
     expect(screen.getByLabelText("Take offline on")).toHaveValue("2027-02-21");
   });
 });

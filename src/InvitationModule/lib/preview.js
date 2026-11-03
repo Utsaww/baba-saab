@@ -25,6 +25,7 @@ export function previewInvitation(draft, template) {
       palette: d.theme?.palette ?? sample.theme.palette,
       sectionOrder: d.theme?.sectionOrder,
       hidden: d.theme?.hidden,
+      colors: d.theme?.colors,
     },
     couple: {
       order: d.couple?.order,
@@ -40,7 +41,7 @@ export function previewInvitation(draft, template) {
   if (result.success) return { invitation: result.data, usedSample };
   const fallback = invitationSchema.parse({
     ...sample,
-    theme: { ...sample.theme, palette: candidate.theme.palette },
+    theme: { ...sample.theme, palette: candidate.theme.palette, colors: candidate.theme.colors },
     language: d.language ?? sample.language,
   });
   return { invitation: fallback, usedSample: true };

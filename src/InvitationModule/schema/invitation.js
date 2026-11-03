@@ -38,6 +38,7 @@ const isoDate = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
   .refine(isRealDate, "Enter a real date");
 const time24 = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:mm (24-hour)");
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a colour code like #7B1E3A");
 const url = z.string().url().refine((s) => s.startsWith("https://"), "Use a link starting with https://");
 
 const person = z.object({
@@ -68,6 +69,8 @@ export const invitationSchema = z.object({
     palette: z.string().min(1),
     sectionOrder: z.array(z.enum(SECTION_IDS)).default(SECTION_IDS),
     hidden: z.array(z.enum(SECTION_IDS)).default([]),
+    // Used when palette is "custom" on a template with customColours; kept when switching to one without.
+    colors: z.object({ bg: hexColor, accent: hexColor }).optional(),
   }),
   status: z.enum(STATUSES).default("draft"),
   language: z.enum(LANGUAGES).default("en"),

@@ -106,6 +106,12 @@ The editor has three parts: the **steps** on the left, the **form** in the middl
 
 Change the design, colour palette or language at any time. Nothing you've typed is lost. If you switch from **Both** to English, the Hindi text is kept, and it comes back if you switch to **Both** again.
 
+**Custom colours (Royal Rajasthani, Floral Pastel and Modern Minimal):** choose **Custom** after the ready-made palettes, then set the **Background** and **Accent**. Type a colour code such as `#7B1E3A`, or click the colour square next to it to pick one. The first time you choose Custom, the fields start from the palette you had. Text colours are worked out for you so they stay readable. The preview updates as you type. A half-typed code shows "Use a colour code like #7B1E3A", and the preview keeps the last complete colour.
+
+- If the accent is too pale or too dark to read on the background, a warning appears. Click **Use suggested colour** to get the nearest colour that works. Until the accent is fixed, the invitation can't be published or updated live: the step 9 checklist says "Pick a stronger accent colour". Your draft still saves.
+- Temple Classic and Velvet Envelope don't offer custom colours. If you switch to one of them, it uses its own palette. Your custom colours are kept, and come back if you switch back and choose **Custom** again.
+- The WhatsApp preview card uses the custom colours too.
+
 ## Editor step 2: Couple & families
 
 - **Bride and groom:** names, and the parents line, for example "D/o Smt. Sunita & Shri Rajesh Sharma".

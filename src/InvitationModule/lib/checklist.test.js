@@ -113,3 +113,21 @@ describe("publishChecklist end date", () => {
     }
   });
 });
+
+describe("publishChecklist custom colours", () => {
+  const custom = (colors, templateId = "royal") => ({ ...complete(), templateId, theme: { palette: "custom", colors } });
+  it("passes custom colours with a readable accent", () => {
+    expect(publishChecklist(custom({ bg: "#fff8e7", accent: "#7b1e3a" }))).toEqual([]);
+  });
+  it("asks for both colours when one is missing or invalid, linking to step 1", () => {
+    for (const colors of [undefined, { bg: "#fff8e7" }, { bg: "#fff8e7", accent: "#12" }]) {
+      expect(publishChecklist(custom(colors))).toEqual([{ id: "colors", message: "Choose the custom background and accent colours", step: 1 }]);
+    }
+  });
+  it("blocks a weak accent, linking to step 1", () => {
+    expect(publishChecklist(custom({ bg: "#fff8e7", accent: "#f3e5ab" }))).toEqual([{ id: "accent", message: "Pick a stronger accent colour", step: 1 }]);
+  });
+  it("ignores custom colours on templates without them", () => {
+    expect(publishChecklist(custom({ bg: "#fff8e7", accent: "#f3e5ab" }, "temple"))).toEqual([]);
+  });
+});

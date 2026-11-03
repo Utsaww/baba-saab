@@ -11,6 +11,7 @@ export const TEMPLATE_CHOICES = [
     id: "royal",
     name: "Royal Rajasthani",
     description: "Maroon and gold.",
+    customColours: true,
     textKeys: ["weddingOf", "together", "saveTheDate", "countdown", "begun", "venue", "travel", "schedule", "gallery", "film", "rsvp", "rsvpBy", "closing", "scratchHint"],
     palettes: [
       { id: "maroon-gold", name: "Maroon & Gold", bg: "#fff8f0", primary: "#7a1f2b" },
@@ -21,8 +22,17 @@ export const TEMPLATE_CHOICES = [
     id: "floral",
     name: "Floral Pastel",
     description: "Soft florals.",
+    customColours: true,
     textKeys: ["weddingOf", "together", "saveTheDate", "countdown", "begun", "venue", "travel", "schedule", "gallery", "film", "rsvp", "rsvpBy", "closing", "scrollToOpen"],
     palettes: [{ id: "blush", name: "Blush", bg: "#fff5f6", primary: "#c27a8a" }],
+  },
+  {
+    id: "temple",
+    name: "Temple Classic",
+    description: "Ivory paper.",
+    customColours: false,
+    textKeys: ["weddingOf", "saveTheDate"],
+    palettes: [{ id: "kumkum", name: "Wine & Rose", bg: "#fbf6ec", primary: "#7a1f2b" }],
   },
 ];
 

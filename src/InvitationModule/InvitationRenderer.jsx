@@ -9,7 +9,7 @@ export default function InvitationRenderer({ invitation, ctx = {} }) {
   if (!template) return null;
   const { Component } = template;
   return (
-    <div className={`${fontVariables} ${styles.wrapper}`} style={{ ...themeStyle(template, invitation.theme.palette), ...textStyleVars(invitation) }}>
+    <div className={`${fontVariables} ${styles.wrapper}`} style={{ ...themeStyle(template, invitation), ...textStyleVars(invitation) }}>
       <Component invitation={invitation} ctx={ctx} />
     </div>
   );

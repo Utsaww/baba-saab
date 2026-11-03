@@ -1,3 +1,4 @@
+import { customPaletteVars, isHex } from "../lib/colors";
 import RoyalTemplate from "./royal";
 import { royalFontVars, royalPalettes } from "./royal/palettes";
 import { royalSample } from "./royal/sample";
@@ -26,6 +27,7 @@ export const TEMPLATES = [
     palettes: royalPalettes,
     fontVars: royalFontVars,
     sample: royalSample,
+    customColours: true,
     textKeys: [...SHARED_TEXT, "scratchHint"],
   },
   {
@@ -36,6 +38,7 @@ export const TEMPLATES = [
     palettes: floralPalettes,
     fontVars: floralFontVars,
     sample: floralSample,
+    customColours: true,
     textKeys: [...SHARED_TEXT, "scrollToOpen"],
   },
   {
@@ -58,6 +61,7 @@ export const TEMPLATES = [
     palettes: minimalPalettes,
     fontVars: minimalFontVars,
     sample: minimalSample,
+    customColours: true,
     textKeys: [...SHARED_TEXT, "tapToOpen"],
   },
   {
@@ -80,6 +84,13 @@ export function getPalette(template, paletteId) {
   return template.palettes.find((p) => p.id === paletteId) ?? template.palettes[0];
 }
 
-export function themeStyle(template, paletteId) {
-  return { ...template.fontVars, ...getPalette(template, paletteId).vars };
+/** Colour variables for an invitation: derived from its custom colours when chosen and allowed, else the named palette. */
+export function paletteVars(template, invitation) {
+  const { palette, colors } = invitation.theme ?? {};
+  if (palette === "custom" && template.customColours && isHex(colors?.bg) && isHex(colors?.accent)) return customPaletteVars(colors);
+  return getPalette(template, palette).vars;
+}
+
+export function themeStyle(template, invitation) {
+  return { ...template.fontVars, ...paletteVars(template, invitation) };
 }

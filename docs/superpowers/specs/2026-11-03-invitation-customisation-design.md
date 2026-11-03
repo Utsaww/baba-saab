@@ -83,6 +83,13 @@ Customers like a design but ask for small personal changes, and today staff have
 - The WhatsApp/OG card uses the custom colours.
 - Switching to Temple or Velvet: the colour fields disappear and that template's palette is used; the custom colours stay saved and come back if the template is switched back (my call).
 
+### 5.6 Map and calendar buttons, per event (owner, 2026-11-03)
+
+- All five templates (the buttons are shared: `templates/base/BaseSections.jsx`, `sections/AddToCalendar.jsx`).
+- **Per event**, in editor step 4, two switches on each event: **Show "Open in Google Maps"** and **Show calendar buttons** (hides both "Add to Google Calendar" and "Download (.ics)" together — my call). Owner: some events show them and some don't; not one switch for the whole invitation.
+- The Venue section's own "Open in Google Maps" button gets the same switch in step 3, next to the venue's map link (my call — the venue isn't an event).
+- Default: shown (absent = shown), so existing invitations don't change. A map button still only appears when there is a map link, as today.
+
 ## 6. Data
 
 New optional fields on the invitation (exact shape builder's call), all absent on existing invitations = today's behaviour:
@@ -90,7 +97,8 @@ New optional fields on the invitation (exact shape builder's call), all absent o
 - date style;
 - per-element size/bold/italic;
 - countdown mode + message (localised);
-- custom colours (background, accent) and whether the custom palette is chosen.
+- custom colours (background, accent) and whether the custom palette is chosen;
+- per event: hide map button, hide calendar buttons; venue: hide map button.
 Validated in `schema/invitation.js` and cleaned in `schema/draft.js` like other fields; colours must be valid 6-digit hex; unknown keys dropped. The public page and preview read them from the live/draft copy as today.
 
 ## 7. Editor
@@ -109,11 +117,11 @@ Validated in `schema/invitation.js` and cleaned in `schema/draft.js` like other 
 
 ## 9. Testing
 
-Unit: each date style (one day, two days, month/year crossing, Hindi); colour derivation and contrast (incl. very dark, very light, mid-grey backgrounds, failing accent → suggestion passes); wording override fallback; schema/draft cleaning (bad hex, unknown keys, absent = unchanged). Render: every template with no customisation renders exactly as before; overrides, date style, sizes, bold/italic, countdown message/hidden show in each template; custom colours apply in Royal/Floral/Minimal and are ignored in Temple/Velvet. Editor: new controls update the draft and preview. Manual: 360px phone with long names at Largest in all five templates.
+Unit: each date style (one day, two days, month/year crossing, Hindi); colour derivation and contrast (incl. very dark, very light, mid-grey backgrounds, failing accent → suggestion passes); wording override fallback; schema/draft cleaning (bad hex, unknown keys, absent = unchanged). Render: every template with no customisation renders exactly as before; overrides, date style, sizes, bold/italic, countdown message/hidden show in each template; custom colours apply in Royal/Floral/Minimal and are ignored in Temple/Velvet. Per-event button switches: hidden on one event, shown on another, venue switch independent. Editor: new controls update the draft and preview. Manual: 360px phone with long names at Largest in all five templates.
 
 ## 10. Staff guide
 
-`docs/admin-guide.md`: custom colours (and the warning), date styles, the new "Wording & style" step, renumbered steps.
+`docs/admin-guide.md`: custom colours (and the warning), date styles, the new "Wording & style" step, renumbered steps, per-event map/calendar switches.
 
 ## 11. Answers to the builder check
 
@@ -123,4 +131,4 @@ Unit: each date style (one day, two days, month/year crossing, Hindi); colour de
 
 ## Left to the builder
 
-Exact data shape and key names; the exact editable-text list within §5.1's rule; size factors; colour-derivation maths (within the contrast rule); editor layout in the existing admin style; how the countdown setting and step 6 hide stay in agreement; splitting the work into parts (suggested order: date style → wording → countdown/message → text size/style → custom colours).
+Exact data shape and key names; the exact editable-text list within §5.1's rule; size factors; colour-derivation maths (within the contrast rule); editor layout in the existing admin style; how the countdown setting and step 6 hide stay in agreement; splitting the work into parts (suggested order: map/calendar switches → date style → wording → countdown/message → text size/style → custom colours).

@@ -14,7 +14,7 @@
 .coverNames { letter-spacing: -0.01em; }
 .amp { font-style: italic; color: var(--accent); }
 .section { border-top: 1px solid color-mix(in srgb, var(--text) 12%, transparent); }
-.sectionTitle { color: var(--text); font-family: var(--font-body), sans-serif; font-size: 13px; letter-spacing: 0.3em; text-transform: uppercase; }
+.sectionTitle { color: var(--text); font-family: var(--font-body), sans-serif; font-size: calc(13px * var(--headings-scale, 1)); letter-spacing: 0.3em; text-transform: uppercase; }
 .event { background: transparent; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent); border-radius: 0; padding: 16px 0; }
 .eventName { color: var(--text); }
 .countItem { background: transparent; border: 0; }

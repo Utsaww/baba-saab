@@ -81,3 +81,14 @@ describe("custom.text", () => {
     expect(() => parseInvitation({ ...minimalInvitation(), custom: { text: { venue: { en: "x".repeat(161) } } } })).toThrow();
   });
 });
+
+describe("custom.styles", () => {
+  it("accepts size, bold and italic per element", () => {
+    const styles = { names: { size: "xl", bold: true }, headings: { italic: true } };
+    expect(parseInvitation({ ...minimalInvitation(), custom: { styles } }).custom.styles).toEqual(styles);
+  });
+  it("rejects unknown elements and sizes", () => {
+    expect(() => parseInvitation({ ...minimalInvitation(), custom: { styles: { body: { bold: true } } } })).toThrow();
+    expect(() => parseInvitation({ ...minimalInvitation(), custom: { styles: { names: { size: "huge" } } } })).toThrow();
+  });
+});

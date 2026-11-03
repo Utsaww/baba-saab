@@ -1,7 +1,7 @@
 "use client";
 
 import { UI } from "@/InvitationModule/lib/ui-strings";
-import { ChipGroup, Group, LocalisedInput } from "../fields";
+import { ChipGroup, Group, LocalisedInput, Toggle } from "../fields";
 
 const smallButton = "min-h-[44px] rounded-full border border-stone-300 px-4 text-sm hover:bg-stone-100";
 
@@ -48,10 +48,24 @@ const COUNTDOWN_MODES = [
   { id: "message", label: "Message" },
 ];
 
+const STYLE_ELEMENTS = [
+  ["names", "Couple's names"],
+  ["parents", "Parents' names"],
+  ["intro", "Opening line"],
+  ["headings", "Section headings"],
+];
+const SIZES = [
+  { id: "sm", label: "Smaller" },
+  { id: "md", label: "Normal" },
+  { id: "lg", label: "Larger" },
+  { id: "xl", label: "Largest" },
+];
+
 export default function WordingStep({ content, update, language, templates, onGoToStep }) {
   const keys = templates.find((t) => t.id === content.templateId)?.textKeys ?? [];
   const text = content.custom?.text;
   const countdown = content.custom?.countdown;
+  const styles = content.custom?.styles;
   return (
     <div className="space-y-4">
       <p className="text-sm text-stone-600">
@@ -79,6 +93,26 @@ export default function WordingStep({ content, update, language, templates, onGo
         })}
         <button type="button" onClick={() => update(["custom", "text"], undefined)} className={smallButton}>
           Reset wording
+        </button>
+      </Group>
+      <Group title="Text size & style">
+        {STYLE_ELEMENTS.map(([el, label]) => {
+          const style = styles?.[el];
+          // Normal size and switched-off toggles are the design's own, so they are stored as unset.
+          const set = (key, value) => update(["custom", "styles", el, key], value || undefined);
+          return (
+            <fieldset key={el} className="space-y-2">
+              <legend className="mb-2 text-sm font-semibold text-stone-700">{label}</legend>
+              <ChipGroup legend="Size" options={SIZES} value={style?.size ?? "md"} onChange={(size) => set("size", size === "md" ? undefined : size)} />
+              <div className="flex flex-wrap gap-x-6">
+                <Toggle label="Bold" checked={style?.bold} onChange={(on) => set("bold", on)} />
+                <Toggle label="Italic" checked={style?.italic} onChange={(on) => set("italic", on)} />
+              </div>
+            </fieldset>
+          );
+        })}
+        <button type="button" onClick={() => update(["custom", "styles"], undefined)} className={smallButton}>
+          Reset styles
         </button>
       </Group>
       <Group title="Countdown">

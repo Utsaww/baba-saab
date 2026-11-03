@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import WordingStep from "./WordingStep";
 import { renderStep } from "../test-utils";
 import { templateChoices } from "@/AdminModule/invitations/templateChoices";
 
 const start = (templateId = "royal", custom) => ({ templateId, theme: { palette: "maroon-gold" }, language: "en", custom });
 const COUPLE_LINE = "Line above the couple's names";
+// One element's controls inside the "Text size & style" group.
+const styleControls = (name) => within(within(screen.getByRole("heading", { name: "Text size & style" }).closest("section")).getByRole("group", { name }));
 
 describe("WordingStep", () => {
   it("renders the intro", () => {
@@ -53,5 +55,28 @@ describe("WordingStep", () => {
     renderStep(WordingStep, start(), { onGoToStep });
     fireEvent.click(screen.getByRole("button", { name: /step 6/ }));
     expect(onGoToStep).toHaveBeenCalledWith(6);
+  });
+
+  it("sets a size and bold for the couple's names", () => {
+    const { latest } = renderStep(WordingStep, start());
+    const names = styleControls("Couple's names");
+    fireEvent.click(names.getByRole("button", { name: "Largest" }));
+    fireEvent.click(names.getByLabelText("Bold"));
+    expect(latest().custom.styles).toEqual({ names: { size: "xl", bold: true } });
+  });
+
+  it("clears a style when set back to Normal or off", () => {
+    const { latest } = renderStep(WordingStep, start("royal", { styles: { headings: { size: "lg", italic: true } } }));
+    const headings = styleControls("Section headings");
+    expect(headings.getByRole("button", { name: "Larger" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(headings.getByRole("button", { name: "Normal" }));
+    fireEvent.click(headings.getByLabelText("Italic"));
+    expect(latest().custom.styles.headings).toEqual({ size: undefined, italic: undefined });
+  });
+
+  it("resets all styles", () => {
+    const { latest } = renderStep(WordingStep, start("royal", { dateStyle: "ordinal", styles: { names: { bold: true } } }));
+    fireEvent.click(screen.getByRole("button", { name: "Reset styles" }));
+    expect(latest().custom).toEqual({ dateStyle: "ordinal" });
   });
 });

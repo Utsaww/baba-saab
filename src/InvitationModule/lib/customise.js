@@ -21,3 +21,19 @@ export function uiText(inv) {
   }
   return ui;
 }
+
+export const TEXT_STYLE_ELEMENTS = ["names", "parents", "intro", "headings"];
+export const SIZE_SCALE = { sm: 0.85, md: 1, lg: 1.2, xl: 1.4 };
+
+// CSS custom properties for the chosen text styles; unset values add nothing, so templates keep their design.
+export function textStyleVars(inv) {
+  const vars = {};
+  for (const el of TEXT_STYLE_ELEMENTS) {
+    const s = inv.custom?.styles?.[el];
+    if (!s) continue;
+    if (s.size && s.size !== "md") vars[`--${el}-scale`] = String(SIZE_SCALE[s.size]);
+    if (s.bold) vars[`--${el}-weight`] = "700";
+    if (s.italic) vars[`--${el}-style`] = "italic";
+  }
+  return vars;
+}

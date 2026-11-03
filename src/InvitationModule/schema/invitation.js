@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EDITABLE_TEXT_KEYS } from "../lib/ui-strings";
+import { SIZE_SCALE, TEXT_STYLE_ELEMENTS } from "../lib/customise";
 
 export const GALLERY_MAX = 12;
 export const TEMPLATE_IDS = ["royal", "floral", "temple", "minimal", "velvet"];
@@ -136,6 +137,12 @@ export const invitationSchema = z.object({
           mode: z.enum(["countdown", "message"]).optional(),
           message: z.object({ en: z.string().trim().max(200).optional(), hi: z.string().trim().max(200).optional() }).optional(),
         })
+        .optional(),
+      styles: z
+        .record(
+          z.enum(TEXT_STYLE_ELEMENTS),
+          z.object({ size: z.enum(Object.keys(SIZE_SCALE)).optional(), bold: z.boolean().optional(), italic: z.boolean().optional() }),
+        )
         .optional(),
     })
     .optional(),

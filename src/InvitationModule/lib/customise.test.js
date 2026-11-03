@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardDate, shortDate, uiText } from "./customise";
+import { cardDate, shortDate, textStyleVars, uiText } from "./customise";
 import { UI } from "./ui-strings";
 import { formatDateRange } from "./datetime";
 
@@ -40,5 +40,19 @@ describe("uiText", () => {
     const ui = uiText({ custom: { text: { submit: { en: "x" }, credit: { en: "y" } } } });
     expect(ui.submit).toEqual(UI.submit);
     expect(ui.credit).toEqual(UI.credit);
+  });
+});
+
+describe("textStyleVars", () => {
+  it("is empty without styles", () => {
+    expect(textStyleVars({})).toEqual({});
+    expect(textStyleVars({ custom: { styles: {} } })).toEqual({});
+  });
+  it("sets only the chosen values", () => {
+    expect(textStyleVars({ custom: { styles: { names: { size: "xl", bold: true } } } })).toEqual({ "--names-scale": "1.4", "--names-weight": "700" });
+    expect(textStyleVars({ custom: { styles: { headings: { size: "sm", italic: true } } } })).toEqual({ "--headings-scale": "0.85", "--headings-style": "italic" });
+  });
+  it("skips normal size and switched-off toggles", () => {
+    expect(textStyleVars({ custom: { styles: { parents: { size: "md", bold: false, italic: false } } } })).toEqual({});
   });
 });

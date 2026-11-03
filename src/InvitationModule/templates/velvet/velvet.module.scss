@@ -32,16 +32,29 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 // Small letter-spaced capitals. Devanagari has no capitals and spacing breaks its joins.
-@mixin smallCaps($size, $spacing) {
+// $style names a text-style group (intro, headings) whose size, bold and italic settings apply.
+@mixin smallCaps($size, $spacing, $style: null) {
   font-family: var(--font-body), Georgia, serif;
-  font-size: $size;
-  font-weight: 600;
+  @if $style {
+    font-size: calc(#{$size} * var(--#{$style}-scale, 1));
+    font-weight: var(--#{$style}-weight, 600);
+    font-style: var(--#{$style}-style, normal);
+    overflow-wrap: anywhere;
+  } @else {
+    font-size: $size;
+    font-weight: 600;
+  }
   letter-spacing: $spacing;
   text-transform: uppercase;
   &[lang="hi"],
   [lang="hi"] {
-    font-size: calc(#{$size} + 3px);
-    font-weight: 400;
+    @if $style {
+      font-size: calc((#{$size} + 3px) * var(--#{$style}-scale, 1));
+      font-weight: var(--#{$style}-weight, 400);
+    } @else {
+      font-size: calc(#{$size} + 3px);
+      font-weight: 400;
+    }
     letter-spacing: 0;
     text-transform: none;
   }
@@ -159,13 +172,13 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .eyebrow {
-  @include smallCaps(12.5px, 0.32em);
+  @include smallCaps(12.5px, 0.32em, intro);
   color: var(--muted);
 }
 
 .coverNames {
   color: var(--ivory);
-  font-size: clamp(54px, 17vw, 78px);
+  font-size: clamp(calc(54px * var(--names-scale, 1)), calc(17vw * var(--names-scale, 1)), calc(78px * var(--names-scale, 1)));
   line-height: 1.08;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.28);
   [lang="hi"] { font-size: 0.6em; line-height: 1.45; }
@@ -193,7 +206,7 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .sectionTitle {
-  @include smallCaps(13.5px, 0.34em);
+  @include smallCaps(13.5px, 0.34em, headings);
   color: var(--primary);
   margin-bottom: 28px;
 }
@@ -216,12 +229,12 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .personName {
   color: var(--ivory);
-  font-size: 46px;
+  font-size: calc(46px * var(--names-scale, 1));
   line-height: 1.15;
   &[lang="hi"],
-  [lang="hi"] { font-size: 28px; line-height: 1.5; }
+  [lang="hi"] { font-size: calc(28px * var(--names-scale, 1)); line-height: 1.5; }
 }
-.parents { font-size: 16px; font-style: italic; }
+.parents { font-size: calc(16px * var(--parents-scale, 1)); font-style: var(--parents-style, italic); }
 
 .bigDate {
   font-family: var(--font-body), Georgia, serif;
@@ -496,17 +509,19 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 .letterNames {
   max-width: 100%;
   font-family: var(--font-display), cursive;
-  font-size: 28px;
-  font-size: 9cqi;
+  font-size: calc(28px * var(--names-scale, 1));
+  font-size: calc(9cqi * var(--names-scale, 1));
+  font-weight: var(--names-weight, 400);
+  font-style: var(--names-style, normal);
   line-height: 1.2;
   color: var(--ivory);
   // A wedding card never cuts a name off: wrap onto a second line, balanced, instead.
   text-wrap: balance;
   overflow-wrap: anywhere;
-  &[data-length="medium"] { font-size: 24px; font-size: 7.6cqi; }
-  &[data-length="long"] { font-size: 21px; font-size: 6.6cqi; }
-  &[lang="hi"] { font-size: 19px; font-size: 6.2cqi; line-height: 1.5; }
-  &[lang="hi"][data-length="long"] { font-size: 17px; font-size: 5.2cqi; }
+  &[data-length="medium"] { font-size: calc(24px * var(--names-scale, 1)); font-size: calc(7.6cqi * var(--names-scale, 1)); }
+  &[data-length="long"] { font-size: calc(21px * var(--names-scale, 1)); font-size: calc(6.6cqi * var(--names-scale, 1)); }
+  &[lang="hi"] { font-size: calc(19px * var(--names-scale, 1)); font-size: calc(6.2cqi * var(--names-scale, 1)); line-height: 1.5; }
+  &[lang="hi"][data-length="long"] { font-size: calc(17px * var(--names-scale, 1)); font-size: calc(5.2cqi * var(--names-scale, 1)); }
 }
 .letterDate {
   font-family: var(--font-body), Georgia, serif;

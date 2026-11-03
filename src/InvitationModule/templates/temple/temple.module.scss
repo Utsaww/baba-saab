@@ -208,11 +208,13 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 .heroOrnament { @include ornament(150px); margin-block: 2px; }
 .blessing {
   max-width: 32ch;
-  font-style: italic;
-  font-size: 15.5px;
+  font-style: var(--intro-style, italic);
+  font-weight: var(--intro-weight, 400);
+  font-size: calc(15.5px * var(--intro-scale, 1));
   line-height: 1.75;
   color: var(--muted);
-  &[lang="hi"] { font-style: normal; font-size: 16px; }
+  overflow-wrap: anywhere;
+  &[lang="hi"] { font-style: var(--intro-style, normal); font-size: calc(16px * var(--intro-scale, 1)); }
 }
 
 .heroNames {
@@ -244,23 +246,28 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .heroName {
   font-family: var(--font-script), cursive;
-  font-size: clamp(58px, 18vw, 84px);
+  font-size: clamp(calc(58px * var(--names-scale, 1)), calc(18vw * var(--names-scale, 1)), calc(84px * var(--names-scale, 1)));
+  font-weight: var(--names-weight, 400);
+  font-style: var(--names-style, normal);
   line-height: 1;
   color: var(--primary-deep);
+  overflow-wrap: anywhere;
   // Hindi names: Italianno has no Devanagari.
-  &[lang="hi"] { font-family: var(--font-hindi), serif; font-size: clamp(32px, 9vw, 40px); line-height: 1.45; }
+  &[lang="hi"] { font-family: var(--font-hindi), serif; font-size: clamp(calc(32px * var(--names-scale, 1)), calc(9vw * var(--names-scale, 1)), calc(40px * var(--names-scale, 1))); line-height: 1.45; }
   [lang="hi"] { font-size: 0.42em; line-height: 1.5; color: var(--primary); }
 }
 .heroParents {
   display: block;
   margin-top: 2px;
   font-family: var(--font-body), Georgia, serif;
-  font-style: italic;
-  font-size: 14.5px;
+  font-style: var(--parents-style, italic);
+  font-weight: var(--parents-weight, 400);
+  font-size: calc(14.5px * var(--parents-scale, 1));
   line-height: 1.55;
   color: var(--muted);
+  overflow-wrap: anywhere;
   &[lang="hi"],
-  [lang="hi"] { font-style: normal; font-size: 15px; }
+  [lang="hi"] { font-style: var(--parents-style, normal); font-size: calc(15px * var(--parents-scale, 1)); }
 }
 .heroAmp {
   font-family: var(--font-script), cursive;
@@ -307,11 +314,13 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .sectionTitle {
   font-family: var(--font-display), Georgia, serif;
-  font-weight: 400;
-  font-size: clamp(28px, 8.4vw, 36px);
+  font-weight: var(--headings-weight, 400);
+  font-style: var(--headings-style, normal);
+  font-size: clamp(calc(28px * var(--headings-scale, 1)), calc(8.4vw * var(--headings-scale, 1)), calc(36px * var(--headings-scale, 1)));
   line-height: 1.2;
   color: var(--primary-deep);
   margin-bottom: 28px;
+  overflow-wrap: anywhere;
   // The Hindi line under an English title is smaller; a Hindi-only title keeps near full size.
   [lang="hi"] { font-size: 0.62em; line-height: 1.5; color: var(--primary); }
   [lang="hi"]:only-child { font-size: 0.86em; line-height: 1.4; color: var(--primary-deep); }
@@ -614,9 +623,12 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 .closingNames {
   margin: 4px 0 14px;
   font-family: var(--font-script), cursive;
-  font-size: clamp(46px, 14vw, 60px);
+  font-size: clamp(calc(46px * var(--names-scale, 1)), calc(14vw * var(--names-scale, 1)), calc(60px * var(--names-scale, 1)));
+  font-weight: var(--names-weight, 400);
+  font-style: var(--names-style, normal);
   line-height: 1.1;
   color: var(--primary-deep);
+  overflow-wrap: anywhere;
   [lang="hi"] { font-family: var(--font-hindi), serif; font-size: 0.5em; line-height: 1.6; }
   :global(.hiLine) { display: inline; }
   .heroAmp { font-size: 0.7em; margin: 0 0.1em; }
@@ -667,7 +679,9 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   flex-direction: column;
   align-items: center;
   font-family: var(--font-script), cursive;
-  font-size: clamp(40px, 12vw, 52px);
+  font-size: clamp(calc(40px * var(--names-scale, 1)), calc(12vw * var(--names-scale, 1)), calc(52px * var(--names-scale, 1)));
+  font-weight: var(--names-weight, 400);
+  font-style: var(--names-style, normal);
   line-height: 1.05;
   color: var(--primary-deep);
   overflow-wrap: anywhere;
@@ -944,18 +958,18 @@ $ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 @media (max-height: 600px) {
   .opening { padding-block: 12px; }
   .openingInner { gap: 8px; }
-  .openingNames { font-size: clamp(32px, 9vh, 44px); }
+  .openingNames { font-size: clamp(calc(32px * var(--names-scale, 1)), calc(9vh * var(--names-scale, 1)), calc(44px * var(--names-scale, 1))); }
   .envelope { width: min(320px, 84vw, 62vh); }
 }
 @media (max-height: 420px) {
   .openingEyebrow { display: none; }
-  .openingNames { font-size: 30px; }
+  .openingNames { font-size: calc(30px * var(--names-scale, 1)); }
   .envelope { width: min(300px, 84vw, 54vh); }
   .tapHint { margin-top: 2px; }
 }
 @media (max-width: 360px) {
   .heroFrame { padding-inline: 14px; }
-  .heroName { font-size: 54px; }
+  .heroName { font-size: calc(54px * var(--names-scale, 1)); }
 }
 
 // Reduced motion: no 3D flap, rising letter, sparkles, petals or fades — the overlay simply fades.

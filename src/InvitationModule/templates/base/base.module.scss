@@ -20,6 +20,7 @@
   padding: 24px;
   // Large text can make the opening taller than a phone: scroll it, centred only while it fits.
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--bg);
   color: var(--text);
   transition: opacity 0.7s ease, transform 0.7s ease;

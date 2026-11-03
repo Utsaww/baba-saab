@@ -7,7 +7,7 @@ import ScratchReveal from "../../sections/reveals/ScratchReveal";
 import Emblem from "../../sections/Emblem";
 import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
-import { shortDate, uiText } from "../../lib/customise";
+import { dateProps, uiText } from "../../lib/customise";
 import { plainText } from "../../lib/i18n";
 import { couplePair } from "../../lib/names";
 import { mergeStyles } from "../../lib/styles";
@@ -32,9 +32,7 @@ function Opening({ inv, lang, open }) {
         hint={plainText(UI.revealNow, lang)}
         onReveal={() => setTimeout(open, REVEAL_PAUSE_MS)}
       >
-        <p className={s.scratchDate} data-style={inv.custom?.dateStyle}>
-          {shortDate(inv, lang)}
-        </p>
+        <p className={s.scratchDate} data-style={inv.custom?.dateStyle} {...dateProps(inv, lang)} />
       </ScratchReveal>
     </div>
   );

@@ -5,7 +5,7 @@ import TemplateFrame from "../base/TemplateFrame";
 import { CoverBase } from "../base/BaseSections";
 import ScrollReveal from "../../sections/reveals/ScrollReveal";
 import T from "../../sections/Text";
-import { shortDate, uiText } from "../../lib/customise";
+import { dateProps, uiText } from "../../lib/customise";
 import { couplePair } from "../../lib/names";
 import { mergeStyles } from "../../lib/styles";
 
@@ -34,7 +34,7 @@ function Opening({ inv, lang, open }) {
         <span className={s.openingNames}>
           <T v={first.name} lang={lang} /> &amp; <T v={second.name} lang={lang} />
         </span>
-        <span className={s.coverDate}>{shortDate(inv, lang)}</span>
+        <span className={s.coverDate} {...dateProps(inv, lang)} />
         <T as="span" v={ui.scrollToOpen} lang={lang} className={s.scrollHint} />
       </ScrollReveal>
     </div>

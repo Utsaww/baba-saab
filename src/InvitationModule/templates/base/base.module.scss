@@ -65,6 +65,8 @@
 }
 .amp { font-size: 0.6em; color: var(--primary); margin: 4px 0; }
 .coverDate { font-size: 20px; letter-spacing: 0.3em; color: var(--primary); }
+// A Hindi date style ("11 दिसंबर 2026"): wide letter-spacing breaks the joining line of Devanagari.
+.coverDate, .bigDate, .scratchDate, .letterDate { &[lang="hi"] { letter-spacing: 0; } }
 
 .section { padding: 48px 0; text-align: center; border-top: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); }
 .sectionTitle {

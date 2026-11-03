@@ -13,6 +13,8 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  /* clip, unlike hidden, doesn't turn the page into a scroll box, so position: sticky keeps working (editor preview). Old browsers keep hidden. */
+  overflow-x: clip;
 }
 
 

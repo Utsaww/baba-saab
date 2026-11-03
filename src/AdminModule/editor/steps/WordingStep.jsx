@@ -96,7 +96,11 @@ export default function WordingStep({ content, update, language, templates, onGo
             </fieldset>
           );
         })}
-        <button type="button" onClick={() => update(["custom", "text"], undefined)} className={smallButton}>
+        <button
+          type="button"
+          onClick={() => window.confirm("Reset all wording to the design's own? This can't be undone.") && update(["custom", "text"], undefined)}
+          className={smallButton}
+        >
           Reset wording
         </button>
       </Group>
@@ -116,7 +120,11 @@ export default function WordingStep({ content, update, language, templates, onGo
             </fieldset>
           );
         })}
-        <button type="button" onClick={() => update(["custom", "styles"], undefined)} className={smallButton}>
+        <button
+          type="button"
+          onClick={() => window.confirm("Reset all text sizes and styles to the design's own? This can't be undone.") && update(["custom", "styles"], undefined)}
+          className={smallButton}
+        >
           Reset styles
         </button>
       </Group>

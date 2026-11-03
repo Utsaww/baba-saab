@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardDate, shortDate, textStyleVars, uiText } from "./customise";
+import { cardDate, dateProps, shortDate, textStyleVars, uiText } from "./customise";
 import { UI } from "./ui-strings";
 import { formatDateRange } from "./datetime";
 
@@ -54,5 +54,16 @@ describe("textStyleVars", () => {
   });
   it("skips normal size and switched-off toggles", () => {
     expect(textStyleVars({ custom: { styles: { parents: { size: "md", bold: false, italic: false } } } })).toEqual({});
+  });
+});
+
+describe("dateProps", () => {
+  const inv = (dateStyle) => ({ mainDate: "2026-12-11", custom: dateStyle ? { dateStyle } : undefined });
+  it("marks a Hindi date as Hindi", () => {
+    expect(dateProps(inv("dayMonth"), "hi")).toEqual({ children: "11 दिसंबर 2026", lang: "hi" });
+  });
+  it("leaves digits-only and English dates unmarked", () => {
+    expect(dateProps(inv(), "hi")).toEqual({ children: "11 · 12 · 2026", lang: undefined });
+    expect(dateProps(inv("dayMonth"), "en").lang).toBeUndefined();
   });
 });

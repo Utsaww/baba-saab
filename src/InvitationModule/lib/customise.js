@@ -1,8 +1,15 @@
 import { formatDateRange, formatShortDate } from "./datetime";
 import { EDITABLE_TEXT_KEYS, UI } from "./ui-strings";
+import { isDevanagari } from "./i18n";
 
 // Readers for inv.custom, so templates never touch the raw field.
 export const shortDate = (inv, lang) => formatShortDate(inv.mainDate, inv.mainDateEnd, inv.custom?.dateStyle, lang === "hi" ? "hi" : "en");
+
+// Props for an element showing the short date: a Hindi date is marked lang="hi" so it gets the Hindi font, not the display font's letter-spacing.
+export function dateProps(inv, lang) {
+  const text = shortDate(inv, lang);
+  return { children: text, lang: isDevanagari(text) ? "hi" : undefined };
+}
 
 // The long date on the share card: today's format unless a style was chosen.
 export function cardDate(inv, lang) {

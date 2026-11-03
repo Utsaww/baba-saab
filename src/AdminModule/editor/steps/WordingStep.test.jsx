@@ -36,10 +36,21 @@ describe("WordingStep", () => {
     expect(screen.queryByLabelText("Scratch hint")).toBeNull();
   });
 
-  it("resets all wording", () => {
+  it("resets all wording after the staff confirm", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const { latest } = renderStep(WordingStep, start("royal", { dateStyle: "ordinal", text: { together: { en: "Hi" } } }));
     fireEvent.click(screen.getByRole("button", { name: "Reset wording" }));
+    expect(confirm).toHaveBeenCalled();
     expect(latest().custom).toEqual({ dateStyle: "ordinal" });
+    confirm.mockRestore();
+  });
+
+  it("keeps the wording when the staff cancel the reset", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const { latest } = renderStep(WordingStep, start("royal", { text: { together: { en: "Hi" } } }));
+    fireEvent.click(screen.getByRole("button", { name: "Reset wording" }));
+    expect(latest().custom.text.together.en).toBe("Hi");
+    confirm.mockRestore();
   });
 
   it("switches the countdown to a message and writes it", () => {
@@ -80,9 +91,14 @@ describe("WordingStep", () => {
     expect(latest().custom.styles.headings).toEqual({ size: undefined, italic: undefined });
   });
 
-  it("resets all styles", () => {
+  it("resets all styles after the staff confirm, and keeps them on cancel", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const { latest } = renderStep(WordingStep, start("royal", { dateStyle: "ordinal", styles: { names: { bold: true } } }));
     fireEvent.click(screen.getByRole("button", { name: "Reset styles" }));
+    expect(latest().custom.styles.names.bold).toBe(true);
+    confirm.mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: "Reset styles" }));
     expect(latest().custom).toEqual({ dateStyle: "ordinal" });
+    confirm.mockRestore();
   });
 });

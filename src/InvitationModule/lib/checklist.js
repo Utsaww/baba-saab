@@ -30,6 +30,7 @@ const STEP_FOR_FIELD = {
 
 export function stepForPath(path) {
   if (path[0] === "theme" && (path[1] === "palette" || path[1] === "colors")) return 1;
+  if (path[0] === "custom" && path[1] === "dateStyle") return 3; // the date style is picked beside the date
   return STEP_FOR_FIELD[path[0]] ?? 9;
 }
 

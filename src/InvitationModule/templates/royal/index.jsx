@@ -32,7 +32,9 @@ function Opening({ inv, lang, open }) {
         hint={plainText(UI.revealNow, lang)}
         onReveal={() => setTimeout(open, REVEAL_PAUSE_MS)}
       >
-        <p className={s.scratchDate}>{shortDate(inv, lang)}</p>
+        <p className={s.scratchDate} data-style={inv.custom?.dateStyle}>
+          {shortDate(inv, lang)}
+        </p>
       </ScratchReveal>
     </div>
   );

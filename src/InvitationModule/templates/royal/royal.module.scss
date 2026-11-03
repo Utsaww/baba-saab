@@ -20,6 +20,10 @@
   &::after { content: "❖"; display: block; font-size: 14px; margin-top: 8px; color: var(--accent); }
 }
 .scratch { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.scratchSurface { width: min(260px, 80vw); height: 90px; border-radius: 14px; overflow: hidden; border: 2px solid var(--primary); background: var(--surface); }
-.scratchDate { height: 90px; display: grid; place-items: center; font-family: var(--font-display), serif; font-size: 26px; letter-spacing: 0.12em; color: var(--accent); }
+.scratchSurface { width: min(260px, 80vw); min-height: 90px; border-radius: 14px; overflow: hidden; border: 2px solid var(--primary); background: var(--surface); }
+.scratchDate {
+  min-height: 90px; display: grid; place-items: center; text-align: center; font-family: var(--font-display), serif; font-size: 26px; letter-spacing: 0.12em; color: var(--accent);
+  // The long styles wrap onto several lines: smaller, tighter type, and the surface grows if it still needs to.
+  &[data-style="dayMonth"], &[data-style="weekday"] { box-sizing: border-box; padding: 10px 12px; font-size: clamp(16px, 5.4vw, 20px); line-height: 1.15; }
+}
 .event { border-color: color-mix(in srgb, var(--primary) 55%, transparent); }

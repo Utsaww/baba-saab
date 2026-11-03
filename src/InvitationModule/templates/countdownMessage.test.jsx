@@ -23,6 +23,21 @@ describe.each(TEMPLATES)("countdown message in $id", (template) => {
     expect(el.textContent).toContain(MSG);
   });
 
+  it("hides a heading set only in a language that isn't shown", () => {
+    const inv = parseInvitation({
+      ...template.sample,
+      language: "hi",
+      mainDate: "2099-01-01",
+      custom: { countdown: { mode: "message", message: { hi: "जयपुर में मिलते हैं" } }, text: { countdown: { en: "Almost there" } } },
+    });
+    expect(section(inv).querySelector("h2")).toBeNull();
+  });
+
+  it("shows a heading set in either language on a bilingual invitation", () => {
+    const inv = parseInvitation({ ...template.sample, language: "both", mainDate: "2099-01-01", custom: { countdown: message, text: { countdown: { en: "Almost there" } } } });
+    expect(section(inv).querySelector("h2").textContent).toContain("Almost there");
+  });
+
   it("falls back to the countdown when the message is empty", () => {
     const el = section(build(template, { countdown: { mode: "message", message: {} } }));
     expect(el.querySelector('[role="timer"]')).not.toBeNull();

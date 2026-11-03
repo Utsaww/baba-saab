@@ -90,12 +90,16 @@ function Couple({ inv, lang, s }) {
 }
 
 function SaveTheDate({ inv, lang, s }) {
+  // The weekday style's big date already is the long date, so the line under it would repeat it.
+  const weekday = inv.custom?.dateStyle === "weekday";
   return (
     <Section id="saveTheDate" s={s} title={uiText(inv).saveTheDate} lang={lang}>
       <p className={s.bigDate}>{shortDate(inv, lang)}</p>
-      <p className={s.longDate} lang={lang === "hi" ? "hi" : undefined}>
-        {formatDateRange(inv.mainDate, inv.mainDateEnd, dateLang(lang))}
-      </p>
+      {!weekday && (
+        <p className={s.longDate} lang={lang === "hi" ? "hi" : undefined}>
+          {formatDateRange(inv.mainDate, inv.mainDateEnd, dateLang(lang))}
+        </p>
+      )}
       {lang === "both" && (
         <p className={s.longDate} lang="hi">
           {formatDateRange(inv.mainDate, inv.mainDateEnd, "hi")}
@@ -109,9 +113,11 @@ function CountdownSection({ inv, lang, s }) {
   const ui = uiText(inv);
   const { mode, message } = inv.custom?.countdown ?? {};
   if (mode === "message" && (message?.en || message?.hi)) {
-    // No heading unless staff set one: the template's "Countdown" would sit over a message that isn't one.
+    // No heading unless staff set one in a language shown: the template's "Countdown" would sit over a message that isn't one.
+    const heading = inv.custom.text?.countdown;
+    const shown = lang === "both" ? hasText(heading) : Boolean(heading?.[lang]?.trim());
     return (
-      <Section id="countdown" s={s} title={inv.custom.text?.countdown ? ui.countdown : undefined} lang={lang}>
+      <Section id="countdown" s={s} title={shown ? ui.countdown : undefined} lang={lang}>
         <T as="p" v={message} lang={lang} className={s.countdownMessage} />
       </Section>
     );

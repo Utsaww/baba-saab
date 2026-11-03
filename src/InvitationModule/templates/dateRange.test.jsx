@@ -39,3 +39,23 @@ describe.each(["royal", "floral", "temple", "minimal", "velvet"])("date style in
     expect(text(build(id, "2026-12-12"))).not.toContain("11th");
   });
 });
+
+describe.each(["royal", "floral", "temple", "minimal", "velvet"])("weekday style on save-the-date in %s", (id) => {
+  const saveTheDate = (language) => {
+    const inv = parseInvitation({ ...getTemplate(id).sample, language, mainDate: "2026-12-11", mainDateEnd: "2026-12-12", custom: { dateStyle: "weekday" } });
+    return render(<InvitationRenderer invitation={inv} />).container.querySelector('[data-section="saveTheDate"]').textContent;
+  };
+  const count = (t, s) => t.split(s).length - 1;
+
+  it("writes the long date once", () => {
+    expect(count(saveTheDate("en"), "Friday 11 – Saturday 12 December 2026")).toBeLessThan(2);
+    expect(count(saveTheDate("hi"), "शुक्रवार 11 – शनिवार 12 दिसंबर 2026")).toBeLessThan(2);
+  });
+
+  // Temple shows its long date only once the cards are scratched.
+  it.skipIf(id === "temple")("keeps the Hindi line on a bilingual invitation", () => {
+    const t = saveTheDate("both");
+    expect(count(t, "Friday 11 – Saturday 12 December 2026")).toBeLessThan(2);
+    expect(t).toContain("शुक्रवार 11 – शनिवार 12 दिसंबर 2026");
+  });
+});

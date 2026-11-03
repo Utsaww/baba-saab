@@ -50,6 +50,12 @@ describe("WordingStep", () => {
     expect(latest().custom.countdown).toEqual({ mode: "message", message: { en: "See you in Jaipur!" } });
   });
 
+  it("stops typing at the schema's caps, so no line is dropped on save", () => {
+    renderStep(WordingStep, start("royal", { countdown: { mode: "message" } }));
+    expect(screen.getByLabelText(COUPLE_LINE)).toHaveAttribute("maxLength", "160");
+    expect(screen.getByLabelText("Message")).toHaveAttribute("maxLength", "200");
+  });
+
   it("links to the Sections step to hide the countdown", () => {
     const onGoToStep = vi.fn();
     renderStep(WordingStep, start(), { onGoToStep });

@@ -28,7 +28,7 @@ export function Group({ title, children }) {
   );
 }
 
-export function TextInput({ label, value, onChange, error, hint, type = "text", multiline = false, lang, inputMode, placeholder }) {
+export function TextInput({ label, value, onChange, error, hint, type = "text", multiline = false, lang, inputMode, placeholder, maxLength }) {
   const id = useId();
   const note = error ?? hint;
   const Tag = multiline ? "textarea" : "input";
@@ -45,6 +45,7 @@ export function TextInput({ label, value, onChange, error, hint, type = "text", 
         lang={lang}
         inputMode={inputMode}
         placeholder={placeholder}
+        maxLength={maxLength}
         aria-invalid={error ? "true" : undefined}
         aria-describedby={note ? `${id}-note` : undefined}
         onChange={(e) => onChange(e.target.value)}
@@ -61,7 +62,7 @@ export function TextInput({ label, value, onChange, error, hint, type = "text", 
 }
 
 /** One input per language the invitation uses. Text in a language that is switched off is kept. */
-export function LocalisedInput({ label, value, onChange, language, multiline = false, hint }) {
+export function LocalisedInput({ label, value, onChange, language, multiline = false, hint, maxLength }) {
   const langs = requiredLanguages(language);
   const both = langs.length > 1;
   return (
@@ -74,6 +75,7 @@ export function LocalisedInput({ label, value, onChange, language, multiline = f
           lang={lang}
           multiline={multiline}
           hint={hint}
+          maxLength={maxLength}
           onChange={(text) => onChange({ ...value, [lang]: text })}
         />
       ))}

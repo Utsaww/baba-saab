@@ -43,6 +43,10 @@ function cleaned(value) {
   return Object.keys(kept).length ? kept : undefined;
 }
 
+// The schema's caps: past them the save drops the line, so the field stops the typing instead.
+const MAX_LINE = 160;
+const MAX_MESSAGE = 200;
+
 const COUNTDOWN_MODES = [
   { id: "countdown", label: "Countdown" },
   { id: "message", label: "Message" },
@@ -85,6 +89,7 @@ export default function WordingStep({ content, update, language, templates, onGo
                   hint={defaultHint(key, language)}
                   value={text?.[key]}
                   language={language}
+                  maxLength={MAX_LINE}
                   onChange={(v) => update(["custom", "text", key], cleaned(v))}
                 />
               ))}
@@ -124,7 +129,13 @@ export default function WordingStep({ content, update, language, templates, onGo
           hint="Message replaces the days-and-hours countdown with a line of your own."
         />
         {countdown?.mode === "message" && (
-          <LocalisedInput label="Message" value={countdown.message} language={language} onChange={(v) => update(["custom", "countdown", "message"], cleaned(v))} />
+          <LocalisedInput
+            label="Message"
+            value={countdown.message}
+            language={language}
+            maxLength={MAX_MESSAGE}
+            onChange={(v) => update(["custom", "countdown", "message"], cleaned(v))}
+          />
         )}
         <p className="text-sm text-stone-600">
           To hide the countdown completely, switch it off in{" "}

@@ -120,6 +120,7 @@ For a **Both** invitation, each field has an English box and a Hindi box.
 
 - **Main wedding date:** drives the countdown and the save-the-date.
 - **Ends on (for multi-day weddings):** optional. Pick the last day if the wedding runs over more than one day (up to 7 days after the main date); leave it empty for a single-day wedding. Every design then shows both days: the short date reads, for example, **11–12 · 12 · 2026** (Temple Classic's cards read **11–12 Dec 2026**), and the full date reads “Friday 11 – Saturday 12 December 2026”, including on the WhatsApp share card. The countdown still counts down to the main date.
+- **How the date is written:** choose Classic (**11–12 · 12 · 2026**), Ordinal (**11th & 12th Dec 2026**), Day and month (**11 & 12 December 2026**) or With weekday. The buttons show your own dates. It changes the short date on the cover, the save-the-date, the WhatsApp share message and the share card; Temple Classic's three date cards stay as they are.
 - **Venue name and address.**
 - **Google Maps link:** open the venue in Google Maps, tap **Share**, copy the link and paste it. It must start with `https://`. Untick **Show "Open in Google Maps"** to hide the venue's map button on the invitation.
 - **Travel notes:** nearest airport and railway station, weather tips. Put one point per line.

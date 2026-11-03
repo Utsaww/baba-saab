@@ -14,7 +14,8 @@ import T from "../../sections/Text";
 import { UI } from "../../lib/ui-strings";
 import { plainText } from "../../lib/i18n";
 import { invocationText } from "../../lib/invocations";
-import { dateParts, dateRangeParts, formatDateRange, formatDots } from "../../lib/datetime";
+import { shortDate } from "../../lib/customise";
+import { dateParts, dateRangeParts, formatDateRange } from "../../lib/datetime";
 import { couplePair, coupleTitle, monogram } from "../../lib/names";
 import { mediaUrl } from "../../lib/media";
 import { visibleSections } from "../../lib/sections";
@@ -233,7 +234,7 @@ function Closing({ inv, lang, s: styles }) {
           {hosts.contactPhone}
         </a>
       )}
-      <WhatsAppShare message={`${coupleTitle(inv)} · ${formatDots(inv.mainDate)}`} lang={lang} s={styles} />
+      <WhatsAppShare message={`${coupleTitle(inv)} · ${shortDate(inv, lang)}`} lang={lang} s={styles} />
     </TempleSection>
   );
 }

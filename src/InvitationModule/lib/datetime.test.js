@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dateParts, dateRangeParts, endDateError, formatDateRange, validEndDate, formatDate, formatDots, formatDotsRange, formatTime, istInstant } from "./datetime";
+import { dateParts, dateRangeParts, endDateError, formatDateRange, validEndDate, formatDate, formatDots, formatDotsRange, formatShortDate, formatTime, istInstant } from "./datetime";
 
 describe("dateParts", () => {
   it("splits a date into a short month, the day and the year in English", () => {
@@ -127,5 +127,54 @@ describe("formatDotsRange", () => {
     expect(formatDotsRange("2026-12-11", "2026-12-12")).toBe("11–12 · 12 · 2026");
     expect(formatDotsRange("2026-11-30", "2026-12-01")).toBe("30 · 11 – 01 · 12 · 2026");
     expect(formatDotsRange("2026-12-31", "2027-01-01")).toBe("31 · 12 · 2026 – 01 · 01 · 2027");
+  });
+});
+
+describe("formatShortDate", () => {
+  const f = formatShortDate;
+  it("classic matches formatDotsRange", () => {
+    expect(f("2026-12-11", undefined)).toBe("11 · 12 · 2026");
+    expect(f("2026-12-11", "2026-12-12")).toBe("11–12 · 12 · 2026");
+  });
+  it("ordinal en", () => {
+    expect(f("2026-12-11", undefined, "ordinal")).toBe("11th Dec 2026");
+    expect(f("2026-12-11", "2026-12-12", "ordinal")).toBe("11th & 12th Dec 2026");
+    expect(f("2026-11-30", "2026-12-01", "ordinal")).toBe("30th Nov & 1st Dec 2026");
+    expect(f("2026-12-31", "2027-01-01", "ordinal")).toBe("31st Dec 2026 & 1st Jan 2027");
+  });
+  it("ordinal suffixes", () => {
+    const sfx = { 1: "st", 2: "nd", 3: "rd", 4: "th", 11: "th", 12: "th", 13: "th", 21: "st", 22: "nd", 23: "rd", 31: "st" };
+    for (const [d, s] of Object.entries(sfx)) {
+      expect(f(`2026-12-${d.padStart(2, "0")}`, undefined, "ordinal")).toMatch(new RegExp(`^${d}${s} Dec`));
+    }
+  });
+  it("dayMonth en", () => {
+    expect(f("2026-12-11", undefined, "dayMonth")).toBe("11 December 2026");
+    expect(f("2026-12-11", "2026-12-12", "dayMonth")).toBe("11 & 12 December 2026");
+    expect(f("2026-11-30", "2026-12-01", "dayMonth")).toBe("30 November & 1 December 2026");
+  });
+  it("weekday en", () => {
+    expect(f("2026-12-11", undefined, "weekday")).toBe("Friday, 11 December 2026");
+    expect(f("2026-12-11", "2026-12-12", "weekday")).toBe(formatDateRange("2026-12-11", "2026-12-12"));
+  });
+  it("hindi", () => {
+    for (const s of ["ordinal", "dayMonth"]) {
+      expect(f("2026-12-11", "2026-12-12", s, "hi")).toBe("11 और 12 दिसंबर 2026");
+      expect(f("2026-12-11", undefined, s, "hi")).toBe("11 दिसंबर 2026");
+      expect(f("2026-11-30", "2026-12-01", s, "hi")).toBe("30 नवंबर और 1 दिसंबर 2026");
+      expect(f("2026-12-31", "2027-01-01", s, "hi")).toBe("31 दिसंबर 2026 और 1 जनवरी 2027");
+    }
+    expect(f("2026-12-11", undefined, "weekday", "hi")).toBe(formatDate("2026-12-11", "hi"));
+  });
+  it("falls back sensibly", () => {
+    for (const s of ["classic", "ordinal", "dayMonth", "weekday"]) {
+      expect(f("2026-12-11", "2026-12-11", s)).toBe(f("2026-12-11", undefined, s));
+      expect(f("2026-12-11", "2026-12-19", s)).toBe(f("2026-12-11", undefined, s));
+    }
+    expect(f("2026-12-11", undefined, "bogus")).toBe("11 · 12 · 2026");
+    expect(f("nope", undefined, "ordinal")).toBe("");
+  });
+  it("both reads as English", () => {
+    expect(f("2026-12-11", undefined, "dayMonth", "both")).toBe("11 December 2026");
   });
 });

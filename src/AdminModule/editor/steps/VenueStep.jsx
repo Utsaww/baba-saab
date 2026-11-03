@@ -1,8 +1,14 @@
 "use client";
 
-import { FULL_LINK_HINT, Group, LocalisedInput, TextInput, Toggle } from "../fields";
+import { formatShortDate } from "@/InvitationModule/lib/datetime";
+import { DATE_STYLES } from "@/InvitationModule/schema/invitation";
+import { ChipGroup, FULL_LINK_HINT, Group, LocalisedInput, TextInput, Toggle } from "../fields";
 
 export default function VenueStep({ content, update, errors, language }) {
+  const start = content.mainDate || "2026-12-11";
+  const end = content.mainDate ? content.mainDateEnd : "2026-12-12";
+  const lang = content.language === "hi" ? "hi" : "en";
+  const dateOptions = DATE_STYLES.map((id) => ({ id, label: formatShortDate(start, end, id, lang) }));
   return (
     <div className="space-y-6">
       <Group title="Wedding date">
@@ -21,6 +27,12 @@ export default function VenueStep({ content, update, errors, language }) {
           error={errors.mainDateEnd}
           hint="Leave empty for a single-day wedding."
           onChange={(v) => update(["mainDateEnd"], v || undefined)}
+        />
+        <ChipGroup
+          legend="How the date is written"
+          options={dateOptions}
+          value={content.custom?.dateStyle ?? "classic"}
+          onChange={(id) => update(["custom", "dateStyle"], id === "classic" ? undefined : id)}
         />
       </Group>
       <Group title="Venue">

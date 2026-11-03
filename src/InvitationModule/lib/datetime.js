@@ -113,3 +113,27 @@ export function formatDotsRange(start, end) {
   if (m1 !== m2) return `${d1} · ${m1} ${DASH} ${d2} · ${m2} · ${y1}`;
   return `${d1}${DASH}${d2} · ${m1} · ${y1}`;
 }
+
+const ordinal = (n) => `${n}${["th", "st", "nd", "rd"][n % 100 >= 11 && n % 100 <= 13 ? 0 : n % 10 < 4 ? n % 10 : 0]}`;
+
+// The short date in one of the DATE_STYLES. "both" reads as English. A missing or invalid end date
+// gives the single-day form; an unknown style gives classic.
+export function formatShortDate(start, end, style = "classic", lang = "en") {
+  if (!DATE_RE.test(start ?? "")) return "";
+  const hi = lang === "hi";
+  if (style === "weekday") return formatDateRange(start, end, lang);
+  if (style !== "ordinal" && style !== "dayMonth") return formatDotsRange(start, end);
+  const short = style === "ordinal" && !hi;
+  const p = (date) => {
+    const o = pieces(date, hi ? "hi" : "en");
+    const month = short ? dateParts(date, "en").month : o.month;
+    return { day: short ? ordinal(+o.day) : o.day, month, year: o.year };
+  };
+  const a = p(start);
+  if (!validEndDate(start, end)) return `${a.day} ${a.month} ${a.year}`;
+  const b = p(end);
+  const and = hi ? "और" : "&";
+  if (a.year !== b.year) return `${a.day} ${a.month} ${a.year} ${and} ${b.day} ${b.month} ${b.year}`;
+  if (a.month !== b.month) return `${a.day} ${a.month} ${and} ${b.day} ${b.month} ${b.year}`;
+  return `${a.day} ${and} ${b.day} ${b.month} ${b.year}`;
+}

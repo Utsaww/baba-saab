@@ -12,7 +12,8 @@ import WhatsAppShare from "../../sections/WhatsAppShare";
 import { UI } from "../../lib/ui-strings";
 import { hasText, plainText } from "../../lib/i18n";
 import { invocationText } from "../../lib/invocations";
-import { formatDate, formatDateRange, formatDotsRange, formatTime } from "../../lib/datetime";
+import { shortDate } from "../../lib/customise";
+import { formatDate, formatDateRange, formatTime } from "../../lib/datetime";
 import { countdownTarget } from "../../lib/countdown";
 import { mediaUrl } from "../../lib/media";
 import { isRsvpClosed, isWhatsappNumber, rsvpMessage, whatsappRsvpUrl } from "../../lib/rsvp";
@@ -50,7 +51,7 @@ export function CoverBase({ inv, lang, s }) {
           <span className={s.amp}>&amp;</span>
           <T v={second.name} lang={lang} className={s.name} />
         </h1>
-        <p className={s.coverDate}>{formatDotsRange(inv.mainDate, inv.mainDateEnd)}</p>
+        <p className={s.coverDate}>{shortDate(inv, lang)}</p>
       </div>
     </header>
   );
@@ -89,7 +90,7 @@ function Couple({ inv, lang, s }) {
 function SaveTheDate({ inv, lang, s }) {
   return (
     <Section id="saveTheDate" s={s} title={UI.saveTheDate} lang={lang}>
-      <p className={s.bigDate}>{formatDotsRange(inv.mainDate, inv.mainDateEnd)}</p>
+      <p className={s.bigDate}>{shortDate(inv, lang)}</p>
       <p className={s.longDate} lang={lang === "hi" ? "hi" : undefined}>
         {formatDateRange(inv.mainDate, inv.mainDateEnd, dateLang(lang))}
       </p>
@@ -258,7 +259,7 @@ function Closing({ inv, lang, s }) {
           {hosts.contactPhone}
         </a>
       )}
-      <WhatsAppShare message={`${coupleTitle(inv)} · ${formatDotsRange(inv.mainDate, inv.mainDateEnd)}`} lang={lang} s={s} />
+      <WhatsAppShare message={`${coupleTitle(inv)} · ${shortDate(inv, lang)}`} lang={lang} s={s} />
     </Section>
   );
 }

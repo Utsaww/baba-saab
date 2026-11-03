@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const GALLERY_MAX = 12;
 export const TEMPLATE_IDS = ["royal", "floral", "temple", "minimal", "velvet"];
+export const DATE_STYLES = ["classic", "ordinal", "dayMonth", "weekday"];
 export const LANGUAGES = ["en", "hi", "both"];
 export const STATUSES = ["draft", "published", "offline", "deleted"];
 // The cover always renders first and cannot be hidden, so it is not a section id.
@@ -123,6 +124,7 @@ export const invitationSchema = z.object({
     })
     .default({}),
   showCredit: z.boolean().default(true),
+  custom: z.object({ dateStyle: z.enum(DATE_STYLES).optional() }).optional(),
 });
 
 export function parseInvitation(data) {

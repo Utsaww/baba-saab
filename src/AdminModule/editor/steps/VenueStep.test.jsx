@@ -51,4 +51,18 @@ describe("VenueStep", () => {
     fireEvent.click(screen.getByLabelText('Show "Open in Google Maps"'));
     expect(latest().venue.hideMap).toBeUndefined();
   });
+
+  it("offers the date styles rendered with the wedding dates", () => {
+    renderStep(VenueStep, { ...base(), mainDate: "2027-02-14", mainDateEnd: "2027-02-15" });
+    expect(screen.getByRole("button", { name: "14–15 · 02 · 2027" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "14th & 15th Feb 2027" })).toBeInTheDocument();
+  });
+
+  it("uses example dates when there is no date, and stores and clears the choice", () => {
+    const { latest } = renderStep(VenueStep, base());
+    fireEvent.click(screen.getByRole("button", { name: "11 & 12 December 2026" }));
+    expect(latest().custom.dateStyle).toBe("dayMonth");
+    fireEvent.click(screen.getByRole("button", { name: "11 · 12 · 2026".replace("11 ·", "11–12 ·") }));
+    expect(latest().custom.dateStyle).toBeUndefined();
+  });
 });

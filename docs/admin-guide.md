@@ -121,12 +121,12 @@ For a **Both** invitation, each field has an English box and a Hindi box.
 - **Main wedding date:** drives the countdown and the save-the-date.
 - **Ends on (for multi-day weddings):** optional. Pick the last day if the wedding runs over more than one day (up to 7 days after the main date); leave it empty for a single-day wedding. Every design then shows both days: the short date reads, for example, **11–12 · 12 · 2026** (Temple Classic's cards read **11–12 Dec 2026**), and the full date reads “Friday 11 – Saturday 12 December 2026”, including on the WhatsApp share card. The countdown still counts down to the main date.
 - **Venue name and address.**
-- **Google Maps link:** open the venue in Google Maps, tap **Share**, copy the link and paste it. It must start with `https://`.
+- **Google Maps link:** open the venue in Google Maps, tap **Share**, copy the link and paste it. It must start with `https://`. Untick **Show "Open in Google Maps"** to hide the venue's map button on the invitation.
 - **Travel notes:** nearest airport and railway station, weather tips. Put one point per line.
 
 ## Editor step 4: Events
 
-Add each function guests are invited to. The quick buttons (**+ Haldi**, **+ Mehendi**, **+ Sangeet**, **+ Vivah**, **+ Reception**) fill in the name in English and Hindi. Use **+ Other event** for anything else. Give every event a date and time. Add a different venue, dress code or description only where it applies. Use **Move up** and **Move down** to change the order.
+Add each function guests are invited to. The quick buttons (**+ Haldi**, **+ Mehendi**, **+ Sangeet**, **+ Vivah**, **+ Reception**) fill in the name in English and Hindi. Use **+ Other event** for anything else. Give every event a date and time. Add a different venue, dress code or description only where it applies. Use **Move up** and **Move down** to change the order. Each event also has **Show "Open in Google Maps"** and **Show calendar buttons**; untick either to hide those buttons for that event only.
 
 ## Editor step 5: Photos, film & music
 

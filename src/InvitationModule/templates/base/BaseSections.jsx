@@ -116,7 +116,7 @@ function Venue({ inv, lang, s }) {
     <Section id="venue" s={s} title={UI.venue} lang={lang}>
       <T as="h3" v={venue.name} lang={lang} className={s.venueName} />
       <T as="p" v={venue.address} lang={lang} className={s.address} />
-      {venue.mapsUrl && (
+      {venue.mapsUrl && !venue.hideMap && (
         <a className={s.button} href={venue.mapsUrl} target="_blank" rel="noopener noreferrer">
           <T v={UI.openMap} lang={lang} />
         </a>
@@ -157,23 +157,25 @@ function Schedule({ inv, lang, s }) {
                 </p>
               )}
               <T as="p" v={ev.description} lang={lang} className={s.eventDesc} />
-              {mapsUrl && (
+              {mapsUrl && !ev.hideMap && (
                 <a className={s.calLink} href={mapsUrl} target="_blank" rel="noopener noreferrer">
                   <T v={UI.openMap} lang={lang} />
                 </a>
               )}
-              <AddToCalendar
-                entry={{
-                  uid: `${inv.id ?? inv.slug ?? inv.templateId}-${ev.id}`,
-                  title: `${plainText(ev.name, "en")} — ${title}`,
-                  date: ev.date,
-                  time: ev.time,
-                  location: [plainText(venueName, "en"), plainText(address, "en")].filter(Boolean).join(", "),
-                  details: title,
-                }}
-                lang={lang}
-                s={s}
-              />
+              {!ev.hideCalendar && (
+                <AddToCalendar
+                  entry={{
+                    uid: `${inv.id ?? inv.slug ?? inv.templateId}-${ev.id}`,
+                    title: `${plainText(ev.name, "en")} — ${title}`,
+                    date: ev.date,
+                    time: ev.time,
+                    location: [plainText(venueName, "en"), plainText(address, "en")].filter(Boolean).join(", "),
+                    details: title,
+                  }}
+                  lang={lang}
+                  s={s}
+                />
+              )}
             </li>
           );
         })}

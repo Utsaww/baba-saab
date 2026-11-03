@@ -1,6 +1,6 @@
 "use client";
 
-import { FULL_LINK_HINT, Group, LocalisedInput, TextInput } from "../fields";
+import { FULL_LINK_HINT, Group, LocalisedInput, TextInput, Toggle } from "../fields";
 
 export default function VenueStep({ content, update, errors, language }) {
   return (
@@ -34,6 +34,7 @@ export default function VenueStep({ content, update, errors, language }) {
           hint="Open the venue in Google Maps, tap Share, copy the link and paste it here."
           onChange={(v) => update(["venue", "mapsUrl"], v.trim() || undefined)}
         />
+        <Toggle label='Show "Open in Google Maps"' checked={!content.venue?.hideMap} onChange={(on) => update(["venue", "hideMap"], on ? undefined : true)} />
       </Group>
       <Group title="Travel notes">
         <LocalisedInput

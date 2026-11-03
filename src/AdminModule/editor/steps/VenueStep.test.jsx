@@ -43,4 +43,12 @@ describe("VenueStep", () => {
     fireEvent.change(screen.getByLabelText("Google Maps link"), { target: { value: "" } });
     expect(latest().venue).toEqual({});
   });
+
+  it("switches the venue map button off and back on", () => {
+    const { latest } = renderStep(VenueStep, { ...base(), venue: { mapsUrl: "https://maps.app.goo.gl/x" } });
+    fireEvent.click(screen.getByLabelText('Show "Open in Google Maps"'));
+    expect(latest().venue.hideMap).toBe(true);
+    fireEvent.click(screen.getByLabelText('Show "Open in Google Maps"'));
+    expect(latest().venue.hideMap).toBeUndefined();
+  });
 });

@@ -2,7 +2,7 @@
 
 import { textFor } from "@/InvitationModule/lib/i18n";
 import { chipClass } from "../../ui";
-import { FULL_LINK_HINT, Group, LocalisedInput, TextInput } from "../fields";
+import { FULL_LINK_HINT, Group, LocalisedInput, TextInput, Toggle } from "../fields";
 
 export const EVENT_PRESETS = [
   { key: "haldi", name: { en: "Haldi", hi: "हल्दी" } },
@@ -49,6 +49,13 @@ export default function EventsStep({ content, update, errors, language }) {
               value={event.mapsUrl}
               error={errors[`events.${i}.mapsUrl`] ? FULL_LINK_HINT : undefined}
               onChange={(v) => update(at(i, "mapsUrl"), v.trim() || undefined)}
+            />
+            <Toggle label='Show "Open in Google Maps"' checked={!event.hideMap} onChange={(on) => update(at(i, "hideMap"), on ? undefined : true)} />
+            <Toggle
+              label="Show calendar buttons"
+              description='"Add to Google Calendar" and "Download (.ics)"'
+              checked={!event.hideCalendar}
+              onChange={(on) => update(at(i, "hideCalendar"), on ? undefined : true)}
             />
             <LocalisedInput label="Dress code" value={event.dressCode} language={language} onChange={(v) => update(at(i, "dressCode"), v)} />
             <LocalisedInput label="Description" multiline value={event.description} language={language} onChange={(v) => update(at(i, "description"), v)} />

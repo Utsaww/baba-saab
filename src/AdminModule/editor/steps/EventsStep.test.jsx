@@ -55,4 +55,16 @@ describe("EventsStep", () => {
     renderStep(EventsStep, { ...base(), events: [{ id: "a", name: { en: "Haldi" }, time: "25:00" }] });
     expect(screen.getByLabelText("Time")).toHaveAccessibleDescription("Use HH:mm (24-hour)");
   });
+
+  it("switches the map and calendar buttons off and back on per event", () => {
+    const { latest } = renderStep(EventsStep, { ...base(), events: [{ id: "a", name: { en: "Haldi" } }, { id: "b", name: { en: "Mehendi" } }] });
+    fireEvent.click(screen.getAllByLabelText('Show "Open in Google Maps"')[1]);
+    fireEvent.click(screen.getAllByLabelText(/^Show calendar buttons/)[1]);
+    expect(latest().events[1]).toMatchObject({ hideMap: true, hideCalendar: true });
+    expect(latest().events[0].hideMap).toBeUndefined();
+    fireEvent.click(screen.getAllByLabelText('Show "Open in Google Maps"')[1]);
+    fireEvent.click(screen.getAllByLabelText(/^Show calendar buttons/)[1]);
+    expect(latest().events[1].hideMap).toBeUndefined();
+    expect(latest().events[1].hideCalendar).toBeUndefined();
+  });
 });

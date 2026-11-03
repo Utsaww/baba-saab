@@ -49,6 +49,8 @@ const event = z.object({
   venueName: localised.optional(),
   address: localised.optional(),
   mapsUrl: url.optional(),
+  hideMap: z.boolean().optional(),
+  hideCalendar: z.boolean().optional(),
   dressCode: localised.optional(),
   description: localised.optional(),
 });
@@ -91,6 +93,7 @@ export const invitationSchema = z.object({
     name: localised,
     address: localised,
     mapsUrl: url.optional(),
+    hideMap: z.boolean().optional(),
     travelNotes: localised.optional(),
   }),
   events: z.array(event).default([]),

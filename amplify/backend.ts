@@ -6,7 +6,7 @@ import { defineBackend } from "@aws-amplify/backend";
 import { DockerImage, Duration, Size, Stack } from "aws-cdk-lib";
 import { AnyPrincipal, Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Code, LayerVersion, Runtime } from "aws-cdk-lib/aws-lambda";
-import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import { NodejsFunction, OutputFormat } from "aws-cdk-lib/aws-lambda-nodejs";
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
 import { invitationLifecycle } from "./functions/invitation-lifecycle/resource";
@@ -186,7 +186,15 @@ const renderFn = new NodejsFunction(Stack.of(tables["Invitation"]), "InvitationV
   timeout: Duration.seconds(290),
   ephemeralStorageSize: Size.gibibytes(4),
   layers: [videoLayer],
-  bundling: { externalModules: ["@sparticuz/chromium", "playwright-core", "ffmpeg-static", "@aws-sdk/*"] },
+  // ESM: @sparticuz/chromium is ESM-only, and a CJS bundle can't require() it (Lambda resolves ESM imports from the
+  // layer via NODE_PATH since Node 18). The banner gives bundled CJS code a require. No keepNames: its __name helpers
+  // end up inside page.evaluate callbacks and throw in the browser.
+  bundling: {
+    format: OutputFormat.ESM,
+    mainFields: ["module", "main"],
+    banner: "import { createRequire as __createRequire } from 'node:module'; const require = __createRequire(import.meta.url);",
+    externalModules: ["@sparticuz/chromium", "playwright-core", "ffmpeg-static", "@aws-sdk/*"],
+  },
   environment: {
     INVITATION_TABLE: tables["Invitation"].tableName,
     INVITATION_MEDIA_BUCKET: bucket.bucketName,

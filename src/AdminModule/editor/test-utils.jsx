@@ -110,6 +110,7 @@ export function renderEditor({ invitation = {}, publishActions = {}, lifecycleAc
     eraseNowAction: vi.fn(async () => ({ ok: true })),
     ...lifecycleActions,
   };
+  const video = { makeVideoAction: vi.fn(async () => ({ ok: true, status: "making" })), videoStatusAction: vi.fn(async () => ({ ok: true, status: "none" })) };
   const utils = render(
     <EditorShell
       invitation={inv}
@@ -118,6 +119,7 @@ export function renderEditor({ invitation = {}, publishActions = {}, lifecycleAc
       saveAction={save}
       publishActions={actions}
       lifecycleActions={lifecycle}
+      videoActions={video}
     />,
   );
   return { ...utils, invitation: inv, saveAction: save, publishActions: actions, lifecycleActions: lifecycle };

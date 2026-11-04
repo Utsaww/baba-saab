@@ -90,3 +90,9 @@ export const setOfflineOnRecord = ({ id, expectedVersion, offlineOn }) => mutate
 export const deleteRecord = ({ id, expectedVersion }) => mutate("softDeleteInvitation", { id, expectedVersion });
 export const restoreRecord = ({ id, expectedVersion, offlineOn }) => mutate("restoreInvitation", { id, expectedVersion, offlineOn });
 export const eraseNowRecord = ({ id, confirm }) => mutate("eraseInvitationNow", { id, confirm });
+export const makeVideoRecord = ({ id }) => mutate("makeInvitationVideo", { id });
+
+export async function videoStatusRecord({ id }) {
+  const { data, errors } = await cookieDataClient().queries.invitationVideoStatus({ id });
+  return { data: data == null ? null : parseAwsJson(data), errors };
+}

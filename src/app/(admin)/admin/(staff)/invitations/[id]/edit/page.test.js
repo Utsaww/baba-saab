@@ -13,6 +13,7 @@ vi.mock("@/AdminModule/invitations/lifecycleActions", () => ({
   takeOfflineAction: vi.fn(), putOnlineAction: vi.fn(), setOfflineOnAction: vi.fn(),
   deleteInvitationAction: vi.fn(), restoreInvitationAction: vi.fn(), eraseNowAction: vi.fn(),
 }));
+vi.mock("@/AdminModule/invitations/videoActions", () => ({ makeVideoAction: vi.fn(), videoStatusAction: vi.fn() }));
 vi.mock("@/AdminModule/music/data", () => ({ listMusicTracks: vi.fn(async () => []) }));
 vi.mock("@/AdminModule/invitations/templateChoices", () => ({ templateChoices: () => [] }));
 vi.mock("@/AdminModule/editor/EditorShell", () => ({ default: () => null }));

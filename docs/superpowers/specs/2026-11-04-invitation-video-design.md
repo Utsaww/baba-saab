@@ -58,7 +58,7 @@ Staff share each live invitation on WhatsApp and Instagram from their phones. A 
 
 ## 6. The video
 
-- **Frame:** 9:16 portrait at **1080×1920**, rendered from a phone-width viewport (e.g. 390–412 CSS px wide at device-scale 2.6–2.75, or as close as the renderer allows). H.264 MP4 with AAC audio, `faststart`, so it plays on WhatsApp/Instagram on Android and iOS. Target 30 fps. The file is small enough for WhatsApp (≤ 16 MB is the safe target).
+- **Frame:** 9:16 portrait at **1080×1920**, rendered from a phone-width viewport (e.g. 390–412 CSS px wide at device-scale 2.6–2.75, or as close as the renderer allows). H.264 MP4 with AAC audio, `faststart`, so it plays on WhatsApp/Instagram on Android and iOS. 30 fps. **High quality (owner, 2026-11-04): don't compress hard.** Use x264 `-crf 18 -preset slow` (spike: ~32 MB for 46 s). WhatsApp and Instagram recompress on upload anyway.
 - **Content:** the live public page as a first-time guest sees it, with no guest token. Hindi or bilingual as published. Customisation (wording, styles, colours, date style) applies automatically because it is the real page.
 - **No foreign UI.** No preview banner, cookie or install prompts, mute-button tooltip or browser chrome. The mute button itself may show, since guests see it.
 - **Sequence:**
@@ -66,7 +66,14 @@ Staff share each live invitation on WhatsApp and Instagram from their phones. A 
   2. The opening action plays as a guest would do it (tap, scroll or a scripted scratch stroke) and its transition runs to the end.
   3. The page scrolls top to bottom with eased motion. It pauses on the **couple's names** (cover and couple section), the **date / save-the-date**, and **each event card**, and moves quickly through everything else.
   4. It ends on the closing section ("Warm regards" and the families) with a ~2 s hold. It does not end on the RSVP form; the credit, if shown, may appear in the last frames.
-- **Length (V4):** computed from the content. The time = holds + pauses (per important item) + scroll distance ÷ speed. It is never longer than **60 s**, and never shorter than **about 20 s** (owner accepted this guess). When the natural time is over 60 s, scroll speed goes up first; pauses shrink last, down to a floor (e.g. 1 s each), so every important item still registers. Exact numbers are the builder's call.
+- **Pace (owner approved the spike video, 2026-11-04):** glide at **250 CSS px/s** at a 405 px-wide viewport, which is half the first spike's speed. Each glide eases in and out. Hold **~1.2 s** centred on each stop. Stops, in page order:
+  1. the cover names (`coverNames`)
+  2. the couple block, names and parents' lines together (`couple`)
+  3. the save-the-date big date (`bigDate`)
+  4. each event card (`event`)
+
+  Then glide to the closing section and hold. The spike found these via the CSS-module class prefixes `base_coverNames`, `base_couple`, `base_bigDate` and `li.base_event`. Note that `base_name` does not exist in the couple section.
+- **Length (V4):** computed from the content. The time = holds + pauses (per important item) + scroll distance ÷ speed. It is never longer than **60 s**, and never shorter than **about 20 s** (owner accepted this guess). When the natural time is over 60 s, glide speed goes up first; holds shrink last, down to a floor of 0.8 s each. The minimal sample takes about 46 s at the approved pace.
 - **Music (V3):** the invitation's track from the start of the opening, as on a guest's phone, with a ~2 s fade-out at the end. It is mixed in after recording (a browser recording is silent). No music attached → silent video.
 - **Side effects:** the recording must not create RSVPs and must not bump any visit or reply counters. Today no visit counter exists; if one is added later, the recorder must be excluded.
 
@@ -102,6 +109,10 @@ Staff share each live invitation on WhatsApp and Instagram from their phones. A 
 - **Live copy changes mid-job:** the video is tagged with the `liveVersion` read when the job starts. If "Update live invitation" happens before the job finishes, the finished video counts as stale: it is never offered, and the next press makes a new one. If the invitation goes offline mid-job, the job may finish, but the button stays hidden until the invitation is live again.
 - **Music:** the guest page loops the track (`useMusic.js` sets `loop = true`). The video does the same: loop if the track is shorter than the video, start at 0, ~2 s fade-out. A missing or unreadable track gives a silent video plus a note on the button ("Made without music: the track couldn't be read"), not a failed job.
 - **On-screen elements:** the mute button and the invitation's own credit (when `showCredit`) may appear, because guests see them.
+
+## 8b. Spike result (2026-11-04)
+
+Real-time CDP screencast (`Page.startScreencast`, JPEG q85, 1080×1920 max) worked. Frames went into ffmpeg's concat demuxer with each frame's real duration, then `fps=30`. The run used headless Chromium at viewport 405×720, deviceScaleFactor 8/3, `isMobile`, `hasTouch`. It delivered ~48 fps while moving (frames arrive only when the page changes; holds show as gaps, which is fine). Results were the same with the CPU throttled 4×. The opening was triggered by clicking the last button in `[role="dialog"]`. Not yet proven: the same thing inside AWS Lambda (`@sparticuz/chromium`). The plan's first task proves it on the preview branch. Spike script: scratchpad `phonecheck/video.mjs` (throwaway).
 
 ## 9. Testing
 

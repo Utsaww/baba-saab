@@ -22,9 +22,16 @@ describe("ffmpegArgs", () => {
     expect(args.slice(music - 3, music)).toEqual(["-stream_loop", "-1", "-i"]);
     expect(after(args, "-c:a")).toBe("aac");
     expect(after(args, "-b:a")).toBe("192k");
-    expect(args).toContain(`afade=t=out:st=${seconds - 2}:d=2`);
+    expect(after(args, "-af")).toContain(`afade=t=out:st=${seconds - 2}:d=2`);
     expect(args).not.toContain("-an");
     expect(after(args, "-t")).toBe("40");
+  });
+});
+
+describe("music delay", () => {
+  it("starts the music at the opening tap, before the fade", () => {
+    const args = ffmpegArgs({ listFile: "l.txt", musicFile: "m", musicDelay: 1.75, seconds: 30, out: "o.mp4" });
+    expect(after(args, "-af")).toBe("adelay=1750:all=1,afade=t=out:st=28:d=2");
   });
 });
 

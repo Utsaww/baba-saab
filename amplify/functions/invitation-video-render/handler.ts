@@ -33,7 +33,7 @@ export const handler = async (event: RenderEvent) => {
         ? event.musicKey
         : `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${event.musicKey.replace(/^\//, "")}`;
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
         if (!res.ok) throw new Error(`music ${res.status}`);
         musicFile = path.join(TMP, "music");
         fs.writeFileSync(musicFile, Buffer.from(await res.arrayBuffer()));
@@ -46,11 +46,12 @@ export const handler = async (event: RenderEvent) => {
 
     const framesDir = path.join(TMP, "frames");
     fs.mkdirSync(framesDir);
-    const { frames, seconds } = await record({ url: `${process.env.VIDEO_SITE_ORIGIN}/invitation/${event.slug}`, tmpDir: framesDir });
+    const url = `${process.env.VIDEO_SITE_ORIGIN}/invitation/${encodeURIComponent(event.slug)}`;
+    const { frames, seconds, tapAt } = await record({ url, tmpDir: framesDir });
     const listFile = path.join(TMP, "list.txt");
     fs.writeFileSync(listFile, concatList(frames));
     const out = path.join(TMP, "out.mp4");
-    await encode(ffmpeg!, ffmpegArgs({ listFile, musicFile, seconds, out }));
+    await encode(ffmpeg!, ffmpegArgs({ listFile, musicFile, musicDelay: tapAt, seconds, out }));
 
     const key = `invitations/${event.id}/video/${randomUUID()}.mp4`;
     await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: fs.readFileSync(out), ContentType: "video/mp4" }));
@@ -68,7 +69,10 @@ export const handler = async (event: RenderEvent) => {
     }
     return { key, finished, seconds };
   } catch (err) {
-    await failJob(db, table, { id: event.id, job: event.job }, new Date().toISOString());
+    // A failing failJob must not hide why the render failed.
+    await failJob(db, table, { id: event.id, job: event.job }, new Date().toISOString()).catch((e) =>
+      console.error("video: could not mark the job failed", event.id, e),
+    );
     throw err;
   } finally {
     fs.rmSync(TMP, { recursive: true, force: true });

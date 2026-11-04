@@ -8,7 +8,7 @@ import { buildTimeline } from "./timeline";
  * Plays the live page as a first-time guest on a phone and keeps every screencast frame with its real time
  * (seconds from the first frame). Frames arrive only when the page changes, so holds show as gaps.
  */
-export async function record({ url, tmpDir }: { url: string; tmpDir: string }): Promise<{ frames: { file: string; t: number }[]; seconds: number }> {
+export async function record({ url, tmpDir }: { url: string; tmpDir: string }): Promise<{ frames: { file: string; t: number }[]; seconds: number; tapAt: number }> {
   const browser = await chromium.launch({ executablePath: await sparticuz.executablePath(), args: sparticuz.args });
   try {
     const page = await browser.newPage({ viewport: { width: 405, height: 720 }, deviceScaleFactor: 8 / 3, isMobile: true, hasTouch: true });
@@ -18,16 +18,20 @@ export async function record({ url, tmpDir }: { url: string; tmpDir: string }): 
 
     const cdp = await page.context().newCDPSession(page);
     const frames: { file: string; t: number }[] = [];
+    let untimed = false;
     cdp.on("Page.screencastFrame", ({ data, metadata, sessionId }) => {
       const file = path.join(tmpDir, `${String(frames.length + 1).padStart(5, "0")}.jpg`);
+      // A throw here would escape as an uncaught event error; fail the recording after it stops instead.
+      if (metadata.timestamp === undefined) untimed = true;
       fs.writeFileSync(file, Buffer.from(data, "base64"));
-      frames.push({ file, t: metadata.timestamp ?? 0 });
+      frames.push({ file, t: metadata.timestamp ?? NaN });
       cdp.send("Page.screencastFrameAck", { sessionId }).catch(() => {});
     });
     await cdp.send("Page.startScreencast", { format: "jpeg", quality: 85, maxWidth: 1080, maxHeight: 1920, everyNthFrame: 1 });
     await page.waitForTimeout(1500); // the closed opening
 
     await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('[role="dialog"] button')].pop()?.click());
+    const tapAt = Date.now() / 1000; // the music starts here on a guest's phone
     await page.waitForTimeout(1000);
     // A scratch opening is still a canvas after the tap: scratch it with a zig-zag stroke, as a guest's finger would.
     const canvas = page.locator('[role="dialog"] canvas').first();
@@ -86,11 +90,12 @@ export async function record({ url, tmpDir }: { url: string; tmpDir: string }): 
 
     await cdp.send("Page.stopScreencast");
     if (!frames.length) throw new Error("screencast produced no frames");
+    if (untimed) throw new Error("screencast frame without a timestamp");
     // A still screen sends no frames, so the final hold has none: repeat the last frame at the stop time to keep it.
     frames.push({ file: frames.at(-1)!.file, t: Date.now() / 1000 }); // metadata.timestamp is epoch seconds too
     const t0 = frames[0].t;
     for (const f of frames) f.t -= t0;
-    return { frames, seconds: frames.at(-1)!.t + 1 / 30 };
+    return { frames, seconds: frames.at(-1)!.t + 1 / 30, tapAt: Math.max(0, tapAt - t0) };
   } finally {
     await browser.close();
   }

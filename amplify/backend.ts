@@ -151,7 +151,7 @@ backend.data.resources.cfnResources.amplifyDynamoDbTables["RsvpLimit"].timeToLiv
 // Chromium, Playwright and ffmpeg are too big to bundle, so they come from a layer built with plain npm (no Docker).
 const videoLayerDir = fileURLToPath(new URL("./layers/video", import.meta.url));
 const videoLayer = new LayerVersion(Stack.of(tables["Invitation"]), "InvitationVideoLayer", {
-  compatibleRuntimes: [Runtime.NODEJS_20_X],
+  compatibleRuntimes: [Runtime.NODEJS_22_X],
   code: Code.fromAsset(videoLayerDir, {
     exclude: ["node_modules"], // the install output below, not a source
     bundling: {
@@ -181,7 +181,7 @@ if (!videoSiteOrigin) {
 }
 const renderFn = new NodejsFunction(Stack.of(tables["Invitation"]), "InvitationVideoRender", {
   entry: fileURLToPath(new URL("./functions/invitation-video-render/handler.ts", import.meta.url)),
-  runtime: Runtime.NODEJS_20_X,
+  runtime: Runtime.NODEJS_22_X,
   memorySize: 10240,
   timeout: Duration.seconds(290),
   ephemeralStorageSize: Size.gibibytes(4),
@@ -193,6 +193,8 @@ const renderFn = new NodejsFunction(Stack.of(tables["Invitation"]), "InvitationV
     VIDEO_SITE_ORIGIN: videoSiteOrigin,
   },
 });
+// No automatic retries: a retry would render again and could turn a job already marked failed into ready.
+renderFn.configureAsyncInvoke({ retryAttempts: 0 });
 // It reads the previous video's key and writes the job result on Invitation; it never scans, puts or deletes rows.
 renderFn.addToRolePolicy(
   new PolicyStatement({

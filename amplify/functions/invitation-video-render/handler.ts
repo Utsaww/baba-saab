@@ -62,8 +62,6 @@ export const handler = async (event: RenderEvent) => {
     // Finished: the previous video is replaced. Not finished: a newer job owns the record, so this file is nobody's.
     if (finished) {
       if (previous && previous !== key) await removeQuietly(bucket, previous);
-    } else if (process.env.VIDEO_KEEP_ORPHAN === "1") {
-      console.log("video: kept orphan", key); // TEMPORARY for the AWS proof (dummy jobs); remove before Task 3
     } else {
       await removeQuietly(bucket, key);
     }

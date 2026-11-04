@@ -11,6 +11,7 @@ import { auth } from "./auth/resource";
 import { data } from "./data/resource";
 import { invitationLifecycle } from "./functions/invitation-lifecycle/resource";
 import { invitationPublic } from "./functions/invitation-public/resource";
+import { invitationVideo } from "./functions/invitation-video/resource";
 import { invitationPublish } from "./functions/invitation-publish/resource";
 import { rsvpGuest } from "./functions/rsvp-guest/resource";
 import { staffAdmin } from "./functions/staff-admin/resource";
@@ -24,6 +25,7 @@ const backend = defineBackend({
   invitationPublish,
   invitationPublic,
   invitationLifecycle,
+  invitationVideo,
   rsvpGuest,
 });
 
@@ -222,3 +224,27 @@ renderFn.addToRolePolicy(
     resources: [bucket.arnForObjects("invitations/*/video/*")],
   }),
 );
+
+// invitation-video (staff): claims a job on Invitation, starts the render, and hands out a presigned download.
+const videoFn = backend.invitationVideo.resources.lambda;
+videoFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "ClaimInvitationVideoJob",
+    effect: Effect.ALLOW,
+    actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+    resources: [tables["Invitation"].tableArn],
+  }),
+);
+// The presigned link carries this role's rights: GetObject on the video folders only.
+videoFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "PresignInvitationVideos",
+    effect: Effect.ALLOW,
+    actions: ["s3:GetObject"],
+    resources: [bucket.arnForObjects("invitations/*/video/*")],
+  }),
+);
+renderFn.grantInvoke(videoFn);
+backend.invitationVideo.addEnvironment("INVITATION_TABLE", tables["Invitation"].tableName);
+backend.invitationVideo.addEnvironment("INVITATION_MEDIA_BUCKET", bucket.bucketName);
+backend.invitationVideo.addEnvironment("VIDEO_RENDER_FUNCTION", renderFn.functionName);

@@ -1,5 +1,6 @@
 import { a, defineData, type ClientSchema } from "@aws-amplify/backend";
 import { invitationPublish } from "../functions/invitation-publish/resource";
+import { invitationVideo } from "../functions/invitation-video/resource";
 import { invitationLifecycle } from "../functions/invitation-lifecycle/resource";
 import { invitationPublic } from "../functions/invitation-public/resource";
 import { rsvpGuest } from "../functions/rsvp-guest/resource";
@@ -62,6 +63,14 @@ const schema = a.schema({
       // RSVPs: the secret in the family's private list link, and replies since staff last opened the RSVP page.
       familyToken: a.string(),
       rsvpNewCount: a.integer(),
+      // Invitation video (invitation-video, invitation-video-render): one render job per live version.
+      videoStatus: a.string(),
+      videoJob: a.string(),
+      videoLiveVersion: a.integer(),
+      videoKey: a.string(),
+      videoNote: a.string(),
+      videoStartedAt: a.datetime(),
+      videoFinishedAt: a.datetime(),
     })
     // No generated hard delete (staff were never allowed it): invitations are removed only through
     // softDeleteInvitation and the erase in invitation-lifecycle.
@@ -165,6 +174,20 @@ const schema = a.schema({
     .returns(a.json())
     .authorization((allow) => [allow.group("admin")])
     .handler(a.handler.function(invitationLifecycle)),
+
+  makeInvitationVideo: a
+    .mutation()
+    .arguments({ id: a.id().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationVideo)),
+
+  invitationVideoStatus: a
+    .query()
+    .arguments({ id: a.id().required() })
+    .returns(a.json())
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(invitationVideo)),
 
   PublicInvitation: a.customType({
     mode: a.string().required(),

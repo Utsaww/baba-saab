@@ -204,7 +204,8 @@ const renderFn = new NodejsFunction(Stack.of(tables["Invitation"]), "InvitationV
   },
 });
 // No automatic retries: a retry would render again and could turn a job already marked failed into ready.
-renderFn.configureAsyncInvoke({ retryAttempts: 0 });
+// A render still queued after 5 minutes is already shown as failed, so drop it.
+renderFn.configureAsyncInvoke({ retryAttempts: 0, maxEventAge: Duration.minutes(5) });
 // It reads the previous video's key and writes the job result on Invitation; it never scans, puts or deletes rows.
 renderFn.addToRolePolicy(
   new PolicyStatement({

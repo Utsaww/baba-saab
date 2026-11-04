@@ -64,8 +64,8 @@ export async function handle(event: AppSyncEvent, deps: Deps): Promise<VideoStat
   }
 }
 
-async function load({ db, table }: Deps, id: string) {
-  const { Item } = await db.send(new GetCommand({ TableName: table, Key: { id } }));
+async function load({ db, table }: Deps, id: string, consistent = false) {
+  const { Item } = await db.send(new GetCommand({ TableName: table, Key: { id }, ConsistentRead: consistent }));
   if (!Item) throw new VideoError("NotFound", "Invitation not found.");
   return Item;
 }
@@ -96,7 +96,7 @@ async function start(deps: Deps, id: string): Promise<VideoState> {
         UpdateExpression:
           "SET videoStatus = :making, videoJob = :job, videoLiveVersion = :lv, videoStartedAt = :now REMOVE videoNote",
         ConditionExpression:
-          "#s = :published AND liveVersion = :lv AND (attribute_not_exists(videoStatus) OR videoStatus <> :making OR videoStartedAt < :cutoff)",
+          "#s = :published AND liveVersion = :lv AND (attribute_not_exists(videoStatus) OR videoStatus <> :making OR videoLiveVersion <> :lv OR videoStartedAt < :cutoff)",
         ExpressionAttributeNames: { "#s": "status" },
         ExpressionAttributeValues: {
           ":making": "making",
@@ -111,8 +111,9 @@ async function start(deps: Deps, id: string): Promise<VideoState> {
   } catch (err: any) {
     if (err?.name !== "ConditionalCheckFailedException") throw err;
     // Lost the race (or the invitation changed): report what the record says now.
-    const fresh = await load(deps, id);
-    if (readState(fresh, Date.now()) === "making") return { status: "making" };
+    const fresh = await load(deps, id, true);
+    const state = readState(fresh, Date.now());
+    if (state === "making" || state === "ready") return describe(deps, fresh);
     throw new VideoError("WrongStatus", "This invitation changed — reload the page.");
   }
 

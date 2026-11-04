@@ -149,7 +149,7 @@ backend.data.resources.cfnResources.amplifyDynamoDbTables["RsvpLimit"].timeToLiv
 };
 
 // invitation-video-render plays the live page in headless Chromium and encodes an MP4 (spec §6). It lives in the
-// data stack: the start function there must reference it, and a separate stack would make a circular dependency.
+// Invitation nested stack: the start function there must reference it, and a separate stack would make a circular dependency.
 // Chromium, Playwright and ffmpeg are too big to bundle, so they come from a layer built with plain npm (no Docker).
 const videoLayerDir = fileURLToPath(new URL("./layers/video", import.meta.url));
 const videoLayer = new LayerVersion(Stack.of(tables["Invitation"]), "InvitationVideoLayer", {

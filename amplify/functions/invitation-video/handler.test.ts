@@ -43,7 +43,7 @@ describe("invitation-video handler", () => {
     await expect(handle(ev("makeInvitationVideo"), deps)).resolves.toEqual({ status: "making" });
     const update = sent.find((c) => c instanceof UpdateCommand)!.input as any;
     expect(update.ConditionExpression).toBe(
-      "#s = :published AND liveVersion = :lv AND (attribute_not_exists(videoStatus) OR videoStatus <> :making OR videoStartedAt < :cutoff)",
+      "#s = :published AND liveVersion = :lv AND (attribute_not_exists(videoStatus) OR videoStatus <> :making OR videoLiveVersion <> :lv OR videoStartedAt < :cutoff)",
     );
     expect(update.ExpressionAttributeValues).toMatchObject({ ":published": "published", ":lv": 3, ":making": "making" });
     expect(update.UpdateExpression).toContain("videoLiveVersion = :lv");
@@ -53,6 +53,32 @@ describe("invitation-video handler", () => {
     expect(JSON.parse(payload(invoke.mock.calls[0][0]))).toEqual({
       id: ID, slug: "rahul-priya", liveVersion: 3, job: update.ExpressionAttributeValues[":job"], musicKey: "music-library/a.mp3",
     });
+  });
+
+  it("start while an older version is making claims and invokes once", async () => {
+    const old = { ...live, videoStatus: "making", videoLiveVersion: 2, videoStartedAt: NOW };
+    const { deps, sent, invoke } = setup([old]);
+    await expect(handle(ev("makeInvitationVideo"), deps)).resolves.toEqual({ status: "making" });
+    expect((sent.find((c) => c instanceof UpdateCommand)!.input as any).ConditionExpression).toContain("videoLiveVersion <> :lv");
+    expect(invoke).toHaveBeenCalledTimes(1);
+  });
+
+  it("invoke failure releases the claim and surfaces", async () => {
+    const { deps, sent, invoke } = setup([live]);
+    invoke.mockRejectedValueOnce(new Error("nope"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await expect(handle(ev("makeInvitationVideo"), deps)).rejects.toThrow("Something went wrong. Please try again.");
+    const updates = sent.filter((c) => c instanceof UpdateCommand).map((c) => c.input as any);
+    expect(updates).toHaveLength(2);
+    expect(updates[1].ExpressionAttributeValues).toMatchObject({ ":failed": "failed", ":job": updates[0].ExpressionAttributeValues[":job"] });
+  });
+
+  it("lost race re-reads consistently and returns ready if it finished", async () => {
+    const ready = { ...live, videoStatus: "ready", videoLiveVersion: 3, videoKey: `invitations/${ID}/video/v.mp4` };
+    const { deps, sent } = setup([live, ready], failedCondition);
+    await expect(handle(ev("makeInvitationVideo"), deps)).resolves.toMatchObject({ status: "ready" });
+    const gets = sent.filter((c) => c instanceof GetCommand);
+    expect((gets[1].input as any).ConsistentRead).toBe(true);
   });
 
   it("omits musicKey when there is no music (stored object form too)", async () => {

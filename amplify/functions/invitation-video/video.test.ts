@@ -17,6 +17,9 @@ describe("readState", () => {
     expect(readState({ ...making, videoStartedAt: ago(MAKING_TIMEOUT_MS + 1000) }, NOW)).toBe("failed");
     expect(readState({ ...making, videoStartedAt: ago(4 * 60 * 1000) }, NOW)).toBe("making");
   });
+  it("making for an older live version reads as none", () => {
+    expect(readState({ ...live, videoStatus: "making", videoLiveVersion: 2, videoStartedAt: ago(1000) }, NOW)).toBe("none");
+  });
   it("not live → none", () => {
     expect(readState({ ...live, status: "offline" }, NOW)).toBe("none");
   });

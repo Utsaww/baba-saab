@@ -1,0 +1,10 @@
+{
+  "name": "invitation-video-layer",
+  "private": true,
+  "description": "Lambda layer for invitation-video-render. @sparticuz/chromium 143 matches playwright-core 1.57's Chromium 143 and still supports the nodejs20.x runtime.",
+  "dependencies": {
+    "@sparticuz/chromium": "143.0.4",
+    "ffmpeg-static": "5.2.0",
+    "playwright-core": "1.57.0"
+  }
+}

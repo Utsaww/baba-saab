@@ -6,6 +6,7 @@ import { checkSlugAction, newPreviewLinkAction, publishAction, setSlugAction, up
 import {
   deleteInvitationAction, eraseNowAction, putOnlineAction, restoreInvitationAction, setOfflineOnAction, takeOfflineAction,
 } from "@/AdminModule/invitations/lifecycleActions";
+import { makeVideoAction, videoStatusAction } from "@/AdminModule/invitations/videoActions";
 import { listMusicTracks } from "@/AdminModule/music/data";
 import { templateChoices } from "@/AdminModule/invitations/templateChoices";
 import EditorShell from "@/AdminModule/editor/EditorShell";
@@ -39,6 +40,7 @@ export default async function EditInvitationPage({ params, searchParams }) {
       saveAction={saveInvitationAction}
       publishActions={{ checkSlugAction, setSlugAction, newPreviewLinkAction, publishAction, updateLiveAction }}
       lifecycleActions={{ takeOfflineAction, putOnlineAction, setOfflineOnAction, deleteInvitationAction, restoreInvitationAction, eraseNowAction }}
+      videoActions={{ makeVideoAction, videoStatusAction }}
       musicTracks={musicTracks}
       musicTracksError={musicTracksError}
     />

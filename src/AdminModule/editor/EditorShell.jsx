@@ -22,6 +22,7 @@ import ChangesNote from "./publish/ChangesNote";
 import PublishErrorNote from "./publish/PublishErrorNote";
 import SaveStatus, { SaveBanners } from "./SaveStatus";
 import StepNav from "./StepNav";
+import VideoButton from "./VideoButton";
 import { guideHref, STEPS } from "./steps";
 import { useAutosave } from "./useAutosave";
 import { LEAVE_MESSAGE, UPLOADING_MESSAGE, useLeaveGuard } from "./useLeaveGuard";
@@ -50,6 +51,7 @@ export default function EditorShell({
   saveAction,
   publishActions = {},
   lifecycleActions = {},
+  videoActions = {},
   musicTracks = [],
   musicTracksError = false,
 }) {
@@ -359,6 +361,7 @@ export default function EditorShell({
             RSVPs
           </Link>
           <SaveStatus state={state} />
+          {lifecycle.status === "published" ? <VideoButton key={liveFields.liveVersion} id={invitation.id} make={videoActions.makeVideoAction} check={videoActions.videoStatusAction} /> : null}
           <InvitationMenu status={lifecycle.status} pending={publishPending} onTakeOffline={onTakeOffline} onDelete={onDelete} />
         </div>
       </div>

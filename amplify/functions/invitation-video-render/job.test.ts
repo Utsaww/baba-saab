@@ -23,7 +23,9 @@ describe("finishJob", () => {
     await expect(finishJob(db, "Inv", { id: "inv-1", job: "job-1", key, note: "Made without music" }, NOW)).resolves.toBe(true);
     const input = db.calls[0].input;
     expect(input).toMatchObject({ TableName: "Inv", Key: { id: "inv-1" } });
-    expect(input.ConditionExpression).toContain("videoJob = :job");
+    expect(input.ConditionExpression).toBe("videoJob = :job AND #s = :published AND liveVersion = videoLiveVersion");
+    expect(input.ExpressionAttributeNames).toEqual({ "#s": "status" });
+    expect(input.ExpressionAttributeValues).toMatchObject({ ":published": "published" });
     expect(input.ExpressionAttributeValues).toMatchObject({
       ":job": "job-1",
       ":status": "ready",

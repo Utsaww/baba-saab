@@ -253,6 +253,16 @@ describe("EditorShell publishing", () => {
     storage.deleteMedia.mockClear();
   });
 
+  it("shows the video button only when live", async () => {
+    const { unmount } = renderEditor({ invitation: published });
+    await settle();
+    expect(screen.getByRole("button", { name: "Download video" })).toBeInTheDocument();
+    unmount();
+    renderEditor();
+    await settle();
+    expect(screen.queryByRole("button", { name: "Download video" })).not.toBeInTheDocument();
+  });
+
   it("keeps a file the live copy still uses, and deletes it once Update live drops it", async () => {
     const { publishActions } = renderEditor({ invitation: published, initialStep: 5 });
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);

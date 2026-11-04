@@ -3,7 +3,8 @@ import { UpdateCommand, type DynamoDBDocumentClient } from "@aws-sdk/lib-dynamod
 type Db = Pick<DynamoDBDocumentClient, "send">;
 const lost = (err: any) => err?.name === "ConditionalCheckFailedException";
 
-/** Marks the video ready, but only if this job still owns the record. False: a newer job started meanwhile. */
+/** Marks the video ready, but only if this job still owns the record and that version is still live. False: a newer job
+ * started, or the invitation was taken offline, deleted or updated meanwhile. */
 export async function finishJob(
   db: Db,
   table: string,
@@ -16,8 +17,9 @@ export async function finishJob(
         TableName: table,
         Key: { id },
         UpdateExpression: "SET videoStatus = :status, videoKey = :key, videoNote = :note, videoFinishedAt = :now",
-        ConditionExpression: "videoJob = :job",
-        ExpressionAttributeValues: { ":status": "ready", ":key": key, ":note": note ?? null, ":now": now, ":job": job },
+        ConditionExpression: "videoJob = :job AND #s = :published AND liveVersion = videoLiveVersion",
+        ExpressionAttributeNames: { "#s": "status" },
+        ExpressionAttributeValues: { ":status": "ready", ":key": key, ":note": note ?? null, ":now": now, ":job": job, ":published": "published" },
       }),
     );
     return true;

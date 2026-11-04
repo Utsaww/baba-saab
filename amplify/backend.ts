@@ -6,11 +6,12 @@ import { defineBackend } from "@aws-amplify/backend";
 import { DockerImage, Duration, Size, Stack } from "aws-cdk-lib";
 import { AnyPrincipal, Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Code, LayerVersion, Runtime } from "aws-cdk-lib/aws-lambda";
-import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import { NodejsFunction, OutputFormat } from "aws-cdk-lib/aws-lambda-nodejs";
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
 import { invitationLifecycle } from "./functions/invitation-lifecycle/resource";
 import { invitationPublic } from "./functions/invitation-public/resource";
+import { invitationVideo } from "./functions/invitation-video/resource";
 import { invitationPublish } from "./functions/invitation-publish/resource";
 import { rsvpGuest } from "./functions/rsvp-guest/resource";
 import { staffAdmin } from "./functions/staff-admin/resource";
@@ -24,6 +25,7 @@ const backend = defineBackend({
   invitationPublish,
   invitationPublic,
   invitationLifecycle,
+  invitationVideo,
   rsvpGuest,
 });
 
@@ -147,7 +149,7 @@ backend.data.resources.cfnResources.amplifyDynamoDbTables["RsvpLimit"].timeToLiv
 };
 
 // invitation-video-render plays the live page in headless Chromium and encodes an MP4 (spec §6). It lives in the
-// data stack: the start function there must reference it, and a separate stack would make a circular dependency.
+// Invitation nested stack: the start function there must reference it, and a separate stack would make a circular dependency.
 // Chromium, Playwright and ffmpeg are too big to bundle, so they come from a layer built with plain npm (no Docker).
 const videoLayerDir = fileURLToPath(new URL("./layers/video", import.meta.url));
 const videoLayer = new LayerVersion(Stack.of(tables["Invitation"]), "InvitationVideoLayer", {
@@ -186,7 +188,15 @@ const renderFn = new NodejsFunction(Stack.of(tables["Invitation"]), "InvitationV
   timeout: Duration.seconds(290),
   ephemeralStorageSize: Size.gibibytes(4),
   layers: [videoLayer],
-  bundling: { externalModules: ["@sparticuz/chromium", "playwright-core", "ffmpeg-static", "@aws-sdk/*"] },
+  // ESM: @sparticuz/chromium is ESM-only, and a CJS bundle can't require() it (Lambda resolves ESM imports from the
+  // layer via NODE_PATH since Node 18). The banner gives bundled CJS code a require. No keepNames: its __name helpers
+  // end up inside page.evaluate callbacks and throw in the browser.
+  bundling: {
+    format: OutputFormat.ESM,
+    mainFields: ["module", "main"],
+    banner: "import { createRequire as __createRequire } from 'node:module'; const require = __createRequire(import.meta.url);",
+    externalModules: ["@sparticuz/chromium", "playwright-core", "ffmpeg-static", "@aws-sdk/*"],
+  },
   environment: {
     INVITATION_TABLE: tables["Invitation"].tableName,
     INVITATION_MEDIA_BUCKET: bucket.bucketName,
@@ -194,7 +204,8 @@ const renderFn = new NodejsFunction(Stack.of(tables["Invitation"]), "InvitationV
   },
 });
 // No automatic retries: a retry would render again and could turn a job already marked failed into ready.
-renderFn.configureAsyncInvoke({ retryAttempts: 0 });
+// A render still queued after 5 minutes is already shown as failed, so drop it.
+renderFn.configureAsyncInvoke({ retryAttempts: 0, maxEventAge: Duration.minutes(5) });
 // It reads the previous video's key and writes the job result on Invitation; it never scans, puts or deletes rows.
 renderFn.addToRolePolicy(
   new PolicyStatement({
@@ -214,3 +225,27 @@ renderFn.addToRolePolicy(
     resources: [bucket.arnForObjects("invitations/*/video/*")],
   }),
 );
+
+// invitation-video (staff): claims a job on Invitation, starts the render, and hands out a presigned download.
+const videoFn = backend.invitationVideo.resources.lambda;
+videoFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "ClaimInvitationVideoJob",
+    effect: Effect.ALLOW,
+    actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+    resources: [tables["Invitation"].tableArn],
+  }),
+);
+// The presigned link carries this role's rights: GetObject on the video folders only.
+videoFn.addToRolePolicy(
+  new PolicyStatement({
+    sid: "PresignInvitationVideos",
+    effect: Effect.ALLOW,
+    actions: ["s3:GetObject"],
+    resources: [bucket.arnForObjects("invitations/*/video/*")],
+  }),
+);
+renderFn.grantInvoke(videoFn);
+backend.invitationVideo.addEnvironment("INVITATION_TABLE", tables["Invitation"].tableName);
+backend.invitationVideo.addEnvironment("INVITATION_MEDIA_BUCKET", bucket.bucketName);
+backend.invitationVideo.addEnvironment("VIDEO_RENDER_FUNCTION", renderFn.functionName);

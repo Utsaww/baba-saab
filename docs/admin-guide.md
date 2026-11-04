@@ -220,6 +220,24 @@ When the live link is pasted into WhatsApp, it shows a card with the cover photo
 
 After publishing, click **Download QR code**. It saves a file named like `riya-and-arjun-qr.png` that points to the live link. It prints sharply at normal invitation and standee sizes. Always scan it with a phone before sending it to print.
 
+### Download a video
+
+A live invitation has a **Download video** button at the top of the editor, next to the **⋯** menu. It makes a phone-sized video (portrait, full HD) of the invitation playing from the opening to the end, pausing on the couple's names, the date and each event. It isn't shown for drafts, or for invitations that are offline or deleted.
+
+- Click **Download video**. It changes to **Making video…**, which takes 1–2 minutes. You can keep working, or leave and come back.
+- When it's ready, click **Download MP4**. The file is named like `riya-and-arjun-invitation.mp4`.
+- The video is kept, so downloading again later is instant.
+- After **Update live invitation**, the old video is no longer offered. Click **Download video** again to make one that matches the new version.
+- The invitation's music starts at the opening, as it does on a guest's phone. It repeats if the video is longer than the song, and fades out over the last two seconds. If the song can't be read, the video is made without music and a note says so.
+- The video is 20 seconds to a minute long, depending on how much is in the invitation.
+- If it says **Couldn't make the video**, click **Try again**. If it fails twice, tell the owner.
+- The video is erased together with the invitation.
+
+**Sharing from a phone:** send the MP4 to your phone (for example, on WhatsApp to yourself) and save it to the gallery.
+
+- **WhatsApp status:** Status → add (camera icon) → pick the video from the gallery → send.
+- **Instagram story or Reel:** tap **+** → Story or Reel → pick the video from the gallery → share. Instagram may split a story longer than 60 seconds into parts; Reels play it in one piece.
+
 ### RSVPs on WhatsApp
 
 When **Guests reply on WhatsApp** is on in step 8, the invitation has an RSVP form: name, phone, whether they're coming, how many (if asked), which functions, meal (if asked) and a message.
